@@ -1,6 +1,14 @@
 # Senkronla
 
-Self-hosted, zero-knowledge **Envelope Sync Relay** for offline-first applications.
+[![Version](https://img.shields.io/github/package-json/v/kemalersin/senkronla?filename=packages%2Fserver%2Fpackage.json&label=version)](packages/server/package.json)
+[![Node.js](https://img.shields.io/badge/Node.js-22+-339933)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Buy me a coffee](https://img.shields.io/badge/☕-Buy_me_a_coffee-FFDD00)](https://buy.polar.sh/polar_cl_bgVnJBChysBLb4AeFnjxdmiBepqUoTyWkZraz39sSUf)
+
+Open-source, self-hosted, zero-knowledge **Envelope Sync Relay** for offline-first applications.
+
+**Source:** [github.com/kemalersin/senkronla](https://github.com/kemalersin/senkronla)
 
 Senkronla stores opaque encrypted document envelopes (`ESR-DOC1`) and coordinates revision, device pairing, and slot licensing. The server never reads payload content.
 
@@ -88,4 +96,4 @@ Full v1 delivery includes REST API, WebSocket notifications, and `EsrSync` clien
 
 ## License
 
-TBD
+[MIT](LICENSE) — Copyright (c) 2026 Kemal Ersin

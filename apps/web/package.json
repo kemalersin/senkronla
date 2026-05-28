@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "Senkronla operator portal and developer documentation",
+  "license": "MIT",
   "scripts": {
     "build": "next build",
     "dev": "next dev --port 3000",
-    "lint": "next lint",
+    "lint": "tsc -p tsconfig.json --noEmit",
     "start": "next start",
     "test": "echo \"No tests yet\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
