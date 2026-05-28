@@ -1,0 +1,43 @@
+# server:
+  host: "0.0.0.0"
+  port: 8080
+  publicUrl: "http://localhost:8080"
+  trustProxy: false
+
+database:
+  # Override with ESR_DATABASE_URL env var
+  url: "postgresql://esr:esr@localhost:5432/esr"
+  poolSize: 10
+  ssl: false
+
+blob:
+  driver: "filesystem"
+  filesystem:
+    path: "./data/blobs"
+
+auth:
+  adminApiToken: "${ESR_ADMIN_TOKEN}"
+  deviceTokenBytes: 32
+
+limits:
+  defaultFreeDeviceLimit: 2
+  onLimitReached:
+    mode: payment
+    slotPackages: [3, 5, 10]
+
+websocket:
+  enabled: true
+  pingIntervalSeconds: 30
+  pongTimeoutSeconds: 10
+
+cors:
+  allowedOrigins:
+    - "*"
+
+logging:
+  level: "info"
+  format: "json"
+
+metrics:
+  enabled: true
+  path: "/metrics"

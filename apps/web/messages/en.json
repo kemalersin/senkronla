@@ -1,0 +1,739 @@
+{
+  "meta": {
+    "title": "Senkronla — Sync API & SDK for your app",
+    "description": "Add multi-device sync to your product. Step-by-step SDK guides, REST API reference, and integration checklists for developers."
+  },
+  "nav": {
+    "home": "Home",
+    "guides": "Guides",
+    "sdk": "SDK",
+    "api": "API"
+  },
+  "theme": {
+    "toggle": "Toggle color theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "codeBlock": {
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "landing": {
+    "eyebrow": "For product teams building sync into their app",
+    "title": "Your users' data, up to date on every device",
+    "subtitle": "Senkronla is a sync service you plug into your app. Users can work offline, pick up on another phone or laptop, and you stay in control of the experience — without reading their content.",
+    "ctaPrimary": "Start integrating",
+    "ctaSecondary": "Browse SDK docs",
+    "benefitsTitle": "Why teams use Senkronla?",
+    "benefits": {
+      "privacy": {
+        "title": "Private by design",
+        "body": "Your app sends opaque data packages to the relay. Today v1 uses ENV-RAW1 snapshots (client-side encryption ENV-ENC1 is planned). Recovery phrases never leave the device — only a one-way proof is stored server-side."
+      },
+      "offline": {
+        "title": "Works when the network doesn't",
+        "body": "Changes are saved locally first. When the user comes back online, your app pushes updates and pulls what changed elsewhere."
+      },
+      "devices": {
+        "title": "Built for multiple devices",
+        "body": "Pair a second phone or a desktop app with a short code. You decide how many devices a customer can use and what to charge for extra slots."
+      }
+    },
+    "howTitle": "How it fits into your product",
+    "how": {
+      "step1": {
+        "title": "Your app saves changes locally",
+        "body": "Notes, tasks, settings — whatever you sync. The user keeps working even without internet."
+      },
+      "step2": {
+        "title": "Senkronla carries versioned snapshots",
+        "body": "Your integration pushes opaque ENV-RAW1 packages to the sync API. Other devices are notified and pull the latest version."
+      },
+      "step3": {
+        "title": "Other devices catch up",
+        "body": "The SDK or API pulls the latest version. If two people edited at once, your app asks what to keep."
+      }
+    },
+    "audienceTitle": "Made for real products",
+    "audience": {
+      "apps": {
+        "title": "Mobile & desktop apps",
+        "body": "Ship sync without building your own backend team. Focus on features your customers see."
+      },
+      "teams": {
+        "title": "Small teams & startups",
+        "body": "Predictable integration path: SDK first, REST when you need custom flows."
+      },
+      "builders": {
+        "title": "Existing SaaS products",
+        "body": "Add “use on all my devices” to your roadmap with a documented API and error model."
+      }
+    },
+    "devCta": {
+      "title": "Ready to wire it in?",
+      "body": "Follow the guides step by step — most teams complete first sync in under an hour using the SDK.",
+      "primary": "Read the integration guide",
+      "secondary": "Explore the REST API"
+    }
+  },
+  "guides": {
+    "title": "Integration guides",
+    "intro": "Start here if you are wiring Senkronla into your product for the first time. We explain every concept in plain language — you do not need to know our codebase beforehand.",
+    "nav": {
+      "concepts": "Core concepts",
+      "checklist": "Checklist",
+      "first-device": "First device",
+      "second-device": "Second device",
+      "recovery": "Lost devices",
+      "offline": "Offline & conflicts",
+      "limits": "Device limits",
+      "choose": "SDK or REST?"
+    },
+    "table": {
+      "term": "Term",
+      "meaning": "What it means"
+    },
+    "sections": {
+      "concepts": {
+        "title": "Core concepts",
+        "p1": "Senkronla syncs one JSON snapshot per customer workspace. These terms appear throughout the SDK and API:",
+        "calloutTitle": "Who does what?",
+        "calloutBody": "Your app owns the user experience and data model. Senkronla owns transport: storing opaque packages, versioning, device slots, and notifying other clients.",
+        "rows": {
+          "namespace": "A workspace — one isolated sync space, usually one per customer account. Identified by a UUID v4 you choose or generate.",
+          "deviceToken": "Secret string returned when a device is created or paired. Send as <tag>Bearer</tag> token on every API call. The SDK stores it in <tag>EsrStorage</tag>.",
+          "clientDeviceId": "UUID generated once on the client and kept forever. Identifies this physical install inside envelopes — different from the server <tag>deviceId</tag> (ULID).",
+          "recoveryPhrase": "24-word BIP39 phrase shown once at workspace creation. Proves ownership if all devices are lost. Never sent to the server — only a hash proof.",
+          "revision": "ULID version tag on each snapshot. Required for optimistic locking on push — mismatch returns <tag>REVISION_CONFLICT</tag>.",
+          "envelope": "<tag>ESR-DOC1</tag> wrapper around your JSON snapshot plus metadata. The relay stores it but does not parse your app data.",
+          "primaryDocument": "v1 supports exactly one document per namespace (<tag>documentId: primary</tag>) — typically your full app state as JSON.",
+          "pairingCode": "Six-digit code valid for a few minutes. Host device generates it; guest device redeems it to join the workspace."
+        }
+      },
+      "checklist": {
+        "title": "Integration checklist",
+        "p1": "Work through this list before shipping to production:",
+        "steps": {
+          "s1": {
+            "title": "Get your relay URL",
+            "body": "You need a running Senkronla relay. This documentation uses {relayUrl}."
+          },
+          "s2": {
+            "title": "Install the SDK",
+            "body": "Add <tag>@senkronla/client</tag> to your app (or plan REST calls for non-JS clients)."
+          },
+          "s3": {
+            "title": "Implement DocumentAdapter",
+            "body": "<tag>exportDocument</tag> / <tag>importDocument</tag> must round-trip your app state as JSON. Keep exports fast — they run before every push."
+          },
+          "s4": {
+            "title": "Handle recovery UI",
+            "body": "<tag>onRecoveryPhrase</tag> fires once. Build a modal with copy/save — you cannot retrieve the phrase later."
+          },
+          "s5": {
+            "title": "Handle conflicts",
+            "body": "<tag>onConflict</tag> must ask the user to keep local or remote. There is no automatic merge."
+          },
+          "s6": {
+            "title": "Wire the sync loop",
+            "body": "<tag>ensureNamespace()</tag> → <tag>sync()</tag> on startup → <tag>notifyLocalChange()</tag> after edits → <tag>flushPush()</tag> before logout."
+          }
+        }
+      },
+      "firstDevice": {
+        "title": "First device in a workspace",
+        "p1": "This is the path for a brand-new customer who has no synced data yet:",
+        "codeTitle": "Complete minimal setup",
+        "p2": "After <tag>ensureNamespace()</tag>, the device token and revision state live in <tag>EsrStorage</tag> — users do not manage tokens manually.",
+        "steps": {
+          "s1": {
+            "title": "Pick a stable namespaceId",
+            "body": "Use your internal customer/workspace UUID. It must stay the same across app reinstalls if you want the same sync space."
+          },
+          "s2": {
+            "title": "Create the adapter",
+            "body": "Point <tag>exportDocument</tag> at your store snapshot and <tag>importDocument</tag> at your restore logic."
+          },
+          "s3": {
+            "title": "Connect EsrSync",
+            "body": "Pass <tag>relayUrl</tag>, <tag>document</tag>, <tag>storage</tag>, and the required callbacks."
+          },
+          "s4": {
+            "title": "Call ensureNamespace()",
+            "body": "Creates the workspace on first run, shows recovery phrase, performs initial push."
+          },
+          "s5": {
+            "title": "Hook local changes",
+            "body": "Call <tag>notifyLocalChange()</tag> whenever your store mutates. The SDK debounces pushes (default 2 seconds)."
+          }
+        }
+      },
+      "secondDevice": {
+        "title": "Add a second device",
+        "p1": "The guest device needs the same <tag>namespaceId</tag> in its adapter but does not have a token yet.",
+        "hostTitle": "Host (has data)",
+        "guestTitle": "Guest (new device)",
+        "steps": {
+          "s1": {
+            "title": "Host calls startPairing()",
+            "body": "Display the 6-digit code and optional QR (<tag>qrPayload</tag> uses <tag>esr://pair/v1/...</tag>)."
+          },
+          "s2": {
+            "title": "Guest calls joinPairing(code)",
+            "body": "Receives a device token, stores it, and runs <tag>sync()</tag> to download data."
+          },
+          "s3": {
+            "title": "Verify slot limits",
+            "body": "If the workspace is full, pairing returns <tag>DEVICE_LIMIT_*</tag>. Surface your upgrade UI via <tag>onDeviceLimit</tag>."
+          }
+        }
+      },
+      "recovery": {
+        "title": "When all devices are lost",
+        "p1": "The user enters their 24-word recovery phrase. The SDK builds a cryptographic proof and calls the <tag>recover</tag> endpoint.",
+        "warnTitle": "Important side effect",
+        "warnBody": "Recovery revokes every previously paired device. All other phones and laptops lose access until paired again.",
+        "steps": {
+          "s1": {
+            "title": "Collect the phrase",
+            "body": "Normalize whitespace; the SDK handles casing."
+          },
+          "s2": {
+            "title": "Call sync.recover(phrase)",
+            "body": "Call <tag>sync.recover(phrase)</tag> — stores a fresh device token for this install."
+          },
+          "s3": {
+            "title": "Run sync()",
+            "body": "Downloads the latest remote snapshot into your adapter via <tag>sync()</tag>."
+          }
+        }
+      },
+      "offline": {
+        "title": "Offline edits and conflicts",
+        "p1": "Senkronla is offline-friendly by design. The SDK queues local changes and syncs when the network returns.",
+        "tipTitle": "No server-side merge",
+        "tipBody": "If two devices edit offline and both push, the second push gets <tag>REVISION_CONFLICT</tag>. Your <tag>onConflict</tag> callback decides the winner — plan UI copy accordingly.",
+        "steps": {
+          "s1": {
+            "title": "User edits offline",
+            "body": "Save locally as usual, then call <tag>notifyLocalChange()</tag>. Status may show <tag>offline</tag> or <tag>pending_push</tag>."
+          },
+          "s2": {
+            "title": "Network returns",
+            "body": "Scheduler or manual <tag>sync()</tag> attempts push/pull automatically."
+          },
+          "s3": {
+            "title": "Conflict detected",
+            "body": "<tag>onConflict</tag> receives <tag>remoteMeta</tag> (timestamp, device). Return <tag>remote</tag>, <tag>local</tag>, or <tag>cancel</tag>."
+          }
+        }
+      },
+      "limits": {
+        "title": "Device limits in your UI",
+        "p1": "Each workspace has <tag>maxDevices</tag> = free slots + purchased slots. Your product decides what happens when the limit is hit:",
+        "li1": "<tag>DEVICE_LIMIT_PAYMENT_REQUIRED</tag> — show upgrade / unlock flow (<tag>onDeviceLimit</tag> callback).",
+        "li2": "<tag>DEVICE_LIMIT_BLOCKED</tag> — hard cap; user must revoke an old device via <tag>listDevices()</tag> + <tag>revokeDevice()</tag>.",
+        "li3": "Unlock codes from your operator are redeemed with <tag>redeemUnlockCode()</tag>."
+      },
+      "choose": {
+        "title": "SDK or REST?",
+        "p1": "Use the SDK unless you have a strong reason not to — it saves weeks of edge-case handling.",
+        "sdkTitle": "JavaScript SDK (recommended)",
+        "sdkBody": "Browser, Electron, React Native (with fetch), Node 18+. Handles tokens, debounce, WS notifications, conflicts.",
+        "apiTitle": "REST API directly",
+        "apiBody": "Swift, Kotlin, server jobs, or custom sync engines. You implement revision checks, token storage, and notification polling yourself.",
+        "next": "Reference:",
+        "sdkLink": "SDK docs",
+        "apiLink": "API docs"
+      }
+    }
+  },
+  "sdk": {
+    "title": "Client SDK reference",
+    "intro": "Package: <tag>@senkronla/client</tag>. The <tag>EsrSync</tag> class is your main entry point — it wraps HTTP, optional <tag>WebSocket</tag> notifications, local revision tracking, and user-facing callbacks.",
+    "nav": {
+      "quick-start": "Quick start",
+      "install": "Install",
+      "connect": "Connect options",
+      "adapter": "Document adapter",
+      "storage": "Local storage",
+      "methods": "Methods",
+      "sync": "Sync lifecycle",
+      "pairing": "Pairing",
+      "conflicts": "Conflicts",
+      "notifications": "Notifications",
+      "status": "Status values",
+      "errors": "Errors"
+    },
+    "table": {
+      "option": "Option",
+      "description": "Description",
+      "field": "Field / method",
+      "method": "Method",
+      "status": "Status",
+      "meaning": "Meaning",
+      "code": "Code",
+      "action": "What to do"
+    },
+    "sections": {
+      "quickStart": {
+        "title": "Quick start",
+        "p1": "Copy this template into your app and replace the store hooks with your real state management:",
+        "tipTitle": "Relay URL for this deployment",
+        "tipBody": "Set <tag>relayUrl</tag> to {relayUrl} or read it from your own config."
+      },
+      "install": {
+        "title": "Install",
+        "p1": "Requires Node 18+ or a modern browser with fetch and Web Crypto.",
+        "p2": "TypeScript types are included. For manual envelope building, also add <tag>@senkronla/protocol</tag>."
+      },
+      "connect": {
+        "title": "EsrSync.connect options",
+        "p1": "Only <tag>relayUrl</tag>, <tag>document</tag>, <tag>storage</tag>, <tag>onRecoveryPhrase</tag>, and <tag>onConflict</tag> are required. Everything else has sensible defaults:",
+        "p2": "Use <tag>onStatusChange</tag> to drive a sync indicator in your UI, and <tag>onError</tag> for logging.",
+        "exampleTitle": "Full connect example",
+        "options": {
+          "relayUrl": "Base URL ending in <tag>/v1</tag>, e.g. https://sync.example.com/v1",
+          "document": "Your <tag>DocumentAdapter</tag> instance",
+          "storage": "<tag>EsrStorage</tag> implementation (<tag>createLocalStorageAdapter</tag> for web)",
+          "onRecoveryPhrase": "Required. Called once with the 24-word phrase when namespace is created.",
+          "onConflict": "Required. Return <tag>remote</tag>, <tag>local</tag>, or <tag>cancel</tag> when versions diverge.",
+          "onDeviceLimit": "Optional. Called on <tag>DEVICE_LIMIT_*</tag> errors — open billing UI.",
+          "pushDebounceMs": "Default 2000. Delay before pushing after <tag>notifyLocalChange()</tag>.",
+          "notificationsEnabled": "Default true. Set false for CLI tools or tests.",
+          "persistRecoveryPhrase": "Default true. Stores phrase in <tag>EsrStorage</tag> (consider security implications)."
+        }
+      },
+      "adapter": {
+        "title": "Document adapter",
+        "p1": "The adapter is the bridge between your app state and Senkronla. Use <tag>createDocumentAdapter</tag> for a quick start, or implement <tag>DocumentAdapter</tag> directly:",
+        "p2": "<tag>contentType</tag> should be a vendor MIME type. <tag>encryption.enabled</tag> must stay false until <tag>ENV-ENC1</tag> ships.",
+        "fields": {
+          "namespaceId": "Stable UUID v4 for this workspace — must match across devices.",
+          "namespaceLabel": "Human-readable name shown in device lists.",
+          "buildDocument": "Async. Returns JSON string of current app state.",
+          "importDocument": "Async. Parses remote JSON string and applies to your store.",
+          "contentType": "MIME type describing your snapshot format."
+        }
+      },
+      "storage": {
+        "title": "What the SDK stores locally",
+        "p1": "Implement <tag>EsrStorage</tag> or use <tag>createLocalStorageAdapter(prefix)</tag>. Keys are scoped per namespace:",
+        "li1": "<tag>deviceToken</tag> — required for all authenticated calls",
+        "li2": "<tag>knownRemoteRevision</tag> — last seen server revision for conflict detection",
+        "li3": "<tag>recoveryPhrase</tag> — optional, if <tag>persistRecoveryPhrase</tag> is true",
+        "li4": "<tag>global:clientDeviceId</tag> — generated once per app install",
+        "calloutTitle": "Security",
+        "calloutBody": "Treat device tokens like session secrets. On mobile, prefer secure storage (Keychain / Keystore) by implementing <tag>EsrStorage</tag> yourself."
+      },
+      "methods": {
+        "title": "EsrSync methods",
+        "p1": "Call these from your app lifecycle hooks:",
+        "examplesTitle": "Examples by method",
+        "rows": {
+          "ensureNamespace": "Create workspace on first launch, or verify existing token. Shows recovery phrase when created=true.",
+          "sync": "Full pull/push cycle. Call on app start, network reconnect, and after WS <tag>head_changed</tag>.",
+          "notifyLocalChange": "Mark local data dirty; debounced push follows.",
+          "flushPush": "Push immediately — use before logout or critical saves.",
+          "startPairing": "Host: returns <tag>code</tag>, <tag>qrPayload</tag>, <tag>expiresAt</tag>.",
+          "joinPairing": "Guest: redeems code, stores token, runs <tag>sync()</tag>.",
+          "recover": "Recovery phrase flow. Revokes all other devices.",
+          "listDevices": "Returns devices array and limits for settings UI.",
+          "revokeDevice": "Remove another device by server deviceId (ULID).",
+          "redeemUnlockCode": "Apply operator unlock code for more device slots.",
+          "resolveConflict": "Manual resolution if you handle conflicts outside onConflict.",
+          "getStatus": "Current <tag>EsrSyncStatus</tag> for UI indicators."
+        },
+        "examples": {
+          "ensureNamespace": {
+            "title": "ensureNamespace()",
+            "desc": "Create a workspace on first launch or verify an existing device token."
+          },
+          "sync": {
+            "title": "sync()",
+            "desc": "Run a full pull/push cycle and handle the result status."
+          },
+          "notifyLocalChange": {
+            "title": "notifyLocalChange()",
+            "desc": "Queue a debounced push after local edits."
+          },
+          "flushPush": {
+            "title": "flushPush()",
+            "desc": "Push immediately without waiting for debounce."
+          },
+          "startPairing": {
+            "title": "startPairing()",
+            "desc": "Host device generates a 6-digit pairing code."
+          },
+          "joinPairing": {
+            "title": "joinPairing(code)",
+            "desc": "Guest device redeems the code and syncs."
+          },
+          "recover": {
+            "title": "recover(phrase)",
+            "desc": "Restore access with the 24-word recovery phrase."
+          },
+          "listDevices": {
+            "title": "listDevices()",
+            "desc": "List paired devices and slot limits for settings UI."
+          },
+          "revokeDevice": {
+            "title": "revokeDevice(id)",
+            "desc": "Remove another device from the workspace."
+          },
+          "redeemUnlockCode": {
+            "title": "redeemUnlockCode(code)",
+            "desc": "Apply an operator unlock code for extra device slots."
+          },
+          "resolveConflict": {
+            "title": "resolveConflict(choice)",
+            "desc": "Manually pick local or remote after a conflict."
+          },
+          "getStatus": {
+            "title": "getStatus()",
+            "desc": "Read current sync status and last error."
+          }
+        }
+      },
+      "sync": {
+        "title": "Sync lifecycle",
+        "p1": "Typical integration points in your app:",
+        "li1": "App launch → <tag>ensureNamespace()</tag> then <tag>sync()</tag>",
+        "li2": "Store mutation → <tag>notifyLocalChange()</tag>",
+        "li3": "Window focus / network online → <tag>sync()</tag>",
+        "li4": "Logout → <tag>flushPush()</tag> then optional <tag>disable()</tag>"
+      },
+      "pairing": {
+        "title": "Pairing devices",
+        "p1": "Both devices use the same <tag>relayUrl</tag>. The guest adapter must use the same <tag>namespaceId</tag> as the host.",
+        "p2": "<tag>qrPayload</tag> follows <tag>esr://pair/v1/[namespaceId]?code=XXXXXX&exp=...&host=...</tag> for QR scanner integrations.",
+        "hostExample": "Host device",
+        "guestExample": "Guest device"
+      },
+      "conflicts": {
+        "title": "Handling conflicts",
+        "p1": "A conflict means the server revision advanced while you had unpushed local edits. The SDK pauses and waits for your callback.",
+        "p2": "<tag>remoteMeta</tag> includes <tag>writtenAt</tag>, <tag>deviceId</tag>, and <tag>contentSha256</tag> — enough to show a meaningful choice in UI.",
+        "manualExample": "Manual resolution"
+      },
+      "notifications": {
+        "title": "Live notifications",
+        "p1": "When enabled, the SDK opens a <tag>WebSocket</tag> to <tag>.../notifications</tag> and listens for <tag>head_changed</tag>.",
+        "p2": "If <tag>WebSocket</tag> fails, it falls back to HTTP polling (<tag>ws_with_poll_fallback</tag> mode). WS only notifies — you still pull via HTTP.",
+        "li1": "<tag>head_changed</tag> → triggers <tag>sync()</tag>",
+        "li2": "<tag>limits_changed</tag> → slot count updated (handle in <tag>onDeviceLimit</tag> or poll limits)"
+      },
+      "status": {
+        "title": "Status values",
+        "p1": "Subscribe via <tag>onStatusChange</tag> or poll <tag>getStatus()</tag>:",
+        "exampleTitle": "Polling status",
+        "rows": {
+          "idle": "Ready, no operation in progress",
+          "syncing": "Pull or push running",
+          "pendingPush": "Local changes queued, waiting for debounce or network",
+          "conflict": "Waiting for <tag>onConflict</tag> user decision",
+          "offline": "Network unavailable",
+          "wsConnected": "Notification <tag>WebSocket</tag> is connected"
+        }
+      },
+      "errors": {
+        "title": "Client error codes",
+        "p1": "All SDK errors are <tag>EsrError</tag> instances with a stable <tag>code</tag> string:",
+        "p2": "Server-side codes (full list) are on the API page — including relay quotas (default 50 MB envelope, rate limits). Branch on <tag>error.code</tag>, not HTTP status alone.",
+        "client": {
+          "noToken": "No device token yet — call <tag>ensureNamespace</tag>, <tag>joinPairing</tag>, or <tag>recover</tag>",
+          "offline": "Network down — retry <tag>sync()</tag> when online",
+          "namespaceExists": "Workspace already exists — use pairing or recovery instead of create",
+          "conflictCancelled": "User cancelled conflict dialog — local edits still pending",
+          "revisionConflict": "Server revision moved — conflict flow required",
+          "deviceLimit": "Workspace full — show upgrade or device management UI"
+        }
+      }
+    }
+  },
+  "api": {
+    "title": "REST API reference",
+    "intro": "JSON over HTTPS under <tag>/v1</tag>. Use this when the JavaScript SDK is not an option, or when you need server-side automation.",
+    "nav": {
+      "overview": "Overview",
+      "auth": "Authentication",
+      "workflows": "Typical flow",
+      "namespaces": "Workspaces",
+      "documents": "Documents",
+      "devices": "Devices & recovery",
+      "limits": "Limits & unlock",
+      "websocket": "WebSocket",
+      "relayQuotas": "Relay quotas",
+      "errors": "Error codes"
+    },
+    "table": {
+      "method": "Method",
+      "path": "Path",
+      "purpose": "Purpose",
+      "code": "Code",
+      "http": "HTTP",
+      "action": "What to do",
+      "quota": "Quota",
+      "default": "Default",
+      "scope": "Scope",
+      "window": "Window",
+      "request": "Request",
+      "response": "Response"
+    },
+    "sections": {
+      "overview": {
+        "title": "Overview",
+        "p1": "All business endpoints are prefixed with <tag>/v1</tag>. Responses are JSON. Errors use a consistent shape with <tag>error.code</tag> you can switch on.",
+        "p2": "Unauthenticated: <tag>POST /v1/namespaces</tag>, <tag>POST .../devices</tag> (pairing redeem), <tag>POST .../recover</tag>. Everything else needs a device token.",
+        "healthTitle": "GET /health",
+        "calloutTitle": "Error response shape",
+        "calloutBody": "Errors return JSON with an <tag>error</tag> object containing <tag>code</tag>, <tag>message</tag>, and optional <tag>details</tag> (e.g. <tag>remoteMeta</tag> on <tag>REVISION_CONFLICT</tag>)."
+      },
+      "auth": {
+        "title": "Authentication",
+        "p1": "After creating, pairing, or recovering a device you receive <tag>deviceToken</tag> in the response. Send it on every subsequent request:",
+        "p2": "Revoked when the device is deleted or after recovery (all devices revoked). Store securely on the client.",
+        "li1": "HTTP: <tag>Authorization: Bearer</tag> header",
+        "li2": "<tag>WebSocket</tag>: same token in <tag>Authorization</tag> header or first auth message"
+      },
+      "workflows": {
+        "title": "Typical REST flow (no SDK)",
+        "p1": "Follow this sequence for a minimal integration:",
+        "steps": {
+          "s1": {
+            "title": "Create namespace",
+            "body": "<tag>POST /v1/namespaces</tag> with <tag>namespaceId</tag>, <tag>labels</tag>, <tag>clientDeviceId</tag>, <tag>recoveryKeyProof</tag>."
+          },
+          "s2": {
+            "title": "Save deviceToken",
+            "body": "Persist the token from the <tag>201</tag> response."
+          },
+          "s3": {
+            "title": "Check remote head",
+            "body": "<tag>GET .../documents/primary/head/meta</tag> before every push."
+          },
+          "s4": {
+            "title": "Push snapshot",
+            "body": "<tag>PUT .../primary</tag> with envelope. First push: no <tag>expectedRevision</tag>. Updates: must match meta revision."
+          },
+          "s5": {
+            "title": "Poll or subscribe",
+            "body": "<tag>WebSocket head_changed</tag> or periodic <tag>GET head/meta</tag> on other devices."
+          },
+          "s6": {
+            "title": "Pull changes",
+            "body": "<tag>GET .../head</tag> when meta revision differs from local known revision."
+          }
+        }
+      },
+      "namespaces": {
+        "title": "Workspaces (namespaces)",
+        "p1": "One namespace per customer workspace. <tag>namespaceId</tag> must be UUID v4.",
+        "create": "Create workspace + first device",
+        "get": "Metadata, limits, head summary",
+        "createExample": "POST /v1/namespaces",
+        "getExample": "GET /v1/namespaces/[id]"
+      },
+      "documents": {
+        "title": "Documents",
+        "p1": "v1 syncs a single primary document — your app state as an <tag>ESR-DOC1</tag> envelope.",
+        "meta": "Lightweight head: revision, hash, size",
+        "head": "Full envelope for import",
+        "put": "Push new snapshot",
+        "p2": "Always compare revision before push. Mismatch → <tag>REVISION_CONFLICT</tag> with <tag>remoteMeta</tag> in <tag>details</tag>.",
+        "p3": "The serialized envelope must fit within the relay's <tag>maxEnvelopeBytes</tag> limit (default <tag>52,428,800 bytes (50 MB)</tag>). Larger payloads return <tag>413 ENVELOPE_TOO_LARGE</tag>.",
+        "metaExample": "GET .../head/meta",
+        "headExample": "GET .../head",
+        "pushFirstExample": "PUT .../primary (first push)",
+        "pushUpdateExample": "PUT .../primary (update)",
+        "conflictExample": "409 REVISION_CONFLICT"
+      },
+      "devices": {
+        "title": "Devices & recovery",
+        "p1": "Pairing and recovery endpoints do not require an existing token (recovery uses phrase proof instead).",
+        "pairingToken": "Host generates 6-digit code",
+        "redeem": "Guest redeems code → new token",
+        "list": "List devices + limits",
+        "revoke": "Remove a device (cannot remove last device)",
+        "recover": "Phrase proof → new token, all other devices revoked",
+        "pairingTokenExample": "POST .../pairing-tokens",
+        "redeemExample": "POST .../devices (pairing redeem)",
+        "listExample": "GET .../devices",
+        "revokeExample": "DELETE .../devices/[deviceId]",
+        "recoverExample": "POST .../recover",
+        "warnTitle": "Recovery revokes all devices",
+        "warnBody": "<tag>POST .../recover</tag> invalidates every existing device token in the workspace. Plan your UX accordingly."
+      },
+      "limits": {
+        "title": "Limits & unlock",
+        "p1": "Operators set <tag>freeDeviceLimit</tag> per deployment. <tag>purchasedSlots</tag> increase <tag>maxDevices</tag>.",
+        "get": "Current limits and canAddDevice flag",
+        "unlock": "Redeem unlock code for more slots",
+        "getExample": "GET .../limits",
+        "unlockExample": "POST .../unlock"
+      },
+      "websocket": {
+        "title": "WebSocket notifications",
+        "p1": "Connect to the notifications URL with the device token. Subprotocol: <tag>esr-notifications-v1</tag>.",
+        "p2": "Messages are notifications only — always fetch document data via HTTP <tag>GET</tag>.",
+        "li1": "<tag>head_changed</tag> — new revision available, pull when convenient",
+        "li2": "<tag>limits_changed</tag> — device slot count changed",
+        "exampleTitle": "WebSocket messages"
+      },
+      "relayQuotas": {
+        "title": "Relay quotas & size limits",
+        "p1": "The relay operator configures these in <tag>config.yaml</tag> or <tag>ESR_*</tag> environment variables. If nothing is set, the defaults below apply automatically — limits are on by default.",
+        "sizeTitle": "Maximum envelope size",
+        "sizeBody": "Measured on the full serialized <tag>ESR-DOC1</tag> JSON at push time. Default: <tag>52,428,800 bytes (50 MB)</tag>. Configure with <tag>sync.maxEnvelopeBytes</tag> or <tag>ESR_MAX_ENVELOPE_BYTES</tag>.",
+        "rateTitle": "Rate limits (defaults)",
+        "rateP1": "Sliding-window counters in PostgreSQL. Exempt from the general IP quota: <tag>/health</tag>, <tag>/metrics</tag>, and WebSocket <tag>.../notifications</tag>.",
+        "rows": {
+          "general": "All API requests",
+          "push": "Document push (<tag>PUT .../primary</tag>)",
+          "pair": "Guest pairing redeem",
+          "pairingToken": "Pairing code generation",
+          "recover": "Recovery"
+        },
+        "defaults": {
+          "general": "300 / minute",
+          "push": "120 / hour",
+          "pair": "20 / hour",
+          "pairingToken": "30 / hour",
+          "recover": "5 / hour"
+        },
+        "scopes": {
+          "general": "Client IP",
+          "push": "Device",
+          "pair": "Namespace",
+          "pairingToken": "Namespace",
+          "recover": "Namespace"
+        },
+        "windows": {
+          "general": "1 minute",
+          "push": "1 hour",
+          "pair": "1 hour",
+          "pairingToken": "1 hour",
+          "recover": "1 hour"
+        },
+        "responseTitle": "Quota in responses",
+        "responseP1": "Successful responses include <tag>RateLimit-Limit</tag>, <tag>RateLimit-Remaining</tag>, and <tag>RateLimit-Reset</tag> headers (seconds until the window resets). Push also sends <tag>RateLimit-Push-*</tag>. Pull and push JSON bodies may include a <tag>rateLimits</tag> object keyed by action.",
+        "responseP2": "On <tag>429 RATE_LIMIT_EXCEEDED</tag>, use <tag>Retry-After</tag> and <tag>error.details.rateLimit</tag> for backoff."
+      },
+      "errors": {
+        "title": "Error codes",
+        "p1": "Always branch on <tag>error.code</tag>. Common codes:",
+        "rows": {
+          "validation": "Fix request body fields",
+          "token": "Re-pair or recover — token invalid or revoked",
+          "recovery": "Wrong recovery phrase proof",
+          "limitPay": "Show upgrade / unlock UI",
+          "limitBlock": "User must remove a device",
+          "notFound": "Check <tag>namespaceId</tag>",
+          "noDocument": "No push yet — expected on first pull",
+          "exists": "Namespace taken — pair or recover instead",
+          "conflict": "Re-read <tag>head/meta</tag>, run conflict UX",
+          "tooLarge": "Envelope exceeds <tag>maxEnvelopeBytes</tag> (default 50 MB) — shrink snapshot or ask operator to raise limit",
+          "envelope": "Fix envelope schema or hash",
+          "rateLimit": "Quota exceeded — backoff using <tag>Retry-After</tag> and <tag>RateLimit-*</tag> headers",
+          "pairing": "Code expired or wrong — generate a new one",
+          "unlock": "Invalid or expired unlock code"
+        }
+      }
+    },
+    "code": {
+      "auth": "Authorization: Bearer [device_token]"
+    }
+  },
+  "operator": {
+    "title": "Operator console",
+    "intro": "Relay administration — namespaces, unlock codes, and activity logs.",
+    "loginIntro": "Sign in with your relay admin token to access operator tools.",
+    "login": "Sign in",
+    "loggingIn": "Signing in…",
+    "loginFailed": "Invalid admin token or admin API is disabled.",
+    "logout": "Sign out",
+    "loading": "Loading…",
+    "loadFailed": "Failed to load data from the relay.",
+    "unlock": "Generate unlock code",
+    "unlockHint": "Create a redeemable code for extra device slots on a namespace.",
+    "adminToken": "Admin token",
+    "adminTokenHint": "Same value as ESR_ADMIN_TOKEN in your relay config",
+    "namespaceId": "Namespace ID",
+    "slots": "Device slots",
+    "note": "Note",
+    "notePlaceholder": "Invoice #1234",
+    "generateUnlock": "Generate code",
+    "generating": "Generating…",
+    "unlockCode": "Unlock code",
+    "requestFailed": "Request failed. Check the namespace ID and that the API is running.",
+    "statusOk": "API healthy",
+    "statusDegraded": "API degraded",
+    "statusPending": "Pending",
+    "statusRedeemed": "Redeemed",
+    "version": "Version",
+    "databaseMode": "Database",
+    "websocket": "WebSocket",
+    "websocketEnabled": "enabled",
+    "websocketDisabled": "disabled",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pagination": "Page {page} of {total} · {count} records",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Namespace, code, device, IP…",
+    "filterByAction": "Action",
+    "filterAllActions": "All actions",
+    "noResults": "No records match your filters.",
+    "tabs": {
+      "overview": "Overview",
+      "namespaces": "Namespaces",
+      "unlockCodes": "Unlock codes",
+      "unlockEvents": "Unlock history",
+      "rateLimits": "Rate limits"
+    },
+    "stats": {
+      "namespaces": "Namespaces",
+      "activeDevices": "Active devices",
+      "documents": "Documents",
+      "pendingCodes": "Pending codes",
+      "unlockEvents": "Unlock events",
+      "rateLimitEvents": "Rate limit hits"
+    },
+    "columns": {
+      "namespace": "Namespace",
+      "label": "Label",
+      "devices": "Devices",
+      "slots": "Slots",
+      "document": "Document",
+      "created": "Created",
+      "code": "Code",
+      "status": "Status",
+      "note": "Note",
+      "source": "Source",
+      "action": "Action",
+      "device": "Device",
+      "ip": "IP",
+      "period": "Period",
+      "count": "Requests"
+    },
+    "rateLimitActions": {
+      "global_ip": "General (IP)",
+      "recover": "Recovery",
+      "pair_device": "Pair device",
+      "pairing_token": "Pairing token",
+      "put_primary": "Document push"
+    }
+  },
+  "locale": {
+    "en": "English",
+    "tr": "Türkçe"
+  },
+  "footer": {
+    "tagline": "Sync infrastructure for product teams — SDK, API, and docs.",
+    "developers": "Developers",
+    "guides": "Guides",
+    "sdk": "SDK",
+    "api": "API",
+    "operators": "Operators",
+    "operator": "Operator panel"
+  }
+}

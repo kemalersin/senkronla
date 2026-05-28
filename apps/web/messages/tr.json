@@ -1,0 +1,739 @@
+{
+  "meta": {
+    "title": "Senkronla — Uygulamanız için senkron API ve SDK",
+    "description": "Ürününüze çok cihazlı senkron ekleyin. Geliştiriciler için adım adım SDK rehberleri, REST API referansı ve entegrasyon kontrol listeleri."
+  },
+  "nav": {
+    "home": "Ana sayfa",
+    "guides": "Rehberler",
+    "sdk": "SDK",
+    "api": "API"
+  },
+  "theme": {
+    "toggle": "Renk temasını değiştir",
+    "light": "Açık",
+    "dark": "Koyu"
+  },
+  "codeBlock": {
+    "copy": "Kopyala",
+    "copied": "Kopyalandı"
+  },
+  "landing": {
+    "eyebrow": "Uygulamasına senkron ekleyen ürün ekipleri için",
+    "title": "Kullanıcı verileri her cihazda güncel kalsın",
+    "subtitle": "Senkronla, uygulamanıza entegre ettiğiniz bir senkron hizmetidir. Kullanıcılar çevrimdışı çalışabilir, başka bir telefonda veya bilgisayarda kaldığı yerden devam edebilir; deneyimin kontrolü sizde kalır — içeriği okumadan.",
+    "ctaPrimary": "Entegrasyona başla",
+    "ctaSecondary": "SDK dokümantasyonu",
+    "benefitsTitle": "Ekipler neden Senkronla'yı kullanmalı?",
+    "benefits": {
+      "privacy": {
+        "title": "Gizlilik odaklı",
+        "body": "Uygulamanız relay'e okunamaz veri paketleri gönderir. v1 bugün ENV-RAW1 anlık görüntüleri kullanır (istemci tarafı şifreleme ENV-ENC1 planlanıyor). Kurtarma ifadesi cihazdan çıkmaz — sunucuda yalnızca tek yönlü kanıt saklanır."
+      },
+      "offline": {
+        "title": "Ağ yokken de çalışır",
+        "body": "Değişiklikler önce yerelde kaydedilir. Kullanıcı tekrar çevrimiçi olunca uygulamanız güncellemeleri gönderir, başka yerde değişenleri alır."
+      },
+      "devices": {
+        "title": "Birden fazla cihaz için",
+        "body": "İkinci bir telefon veya masaüstü uygulamasını kısa bir kodla eşleştirin. Müşterinin kaç cihaz kullanacağına ve ek slot için ne ücretlendireceğinize siz karar verin."
+      }
+    },
+    "howTitle": "Ürününüze nasıl oturur",
+    "how": {
+      "step1": {
+        "title": "Uygulamanız değişiklikleri yerelde kaydeder",
+        "body": "Notlar, görevler, ayarlar — ne senkronluyorsanız. Kullanıcı internetsiz de çalışmaya devam eder."
+      },
+      "step2": {
+        "title": "Senkronla sürümlü anlık görüntüleri taşır",
+        "body": "Entegrasyonunuz opak ENV-RAW1 paketlerini senkron API'sine gönderir. Diğer cihazlar bilgilendirilir ve en son sürümü çeker."
+      },
+      "step3": {
+        "title": "Diğer cihazlar yetişir",
+        "body": "SDK veya API en son sürümü çeker. İki kişi aynı anda düzenlediyse uygulamanız hangisinin kalacağını sorar."
+      }
+    },
+    "audienceTitle": "Gerçek ürünler için",
+    "audience": {
+      "apps": {
+        "title": "Mobil ve masaüstü uygulamalar",
+        "body": "Kendi backend ekibinizi kurmadan senkron sunun. Müşterilerin gördüğü özelliklere odaklanın."
+      },
+      "teams": {
+        "title": "Küçük ekipler ve girişimler",
+        "body": "Öngörülebilir entegrasyon yolu: önce SDK, özel akışlar için REST."
+      },
+      "builders": {
+        "title": "Mevcut SaaS ürünleri",
+        "body": "Yol haritanıza «tüm cihazlarımda kullan» ekleyin — belgelenmiş API ve hata modeliyle."
+      }
+    },
+    "devCta": {
+      "title": "Bağlamaya hazır mısınız?",
+      "body": "Rehberleri adım adım izleyin — çoğu ekip SDK ile ilk senkronu bir saatten kısa sürede tamamlar.",
+      "primary": "Entegrasyon rehberini oku",
+      "secondary": "REST API'yi incele"
+    }
+  },
+  "guides": {
+    "title": "Entegrasyon rehberleri",
+    "intro": "Senkronla'yı ürününüze ilk kez bağlıyorsanız buradan başlayın. Her kavramı sade dilde anlatıyoruz — kod tabanımıza önceden hakim olmanız gerekmez.",
+    "nav": {
+      "concepts": "Temel kavramlar",
+      "checklist": "Kontrol listesi",
+      "first-device": "İlk cihaz",
+      "second-device": "İkinci cihaz",
+      "recovery": "Cihaz kaybı",
+      "offline": "Çevrimdışı ve çakışma",
+      "limits": "Cihaz limitleri",
+      "choose": "SDK mi REST mi?"
+    },
+    "table": {
+      "term": "Terim",
+      "meaning": "Anlamı"
+    },
+    "sections": {
+      "concepts": {
+        "title": "Temel kavramlar",
+        "p1": "Senkronla, müşteri çalışma alanı başına bir JSON anlık görüntüsünü senkronize eder. Bu terimler SDK ve API boyunca karşınıza çıkar:",
+        "calloutTitle": "Kim ne yapar?",
+        "calloutBody": "Uygulamanız kullanıcı deneyimini ve veri modelini yönetir. Senkronla taşımayı üstlenir: opak paketleri saklama, sürümleme, cihaz slotları ve diğer istemcilere bildirim gönderme.",
+        "rows": {
+          "namespace": "Çalışma alanı — genellikle müşteri hesabı başına bir izole senkron alanı. Sizin seçtiğiniz veya ürettiğiniz UUID v4 ile tanımlanır.",
+          "deviceToken": "Cihaz oluşturulduğunda veya eşleştirildiğinde dönen gizli dize. Her API çağrısında <tag>Bearer</tag> token olarak gönderilir. SDK bunu <tag>EsrStorage</tag>'da saklar.",
+          "clientDeviceId": "İstemcide bir kez üretilen ve kalıcı tutulan UUID. Zarf içinde bu fiziksel kurulumu tanımlar — sunucu <tag>deviceId</tag>'sinden (ULID) farklıdır.",
+          "recoveryPhrase": "Çalışma alanı oluşturulurken bir kez gösterilen 24 kelimelik BIP39 ifadesi. Tüm cihazlar kaybolursa sahipliği kanıtlar. Sunucuya asla gönderilmez — yalnızca hash kanıtı.",
+          "revision": "Her anlık görüntüdeki ULID sürüm etiketi. Push'ta iyimser kilitleme için gereklidir — uyuşmazlık <tag>REVISION_CONFLICT</tag> döndürür.",
+          "envelope": "JSON anlık görüntünüzü ve meta verileri saran <tag>ESR-DOC1</tag> sarmalayıcısı. Relay bunu saklar ancak uygulama verinizi ayrıştırmaz.",
+          "primaryDocument": "v1, namespace başına tam olarak bir belge destekler (<tag>documentId: primary</tag>) — genellikle uygulama durumunuzun tamamı JSON olarak.",
+          "pairingCode": "Birkaç dakika geçerli altı haneli kod. Ana cihaz üretir; misafir cihaz çalışma alanına katılmak için kullanır."
+        }
+      },
+      "checklist": {
+        "title": "Entegrasyon kontrol listesi",
+        "p1": "Üretime çıkmadan önce bu listeyi tamamlayın:",
+        "steps": {
+          "s1": {
+            "title": "Relay URL'nizi alın",
+            "body": "Çalışan bir Senkronla relay'e ihtiyacınız var. Bu dokümantasyon {relayUrl} kullanır."
+          },
+          "s2": {
+            "title": "SDK'yı kurun",
+            "body": "Uygulamanıza <tag>@senkronla/client</tag> ekleyin (veya JS dışı istemciler için REST çağrıları planlayın)."
+          },
+          "s3": {
+            "title": "DocumentAdapter uygulayın",
+            "body": "<tag>exportDocument</tag> / <tag>importDocument</tag>, uygulama durumunuzu JSON olarak gidip gelmelidir. Dışa aktarmaları hızlı tutun — her push'tan önce çalışır."
+          },
+          "s4": {
+            "title": "Kurtarma arayüzünü hazırlayın",
+            "body": "<tag>onRecoveryPhrase</tag> bir kez tetiklenir. Kopyalama/kaydetme modali oluşturun — ifadeyi daha sonra geri alamazsınız."
+          },
+          "s5": {
+            "title": "Çakışmaları yönetin",
+            "body": "<tag>onConflict</tag> kullanıcıdan yerel veya uzak sürümü seçmesini ister. Otomatik birleştirme yoktur."
+          },
+          "s6": {
+            "title": "Senkron döngüsünü bağlayın",
+            "body": "<tag>ensureNamespace()</tag> → başlangıçta <tag>sync()</tag> → düzenlemelerden sonra <tag>notifyLocalChange()</tag> → çıkıştan önce <tag>flushPush()</tag>."
+          }
+        }
+      },
+      "firstDevice": {
+        "title": "Çalışma alanındaki ilk cihaz",
+        "p1": "Henüz senkronize verisi olmayan yepyeni bir müşteri için yol budur:",
+        "codeTitle": "Tam minimal kurulum",
+        "p2": "<tag>ensureNamespace()</tag> sonrasında cihaz token'ı ve revision durumu <tag>EsrStorage</tag>'da yaşar — kullanıcılar token'ları elle yönetmez.",
+        "steps": {
+          "s1": {
+            "title": "Sabit bir namespaceId seçin",
+            "body": "Dahili müşteri/çalışma alanı UUID'nizi kullanın. Aynı senkron alanını istiyorsanız uygulama yeniden kurulumlarında aynı kalmalıdır."
+          },
+          "s2": {
+            "title": "Adapter'ı oluşturun",
+            "body": "<tag>exportDocument</tag>'ı mağaza anlık görüntünüze, <tag>importDocument</tag>'ı geri yükleme mantığınıza bağlayın."
+          },
+          "s3": {
+            "title": "EsrSync'i bağlayın",
+            "body": "<tag>relayUrl</tag>, <tag>document</tag>, <tag>storage</tag> ve gerekli callback'leri geçirin."
+          },
+          "s4": {
+            "title": "ensureNamespace() çağırın",
+            "body": "İlk çalıştırmada çalışma alanını oluşturur, kurtarma ifadesini gösterir, ilk push'u yapar."
+          },
+          "s5": {
+            "title": "Yerel değişiklikleri bağlayın",
+            "body": "Mağazanız her değiştiğinde <tag>notifyLocalChange()</tag> çağırın. SDK push'ları geciktirir (varsayılan 2 saniye)."
+          }
+        }
+      },
+      "secondDevice": {
+        "title": "İkinci cihaz ekleyin",
+        "p1": "Misafir cihaz adapter'ında aynı <tag>namespaceId</tag>'ye ihtiyaç duyar ancak henüz token'ı yoktur.",
+        "hostTitle": "Ana cihaz (verisi var)",
+        "guestTitle": "Misafir cihaz (yeni cihaz)",
+        "steps": {
+          "s1": {
+            "title": "Ana cihaz startPairing() çağırır",
+            "body": "6 haneli kodu ve isteğe bağlı QR'ı gösterin (<tag>qrPayload</tag> <tag>esr://pair/v1/...</tag> kullanır)."
+          },
+          "s2": {
+            "title": "Misafir joinPairing(code) çağırır",
+            "body": "Cihaz token'ı alır, saklar ve veriyi indirmek için <tag>sync()</tag> çalıştırır."
+          },
+          "s3": {
+            "title": "Slot limitlerini doğrulayın",
+            "body": "Çalışma alanı doluysa eşleştirme <tag>DEVICE_LIMIT_*</tag> döndürür. <tag>onDeviceLimit</tag> ile yükseltme arayüzünüzü gösterin."
+          }
+        }
+      },
+      "recovery": {
+        "title": "Tüm cihazlar kaybolduğunda",
+        "p1": "Kullanıcı 24 kelimelik kurtarma ifadesini girer. SDK kriptografik kanıt oluşturur ve <tag>recover</tag> uç noktasını çağırır.",
+        "warnTitle": "Önemli yan etki",
+        "warnBody": "Kurtarma daha önce eşleştirilmiş tüm cihazları iptal eder. Diğer telefon ve dizüstü bilgisayarlar yeniden eşleştirilene kadar erişimi kaybeder.",
+        "steps": {
+          "s1": {
+            "title": "İfadeyi toplayın",
+            "body": "Boşlukları normalize edin; SDK büyük/küçük harf işlemini yapar."
+          },
+          "s2": {
+            "title": "sync.recover(phrase) çağırın",
+            "body": "<tag>sync.recover(phrase)</tag> çağırın — bu kurulum için yeni bir cihaz token'ı saklar."
+          },
+          "s3": {
+            "title": "sync() çalıştırın",
+            "body": "<tag>sync()</tag> ile en güncel uzak anlık görüntüyü adapter'ınıza indirir."
+          }
+        }
+      },
+      "offline": {
+        "title": "Çevrimdışı düzenlemeler ve çakışmalar",
+        "p1": "Senkronla tasarım gereği çevrimdışı dostudur. SDK yerel değişiklikleri kuyruğa alır ve ağ döndüğünde senkronize eder.",
+        "tipTitle": "Sunucu tarafında birleştirme yok",
+        "tipBody": "İki cihaz çevrimdışı düzenler ve ikisi de push yaparsa ikinci push <tag>REVISION_CONFLICT</tag> alır. <tag>onConflict</tag> callback'iniz kazananı belirler — arayüz metinlerinizi buna göre planlayın.",
+        "steps": {
+          "s1": {
+            "title": "Kullanıcı çevrimdışı düzenler",
+            "body": "Her zamanki gibi yerelde kaydedin, ardından <tag>notifyLocalChange()</tag> çağırın. Durum <tag>offline</tag> veya <tag>pending_push</tag> gösterebilir."
+          },
+          "s2": {
+            "title": "Ağ geri gelir",
+            "body": "Zamanlayıcı veya manuel <tag>sync()</tag> push/pull'u otomatik dener."
+          },
+          "s3": {
+            "title": "Çakışma algılandı",
+            "body": "<tag>onConflict</tag> <tag>remoteMeta</tag> (zaman damgası, cihaz) alır. <tag>remote</tag>, <tag>local</tag> veya <tag>cancel</tag> döndürün."
+          }
+        }
+      },
+      "limits": {
+        "title": "Arayüzünüzde cihaz limitleri",
+        "p1": "Her çalışma alanının <tag>maxDevices</tag> = ücretsiz slotlar + satın alınan slotlar değeri vardır. Limit aşıldığında ne olacağına ürününüz karar verir:",
+        "li1": "<tag>DEVICE_LIMIT_PAYMENT_REQUIRED</tag> — yükseltme / kilidi açma akışını gösterin (<tag>onDeviceLimit</tag> callback).",
+        "li2": "<tag>DEVICE_LIMIT_BLOCKED</tag> — sert üst sınır; kullanıcı <tag>listDevices()</tag> + <tag>revokeDevice()</tag> ile eski bir cihazı iptal etmelidir.",
+        "li3": "Operatörünüzden gelen kilidi açma kodları <tag>redeemUnlockCode()</tag> ile kullanılır."
+      },
+      "choose": {
+        "title": "SDK mi REST mi?",
+        "p1": "Güçlü bir nedeniniz yoksa SDK kullanın — haftalarca edge case yönetiminden kurtarır.",
+        "sdkTitle": "JavaScript SDK (önerilen)",
+        "sdkBody": "Tarayıcı, Electron, React Native (fetch ile), Node 18+. Token, debounce, WS bildirimleri ve çakışmaları yönetir.",
+        "apiTitle": "Doğrudan REST API",
+        "apiBody": "Swift, Kotlin, sunucu işleri veya özel senkron motorları. Revision kontrolleri, token saklama ve bildirim yoklamasını kendiniz uygularsınız.",
+        "next": "Referans:",
+        "sdkLink": "SDK dokümantasyonu",
+        "apiLink": "API dokümantasyonu"
+      }
+    }
+  },
+  "sdk": {
+    "title": "İstemci SDK referansı",
+    "intro": "Paket: <tag>@senkronla/client</tag>. <tag>EsrSync</tag> sınıfı ana giriş noktanızdır — HTTP, isteğe bağlı <tag>WebSocket</tag> bildirimleri, yerel revision takibi ve kullanıcıya dönük callback'leri sarmalar.",
+    "nav": {
+      "quick-start": "Hızlı başlangıç",
+      "install": "Kurulum",
+      "connect": "Bağlantı seçenekleri",
+      "adapter": "Belge adapter'ı",
+      "storage": "Yerel depolama",
+      "methods": "Metodlar",
+      "sync": "Senkron yaşam döngüsü",
+      "pairing": "Eşleştirme",
+      "conflicts": "Çakışmalar",
+      "notifications": "Bildirimler",
+      "status": "Durum değerleri",
+      "errors": "Hatalar"
+    },
+    "table": {
+      "option": "Seçenek",
+      "description": "Açıklama",
+      "field": "Alan / metod",
+      "method": "Metod",
+      "status": "Durum",
+      "meaning": "Anlamı",
+      "code": "Kod",
+      "action": "Ne yapmalı"
+    },
+    "sections": {
+      "quickStart": {
+        "title": "Hızlı başlangıç",
+        "p1": "Bu şablonu uygulamanıza kopyalayın ve mağaza kancalarını gerçek durum yönetiminizle değiştirin:",
+        "tipTitle": "Bu dağıtım için relay URL",
+        "tipBody": "<tag>relayUrl</tag>'yi {relayUrl} olarak ayarlayın veya kendi yapılandırmanızdan okuyun."
+      },
+      "install": {
+        "title": "Kurulum",
+        "p1": "Node 18+ veya fetch ve Web Crypto destekleyen modern bir tarayıcı gerektirir.",
+        "p2": "TypeScript tipleri dahildir. Zarfı elle oluşturmak için <tag>@senkronla/protocol</tag> paketini de ekleyin."
+      },
+      "connect": {
+        "title": "EsrSync.connect seçenekleri",
+        "p1": "Yalnızca <tag>relayUrl</tag>, <tag>document</tag>, <tag>storage</tag>, <tag>onRecoveryPhrase</tag> ve <tag>onConflict</tag> zorunludur. Geri kalanının mantıklı varsayılanları vardır:",
+        "p2": "Arayüzünüzde senkron göstergesi için <tag>onStatusChange</tag>, günlük için <tag>onError</tag> kullanın.",
+        "exampleTitle": "Tam connect örneği",
+        "options": {
+          "relayUrl": "<tag>/v1</tag> ile biten temel URL, örn. https://sync.example.com/v1",
+          "document": "<tag>DocumentAdapter</tag> örneğiniz",
+          "storage": "<tag>EsrStorage</tag> uygulaması (web için <tag>createLocalStorageAdapter</tag>)",
+          "onRecoveryPhrase": "Zorunlu. Namespace oluşturulduğunda 24 kelimelik ifadeyle bir kez çağrılır.",
+          "onConflict": "Zorunlu. Sürümler ayrıştığında <tag>remote</tag>, <tag>local</tag> veya <tag>cancel</tag> döndürün.",
+          "onDeviceLimit": "İsteğe bağlı. <tag>DEVICE_LIMIT_*</tag> hatalarında çağrılır — faturalandırma arayüzünü açın.",
+          "pushDebounceMs": "Varsayılan 2000. <tag>notifyLocalChange()</tag> sonrası push gecikmesi.",
+          "notificationsEnabled": "Varsayılan true. CLI araçları veya testler için false yapın.",
+          "persistRecoveryPhrase": "Varsayılan true. İfadeyi <tag>EsrStorage</tag>'da saklar (güvenlik etkilerini değerlendirin)."
+        }
+      },
+      "adapter": {
+        "title": "Belge adapter'ı",
+        "p1": "Adapter, uygulama durumunuz ile Senkronla arasındaki köprüdür. Hızlı başlangıç için <tag>createDocumentAdapter</tag> kullanın veya <tag>DocumentAdapter</tag>'ı doğrudan uygulayın:",
+        "p2": "<tag>contentType</tag> bir satıcı MIME türü olmalıdır. <tag>ENV-ENC1</tag> çıkana kadar <tag>encryption.enabled</tag> false kalmalıdır.",
+        "fields": {
+          "namespaceId": "Bu çalışma alanı için sabit UUID v4 — cihazlar arasında eşleşmelidir.",
+          "namespaceLabel": "Cihaz listelerinde gösterilen okunabilir ad.",
+          "buildDocument": "Async. Geçerli uygulama durumunun JSON dizesini döndürür.",
+          "importDocument": "Async. Uzak JSON dizesini ayrıştırır ve mağazanıza uygular.",
+          "contentType": "Anlık görüntü formatınızı tanımlayan MIME türü."
+        }
+      },
+      "storage": {
+        "title": "SDK'nın yerelde sakladıkları",
+        "p1": "<tag>EsrStorage</tag> uygulayın veya <tag>createLocalStorageAdapter(prefix)</tag> kullanın. Anahtarlar namespace başına kapsamlanır:",
+        "li1": "<tag>deviceToken</tag> — tüm kimlik doğrulamalı çağrılar için gerekli",
+        "li2": "<tag>knownRemoteRevision</tag> — çakışma algılama için görülen son sunucu revision'ı",
+        "li3": "<tag>recoveryPhrase</tag> — isteğe bağlı, <tag>persistRecoveryPhrase</tag> true ise",
+        "li4": "<tag>global:clientDeviceId</tag> — uygulama kurulumu başına bir kez üretilir",
+        "calloutTitle": "Güvenlik",
+        "calloutBody": "Cihaz token'larını oturum sırları gibi koruyun. Mobilde <tag>EsrStorage</tag>'ı kendiniz uygulayarak güvenli depolamayı (Keychain / Keystore) tercih edin."
+      },
+      "methods": {
+        "title": "EsrSync metodları",
+        "p1": "Bunları uygulama yaşam döngüsü kancalarınızdan çağırın:",
+        "examplesTitle": "Metoda göre örnekler",
+        "rows": {
+          "ensureNamespace": "İlk açılışta çalışma alanı oluşturur veya mevcut token'ı doğrular. created=true iken kurtarma ifadesini gösterir.",
+          "sync": "Tam pull/push döngüsü. Uygulama başlangıcında, ağ yeniden bağlandığında ve WS <tag>head_changed</tag> sonrasında çağırın.",
+          "notifyLocalChange": "Yerel veriyi kirli olarak işaretler; gecikmeli push izler.",
+          "flushPush": "Hemen push yapar — çıkış veya kritik kayıtlardan önce kullanın.",
+          "startPairing": "Ana cihaz: <tag>code</tag>, <tag>qrPayload</tag>, <tag>expiresAt</tag> döndürür.",
+          "joinPairing": "Misafir: kodu kullanır, token saklar, <tag>sync()</tag> çalıştırır.",
+          "recover": "Kurtarma ifadesi akışı. Diğer tüm cihazları iptal eder.",
+          "listDevices": "Ayarlar arayüzü için devices dizisi ve limitleri döndürür.",
+          "revokeDevice": "Sunucu deviceId (ULID) ile başka bir cihazı kaldırır.",
+          "redeemUnlockCode": "Daha fazla cihaz slotu için operatör kilidi açma kodunu uygular.",
+          "resolveConflict": "onConflict dışında çakışmaları yönetiyorsanız manuel çözüm.",
+          "getStatus": "Arayüz göstergeleri için geçerli <tag>EsrSyncStatus</tag>."
+        },
+        "examples": {
+          "ensureNamespace": {
+            "title": "ensureNamespace()",
+            "desc": "İlk açılışta çalışma alanı oluşturur veya mevcut cihaz token'ını doğrular."
+          },
+          "sync": {
+            "title": "sync()",
+            "desc": "Tam pull/push döngüsü çalıştırır ve sonuç durumunu yönetir."
+          },
+          "notifyLocalChange": {
+            "title": "notifyLocalChange()",
+            "desc": "Yerel düzenlemelerden sonra gecikmeli push kuyruğa alır."
+          },
+          "flushPush": {
+            "title": "flushPush()",
+            "desc": "Debounce beklemeden hemen push yapar."
+          },
+          "startPairing": {
+            "title": "startPairing()",
+            "desc": "Ana cihaz 6 haneli eşleştirme kodu üretir."
+          },
+          "joinPairing": {
+            "title": "joinPairing(code)",
+            "desc": "Misafir cihaz kodu kullanır ve senkronize olur."
+          },
+          "recover": {
+            "title": "recover(phrase)",
+            "desc": "24 kelimelik kurtarma ifadesiyle erişimi geri yükler."
+          },
+          "listDevices": {
+            "title": "listDevices()",
+            "desc": "Ayarlar arayüzü için eşleşmiş cihazları ve slot limitlerini listeler."
+          },
+          "revokeDevice": {
+            "title": "revokeDevice(id)",
+            "desc": "Çalışma alanından başka bir cihazı kaldırır."
+          },
+          "redeemUnlockCode": {
+            "title": "redeemUnlockCode(code)",
+            "desc": "Ek cihaz slotları için operatör kilidi açma kodunu uygular."
+          },
+          "resolveConflict": {
+            "title": "resolveConflict(choice)",
+            "desc": "Çakışma sonrası yerel veya uzak sürümü manuel seçer."
+          },
+          "getStatus": {
+            "title": "getStatus()",
+            "desc": "Geçerli senkron durumunu ve son hatayı okur."
+          }
+        }
+      },
+      "sync": {
+        "title": "Senkron yaşam döngüsü",
+        "p1": "Uygulamanızdaki tipik entegrasyon noktaları:",
+        "li1": "Uygulama açılışı → <tag>ensureNamespace()</tag> ardından <tag>sync()</tag>",
+        "li2": "Mağaza değişikliği → <tag>notifyLocalChange()</tag>",
+        "li3": "Pencere odağı / ağ çevrimiçi → <tag>sync()</tag>",
+        "li4": "Çıkış → <tag>flushPush()</tag> ardından isteğe bağlı <tag>disable()</tag>"
+      },
+      "pairing": {
+        "title": "Cihaz eşleştirme",
+        "p1": "Her iki cihaz da aynı <tag>relayUrl</tag> kullanır. Misafir adapter'ı ana cihazla aynı <tag>namespaceId</tag>'yi kullanmalıdır.",
+        "p2": "<tag>qrPayload</tag>, QR tarayıcı entegrasyonları için <tag>esr://pair/v1/[namespaceId]?code=XXXXXX&exp=...&host=...</tag> biçimindedir.",
+        "hostExample": "Ana cihaz",
+        "guestExample": "Misafir cihaz"
+      },
+      "conflicts": {
+        "title": "Çakışmaları yönetme",
+        "p1": "Çakışma, gönderilmemiş yerel düzenlemeleriniz varken sunucu revision'ının ilerlediği anlamına gelir. SDK duraklar ve callback'inizi bekler.",
+        "p2": "<tag>remoteMeta</tag> <tag>writtenAt</tag>, <tag>deviceId</tag> ve <tag>contentSha256</tag> içerir — arayüzde anlamlı bir seçim göstermek için yeterlidir.",
+        "manualExample": "Manuel çözüm"
+      },
+      "notifications": {
+        "title": "Canlı bildirimler",
+        "p1": "Etkinleştirildiğinde SDK <tag>.../notifications</tag> adresine <tag>WebSocket</tag> açar ve <tag>head_changed</tag> dinler.",
+        "p2": "<tag>WebSocket</tag> başarısız olursa HTTP yoklamasına düşer (<tag>ws_with_poll_fallback</tag> modu). WS yalnızca bildirir — veriyi yine HTTP ile çekersiniz.",
+        "li1": "<tag>head_changed</tag> → <tag>sync()</tag> tetikler",
+        "li2": "<tag>limits_changed</tag> → slot sayısı güncellendi (<tag>onDeviceLimit</tag> veya limit yoklamasında yönetin)"
+      },
+      "status": {
+        "title": "Durum değerleri",
+        "p1": "<tag>onStatusChange</tag> ile abone olun veya <tag>getStatus()</tag> ile yoklayın:",
+        "exampleTitle": "Durum yoklama",
+        "rows": {
+          "idle": "Hazır, devam eden işlem yok",
+          "syncing": "Pull veya push çalışıyor",
+          "pendingPush": "Yerel değişiklikler kuyrukta, debounce veya ağ bekleniyor",
+          "conflict": "<tag>onConflict</tag> kullanıcı kararı bekleniyor",
+          "offline": "Ağ kullanılamıyor",
+          "wsConnected": "Bildirim <tag>WebSocket</tag>'i bağlı"
+        }
+      },
+      "errors": {
+        "title": "İstemci hata kodları",
+        "p1": "Tüm SDK hataları kararlı <tag>code</tag> dizesine sahip <tag>EsrError</tag> örnekleridir:",
+        "p2": "Sunucu tarafı kodların tam listesi API sayfasındadır — relay kotaları (varsayılan 50 MB zarf, rate limitler) dahil. Yalnızca HTTP durumuna değil, <tag>error.code</tag>'a göre dallanın.",
+        "client": {
+          "noToken": "Henüz cihaz token'ı yok — <tag>ensureNamespace</tag>, <tag>joinPairing</tag> veya <tag>recover</tag> çağırın",
+          "offline": "Ağ kapalı — çevrimiçi olunca <tag>sync()</tag> yeniden deneyin",
+          "namespaceExists": "Çalışma alanı zaten var — create yerine eşleştirme veya kurtarma kullanın",
+          "conflictCancelled": "Kullanıcı çakışma iletişim kutusunu iptal etti — yerel düzenlemeler hâlâ bekliyor",
+          "revisionConflict": "Sunucu revision'ı ilerledi — çakışma akışı gerekli",
+          "deviceLimit": "Çalışma alanı dolu — yükseltme veya cihaz yönetimi arayüzünü gösterin"
+        }
+      }
+    }
+  },
+  "api": {
+    "title": "REST API referansı",
+    "intro": "<tag>/v1</tag> altında HTTPS üzerinden JSON. JavaScript SDK seçeneğiniz yoksa veya sunucu tarafı otomasyon gerekiyorsa bunu kullanın.",
+    "nav": {
+      "overview": "Genel bakış",
+      "auth": "Kimlik doğrulama",
+      "workflows": "Tipik akış",
+      "namespaces": "Çalışma alanları",
+      "documents": "Belgeler",
+      "devices": "Cihazlar ve kurtarma",
+      "limits": "Limitler ve kilidi açma",
+      "websocket": "WebSocket",
+      "relayQuotas": "Relay kotaları",
+      "errors": "Hata kodları"
+    },
+    "table": {
+      "method": "Metod",
+      "path": "Yol",
+      "purpose": "Amaç",
+      "code": "Kod",
+      "http": "HTTP",
+      "action": "Ne yapmalı",
+      "quota": "Kota",
+      "default": "Varsayılan",
+      "scope": "Kapsam",
+      "window": "Pencere",
+      "request": "İstek",
+      "response": "Yanıt"
+    },
+    "sections": {
+      "overview": {
+        "title": "Genel bakış",
+        "p1": "Tüm iş uç noktaları <tag>/v1</tag> önekiyle başlar. Yanıtlar JSON'dur. Hatalar, <tag>error.code</tag> üzerinden dallanabileceğiniz tutarlı bir yapı kullanır.",
+        "p2": "Kimlik doğrulamasız: <tag>POST /v1/namespaces</tag>, <tag>POST .../devices</tag> (eşleştirme kullanımı), <tag>POST .../recover</tag>. Geri kalanı cihaz token'ı gerektirir.",
+        "healthTitle": "GET /health",
+        "calloutTitle": "Hata yanıt yapısı",
+        "calloutBody": "Hatalar <tag>code</tag>, <tag>message</tag> ve isteğe bağlı <tag>details</tag> (ör. <tag>REVISION_CONFLICT</tag>'te <tag>remoteMeta</tag>) içeren <tag>error</tag> nesnesiyle JSON döndürür."
+      },
+      "auth": {
+        "title": "Kimlik doğrulama",
+        "p1": "Cihaz oluşturduktan, eşleştirdikten veya kurtardıktan sonra yanıtta <tag>deviceToken</tag> alırsınız. Sonraki her istekte gönderin:",
+        "p2": "Cihaz silindiğinde veya kurtarma sonrasında (tüm cihazlar iptal) geçersiz olur. İstemcide güvenle saklayın.",
+        "li1": "HTTP: <tag>Authorization: Bearer</tag> başlığı",
+        "li2": "<tag>WebSocket</tag>: aynı token <tag>Authorization</tag> başlığında veya ilk auth mesajında"
+      },
+      "workflows": {
+        "title": "Tipik REST akışı (SDK yok)",
+        "p1": "Minimal entegrasyon için bu sırayı izleyin:",
+        "steps": {
+          "s1": {
+            "title": "Namespace oluştur",
+            "body": "<tag>POST /v1/namespaces</tag> — <tag>namespaceId</tag>, <tag>labels</tag>, <tag>clientDeviceId</tag>, <tag>recoveryKeyProof</tag> ile."
+          },
+          "s2": {
+            "title": "deviceToken'ı kaydet",
+            "body": "<tag>201</tag> yanıtındaki token'ı kalıcı olarak saklayın."
+          },
+          "s3": {
+            "title": "Uzak head'i kontrol et",
+            "body": "Her push'tan önce <tag>GET .../documents/primary/head/meta</tag>."
+          },
+          "s4": {
+            "title": "Anlık görüntüyü push et",
+            "body": "<tag>PUT .../primary</tag> — zarf ile. İlk push: <tag>expectedRevision</tag> yok. Güncellemeler: meta revision ile eşleşmeli."
+          },
+          "s5": {
+            "title": "Yokla veya abone ol",
+            "body": "<tag>WebSocket head_changed</tag> veya diğer cihazlarda periyodik <tag>GET head/meta</tag>."
+          },
+          "s6": {
+            "title": "Değişiklikleri çek",
+            "body": "Meta revision yerel bilinen revision'dan farklıysa <tag>GET .../head</tag>."
+          }
+        }
+      },
+      "namespaces": {
+        "title": "Çalışma alanları (namespace)",
+        "p1": "Müşteri çalışma alanı başına bir namespace. <tag>namespaceId</tag> UUID v4 olmalıdır.",
+        "create": "Çalışma alanı + ilk cihaz oluştur",
+        "get": "Meta veri, limitler, head özeti",
+        "createExample": "POST /v1/namespaces",
+        "getExample": "GET /v1/namespaces/[id]"
+      },
+      "documents": {
+        "title": "Belgeler",
+        "p1": "v1 tek bir primary belgeyi senkronize eder — uygulama durumunuz <tag>ESR-DOC1</tag> zarfı olarak.",
+        "meta": "Hafif head: revision, hash, boyut",
+        "head": "İçe aktarma için tam zarf",
+        "put": "Yeni anlık görüntüyü push et",
+        "p2": "Push'tan önce her zaman revision karşılaştırın. Uyuşmazlık → <tag>details</tag> içinde <tag>remoteMeta</tag> ile <tag>REVISION_CONFLICT</tag>.",
+        "p3": "Serialize edilmiş zarf relay'in <tag>maxEnvelopeBytes</tag> limitine sığmalıdır (varsayılan <tag>52.428.800 bayt (50 MB)</tag>). Daha büyük yükler <tag>413 ENVELOPE_TOO_LARGE</tag> döndürür.",
+        "metaExample": "GET .../head/meta",
+        "headExample": "GET .../head",
+        "pushFirstExample": "PUT .../primary (ilk push)",
+        "pushUpdateExample": "PUT .../primary (güncelleme)",
+        "conflictExample": "409 REVISION_CONFLICT"
+      },
+      "devices": {
+        "title": "Cihazlar ve kurtarma",
+        "p1": "Eşleştirme ve kurtarma uç noktaları mevcut token gerektirmez (kurtarma ifade kanıtı kullanır).",
+        "pairingToken": "Ana cihaz 6 haneli kod üretir",
+        "redeem": "Misafir kodu kullanır → yeni token",
+        "list": "Cihazları ve limitleri listele",
+        "revoke": "Bir cihazı kaldır (son cihaz kaldırılamaz)",
+        "recover": "İfade kanıtı → yeni token, diğer tüm cihazlar iptal",
+        "pairingTokenExample": "POST .../pairing-tokens",
+        "redeemExample": "POST .../devices (eşleştirme kullanımı)",
+        "listExample": "GET .../devices",
+        "revokeExample": "DELETE .../devices/[deviceId]",
+        "recoverExample": "POST .../recover",
+        "warnTitle": "Kurtarma tüm cihazları iptal eder",
+        "warnBody": "<tag>POST .../recover</tag> çalışma alanındaki mevcut tüm cihaz token'larını geçersiz kılar. UX'inizi buna göre planlayın."
+      },
+      "limits": {
+        "title": "Limitler ve kilidi açma",
+        "p1": "Operatörler dağıtım başına <tag>freeDeviceLimit</tag> belirler. <tag>purchasedSlots</tag> <tag>maxDevices</tag> değerini artırır.",
+        "get": "Güncel limitler ve canAddDevice bayrağı",
+        "unlock": "Daha fazla slot için kilidi açma kodunu kullan",
+        "getExample": "GET .../limits",
+        "unlockExample": "POST .../unlock"
+      },
+      "websocket": {
+        "title": "WebSocket bildirimleri",
+        "p1": "Cihaz token'ı ile bildirim URL'sine bağlanın. Alt protokol: <tag>esr-notifications-v1</tag>.",
+        "p2": "Mesajlar yalnızca bildirimdir — belge verisini her zaman HTTP <tag>GET</tag> ile alın.",
+        "li1": "<tag>head_changed</tag> — yeni revision mevcut, uygun zamanda çekin",
+        "li2": "<tag>limits_changed</tag> — cihaz slot sayısı değişti",
+        "exampleTitle": "WebSocket mesajları"
+      },
+      "relayQuotas": {
+        "title": "Relay kotaları ve boyut limitleri",
+        "p1": "Relay operatörü bunları <tag>config.yaml</tag> veya <tag>ESR_*</tag> ortam değişkenleriyle yapılandırır. Hiçbir şey belirtilmezse aşağıdaki varsayılanlar otomatik uygulanır — limitler varsayılan olarak açıktır.",
+        "sizeTitle": "Maksimum zarf boyutu",
+        "sizeBody": "Push anında serialize edilmiş <tag>ESR-DOC1</tag> JSON'unun tam boyutu ölçülür. Varsayılan: <tag>52.428.800 bayt (50 MB)</tag>. <tag>sync.maxEnvelopeBytes</tag> veya <tag>ESR_MAX_ENVELOPE_BYTES</tag> ile yapılandırılır.",
+        "rateTitle": "Rate limitler (varsayılanlar)",
+        "rateP1": "PostgreSQL'de kayan pencere sayaçları. Genel IP kotasından muaf: <tag>/health</tag>, <tag>/metrics</tag> ve WebSocket <tag>.../notifications</tag>.",
+        "rows": {
+          "general": "Tüm API istekleri",
+          "push": "Belge push'u (<tag>PUT .../primary</tag>)",
+          "pair": "Misafir eşleştirme kullanımı",
+          "pairingToken": "Eşleştirme kodu üretimi",
+          "recover": "Kurtarma"
+        },
+        "defaults": {
+          "general": "300 / dakika",
+          "push": "120 / saat",
+          "pair": "20 / saat",
+          "pairingToken": "30 / saat",
+          "recover": "5 / saat"
+        },
+        "scopes": {
+          "general": "İstemci IP",
+          "push": "Cihaz",
+          "pair": "Namespace",
+          "pairingToken": "Namespace",
+          "recover": "Namespace"
+        },
+        "windows": {
+          "general": "1 dakika",
+          "push": "1 saat",
+          "pair": "1 saat",
+          "pairingToken": "1 saat",
+          "recover": "1 saat"
+        },
+        "responseTitle": "Yanıtlarda kota bilgisi",
+        "responseP1": "Başarılı yanıtlar <tag>RateLimit-Limit</tag>, <tag>RateLimit-Remaining</tag> ve <tag>RateLimit-Reset</tag> başlıklarını içerir (pencere sıfırlanana kadar saniye). Push ayrıca <tag>RateLimit-Push-*</tag> gönderir. Pull ve push JSON gövdelerinde aksiyona göre anahtarlanmış <tag>rateLimits</tag> nesnesi olabilir.",
+        "responseP2": "<tag>429 RATE_LIMIT_EXCEEDED</tag> durumunda geri çekilme için <tag>Retry-After</tag> ve <tag>error.details.rateLimit</tag> kullanın."
+      },
+      "errors": {
+        "title": "Hata kodları",
+        "p1": "Her zaman <tag>error.code</tag>'a göre dallanın. Yaygın kodlar:",
+        "rows": {
+          "validation": "İstek gövdesi alanlarını düzeltin",
+          "token": "Yeniden eşleştirin veya kurtarın — token geçersiz veya iptal",
+          "recovery": "Yanlış kurtarma ifadesi kanıtı",
+          "limitPay": "Yükseltme / kilidi açma arayüzünü gösterin",
+          "limitBlock": "Kullanıcı bir cihaz kaldırmalı",
+          "notFound": "<tag>namespaceId</tag>'yi kontrol edin",
+          "noDocument": "Henüz push yok — ilk pull'da beklenir",
+          "exists": "Namespace dolu — bunun yerine eşleştirin veya kurtarın",
+          "conflict": "<tag>head/meta</tag>'yı yeniden okuyun, çakışma UX'ini çalıştırın",
+          "tooLarge": "Zarf <tag>maxEnvelopeBytes</tag> limitini aşıyor (varsayılan 50 MB) — anlık görüntüyü küçültün veya operatörden limit artırmasını isteyin",
+          "envelope": "Zarf şemasını veya hash'i düzeltin",
+          "rateLimit": "Kota aşıldı — <tag>Retry-After</tag> ve <tag>RateLimit-*</tag> başlıklarıyla geri çekilin",
+          "pairing": "Kod süresi doldu veya yanlış — yenisini üretin",
+          "unlock": "Geçersiz veya süresi dolmuş kilidi açma kodu"
+        }
+      }
+    },
+    "code": {
+      "auth": "Authorization: Bearer [cihaz_token]"
+    }
+  },
+  "operator": {
+    "title": "Operatör paneli",
+    "intro": "Relay yönetimi — namespace'ler, açılış kodları ve işlem geçmişi.",
+    "loginIntro": "Operatör araçlarına erişmek için relay yönetici token'ınızla giriş yapın.",
+    "login": "Giriş yap",
+    "loggingIn": "Giriş yapılıyor…",
+    "loginFailed": "Geçersiz yönetici token veya admin API devre dışı.",
+    "logout": "Çıkış",
+    "loading": "Yükleniyor…",
+    "loadFailed": "Relay'den veri yüklenemedi.",
+    "unlock": "Açılış kodu üret",
+    "unlockHint": "Bir namespace için ek cihaz slotu tanımlayan kullanılabilir kod oluşturur.",
+    "adminToken": "Yönetici token",
+    "adminTokenHint": "Relay yapılandırmanızdaki ESR_ADMIN_TOKEN ile aynı değer",
+    "namespaceId": "Namespace ID",
+    "slots": "Cihaz slotu",
+    "note": "Not",
+    "notePlaceholder": "Fatura #1234",
+    "generateUnlock": "Kod üret",
+    "generating": "Üretiliyor…",
+    "unlockCode": "Açılış kodu",
+    "requestFailed": "İstek başarısız. Namespace ID'yi ve API'nin çalıştığını kontrol edin.",
+    "statusOk": "API sağlıklı",
+    "statusDegraded": "API kısıtlı",
+    "statusPending": "Bekliyor",
+    "statusRedeemed": "Kullanıldı",
+    "version": "Sürüm",
+    "databaseMode": "Veritabanı",
+    "websocket": "WebSocket",
+    "websocketEnabled": "açık",
+    "websocketDisabled": "kapalı",
+    "prevPage": "Önceki",
+    "nextPage": "Sonraki",
+    "pagination": "Sayfa {page} / {total} · {count} kayıt",
+    "searchLabel": "Ara",
+    "searchPlaceholder": "Namespace, kod, cihaz, IP…",
+    "filterByAction": "İşlem",
+    "filterAllActions": "Tüm işlemler",
+    "noResults": "Filtrelere uyan kayıt yok.",
+    "tabs": {
+      "overview": "Özet",
+      "namespaces": "Namespace'ler",
+      "unlockCodes": "Açılış kodları",
+      "unlockEvents": "Açılış geçmişi",
+      "rateLimits": "Rate limit"
+    },
+    "stats": {
+      "namespaces": "Namespace",
+      "activeDevices": "Aktif cihaz",
+      "documents": "Doküman",
+      "pendingCodes": "Bekleyen kod",
+      "unlockEvents": "Açılış olayı",
+      "rateLimitEvents": "Rate limit"
+    },
+    "columns": {
+      "namespace": "Namespace",
+      "label": "Etiket",
+      "devices": "Cihaz",
+      "slots": "Slot",
+      "document": "Doküman",
+      "created": "Oluşturulma",
+      "code": "Kod",
+      "status": "Durum",
+      "note": "Not",
+      "source": "Kaynak",
+      "action": "İşlem",
+      "device": "Cihaz",
+      "ip": "IP",
+      "period": "Periyot",
+      "count": "İstek"
+    },
+    "rateLimitActions": {
+      "global_ip": "Genel (IP)",
+      "recover": "Kurtarma",
+      "pair_device": "Cihaz eşleştirme",
+      "pairing_token": "Pairing token",
+      "put_primary": "Doküman push"
+    }
+  },
+  "locale": {
+    "en": "English",
+    "tr": "Türkçe"
+  },
+  "footer": {
+    "tagline": "Ürün ekipleri için senkron altyapısı — SDK, API ve dokümantasyon.",
+    "developers": "Geliştiriciler",
+    "guides": "Rehberler",
+    "sdk": "SDK",
+    "api": "API",
+    "operators": "Operatörler",
+    "operator": "Operatör paneli"
+  }
+}

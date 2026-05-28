@@ -1,0 +1,14 @@
+{
+  "magic": "ESR-DOC1",
+  "schemaVersion": 1,
+  "namespaceId": "550e8400-e29b-41d4-a716-446655440000",
+  "namespaceLabel": "Fixture Workspace",
+  "documentId": "primary",
+  "revision": "01JFXYZABCDEF1234567890ABCD",
+  "deviceId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "writtenAt": "2026-05-25T14:30:00.000Z",
+  "contentType": "application/vnd.example.test+json",
+  "contentMagic": "ENV-RAW1",
+  "contentSha256": "ca3ffe64b7859dcd0d6c222b74ba698a693596f6640fde5d639ff934b560489d",
+  "payload": "{\"magic\":\"ENV-RAW1\",\"data\":\"{\\\"hello\\\":\\\"world\\\"}\"}"
+}

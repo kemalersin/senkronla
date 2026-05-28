@@ -1,0 +1,48 @@
+export { EsrSync } from './esr-sync.js'
+export { RelayClient } from './relay-client.js'
+export { SyncEngine } from './sync-engine.js'
+export { NotificationClient } from './notification-client.js'
+export { createDocumentAdapter } from './document-adapter.js'
+export { createLocalStorageAdapter, createMemoryStorageAdapter } from './esr-storage.js'
+export { EsrError, isEsrError, isOfflineError, parseApiError } from './errors.js'
+export { buildEnvelope, extractRawDocument, buildRecoveryKeyProof } from './envelope-builder.js'
+export { getOrCreateClientDeviceId, SyncStateStore } from './sync-state.js'
+export { buildNotificationWsUrl } from './ws-url.js'
+
+export type {
+  ConflictContext,
+  CreateNamespaceInput,
+  CreateNamespaceResult,
+  DeviceInfo,
+  DeviceLimitContext,
+  DocumentAdapter,
+  EnsureNamespaceResult,
+  EsrStorage,
+  EsrSyncConnectOptions,
+  EsrSyncStatus,
+  HeadMeta,
+  LimitsChangedPayload,
+  NamespaceLimits,
+  NotificationConnectionState,
+  NotificationMode,
+  PairingHostResult,
+  PushDocumentInput,
+  PushDocumentResult,
+  RecoverInput,
+  RecoverResult,
+  RedeemPairingInput,
+  RedeemPairingResult,
+  RedeemUnlockResult,
+  SyncResult,
+  SyncRunResult,
+} from './types.js'
+
+export type { RelayClientOptions } from './relay-client.js'
+export type { SyncEngineOptions } from './sync-engine.js'
+export type { NotificationClientOptions } from './notification-client.js'
+export type { BuildEnvelopeInput } from './envelope-builder.js'
+
+export * from '@senkronla/protocol'
+
+/** Client SDK semver */
+export const CLIENT_SDK_VERSION = '0.1.0'

@@ -1,0 +1,80 @@
+# Senkronla — Docker Compose
+#
+# Two database modes:
+#
+# 1) Bundled Postgres (default for local dev):
+#    docker compose --profile bundled-db up
+#
+# 2) External Postgres (existing instance — Docker or bare metal):
+#    Set ESR_DATABASE_URL in .env, then:
+#    docker compose up api
+#    (omit --profile bundled-db — postgres service is not started)
+#
+# External DB on host machine from container:
+#   macOS/Windows: postgresql://user:pass@host.docker.internal:5432/esr
+#   Linux:         postgresql://user:pass@172.17.0.1:5432/esr
+#                    or add extra_hosts: host.docker.internal:host-gateway
+
+services:
+  postgres:
+    profiles: [bundled-db]
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-esr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esr}
+      POSTGRES_DB: ${POSTGRES_DB:-esr}
+    ports:
+      - '${POSTGRES_PUBLISH_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-esr} -d ${POSTGRES_DB:-esr}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '${ESR_PUBLISH_PORT:-8080}:8080'
+    environment:
+      ESR_HOST: 0.0.0.0
+      ESR_PORT: 8080
+      ESR_PUBLIC_URL: ${ESR_PUBLIC_URL:-http://localhost:8080}
+      ESR_DATABASE_URL: ${ESR_DATABASE_URL:-postgresql://esr:esr@postgres:5432/esr}
+      ESR_BLOB_PATH: /data/blobs
+      ESR_ADMIN_TOKEN: ${ESR_ADMIN_TOKEN:-change-me-use-a-long-random-token-min-32-chars}
+      ESR_UNLOCK_HMAC_SECRET: ${ESR_UNLOCK_HMAC_SECRET:-change-me-unlock-hmac-secret-min-32}
+      ESR_DEFAULT_FREE_DEVICE_LIMIT: ${ESR_DEFAULT_FREE_DEVICE_LIMIT:-2}
+      ESR_ON_LIMIT_MODE: ${ESR_ON_LIMIT_MODE:-payment}
+      ESR_WEBSOCKET_ENABLED: ${ESR_WEBSOCKET_ENABLED:-true}
+      ESR_CORS_ORIGINS: ${ESR_CORS_ORIGINS:-*}
+    volumes:
+      - blob_data:/data/blobs
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    restart: unless-stopped
+    ports:
+      - '${WEB_PUBLISH_PORT:-3000}:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: ${ESR_PUBLIC_URL:-http://localhost:8080}
+      NEXT_PUBLIC_DEFAULT_LOCALE: en
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  blob_data:

@@ -1,0 +1,78 @@
+# Senkronla server configuration (doc 07)
+# Copy to config.yaml or set ESR_CONFIG_PATH
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  publicUrl: "http://localhost:8080"
+  trustProxy: false
+
+database:
+  url: "${ESR_DATABASE_URL}"
+  poolSize: 10
+  ssl: false
+
+blob:
+  driver: "filesystem"
+  filesystem:
+    path: "./data/blobs"
+
+auth:
+  adminApiToken: "${ESR_ADMIN_TOKEN}"
+  deviceTokenBytes: 32
+
+recovery:
+  argon2:
+    memoryCost: 65536
+    timeCost: 3
+    parallelism: 4
+
+limits:
+  defaultFreeDeviceLimit: 2
+  onLimitReached:
+    mode: payment
+    slotPackages: [3, 5, 10]
+  rateLimit:
+    enabled: true
+    recoverPerHour: 5
+    pairingPerHour: 20
+    pairingTokensPerHour: 30
+    pushPerHourPerDevice: 120
+    generalPerMinutePerIp: 300
+
+pairing:
+  codeTtlSeconds: 600
+  codeLength: 6
+  maxTtlSeconds: 3600
+
+sync:
+  maxEnvelopeBytes: 52428800
+  allowedContentTypes: []
+
+unlock:
+  codePrefix: "ESR-UNLK"
+  defaultExpiryDays: 365
+  hmacSecret: "${ESR_UNLOCK_HMAC_SECRET}"
+
+cors:
+  allowedOrigins:
+    - "*"
+
+logging:
+  level: "info"
+  format: "json"
+  redactPaths:
+    - "envelope.payload"
+    - "deviceToken"
+    - "recoveryKeyProof"
+
+metrics:
+  enabled: true
+  path: "/metrics"
+
+websocket:
+  enabled: true
+  pingIntervalSeconds: 30
+  pongTimeoutSeconds: 10
+  maxConnectionsPerNamespace: 20
+  maxConnectionsPerDevice: 3
