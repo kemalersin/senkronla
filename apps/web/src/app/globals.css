@@ -17,10 +17,11 @@
   --font-serif: 'Source Serif 4', Georgia, serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --max-width: 1180px;
-  --docs-shell-width: min(1200px, 100vw - 2rem);
+  --docs-shell-width: min(1200px, 100%);
   --docs-sidebar-width: 240px;
-  --site-header-height: 3.25rem;
-  --docs-sidebar-top: calc(var(--site-header-height) + 2rem);
+  --docs-shell-padding-top: 2rem;
+  --site-header-height: 3.75rem;
+  --docs-sidebar-top: calc(var(--site-header-height) + var(--docs-shell-padding-top));
   --docs-anchor-offset: calc(var(--site-header-height) + 1.25rem);
   --doc-prose-width: 70ch;
   --shadow-sm: 0 1px 2px rgba(27, 35, 48, 0.06);
@@ -61,6 +62,7 @@ body {
   color: var(--text);
   line-height: 1.65;
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 a {
@@ -188,6 +190,7 @@ html[data-theme='dark'] .shiki span {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  min-height: calc(var(--site-header-height) - 1.75rem);
   padding: 0.875rem 0;
 }
 
@@ -512,8 +515,10 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   grid-template-columns: var(--docs-sidebar-width) minmax(0, 1fr);
   gap: 2rem;
   width: var(--docs-shell-width);
+  max-width: calc(100% - 2rem);
   margin: 0 auto;
-  padding: 2rem 0 4rem;
+  padding: var(--docs-shell-padding-top) 1rem 4rem;
+  box-sizing: border-box;
 }
 
 .docs-sidebar-slot {
@@ -523,16 +528,22 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 @media (min-width: 901px) {
   .docs-sidebar {
-    position: sticky;
+    position: fixed;
     top: var(--docs-sidebar-top);
-    width: var(--docs-sidebar-width);
+    z-index: 40;
     max-height: calc(100vh - var(--docs-sidebar-top) - 1rem);
+    overflow-x: hidden;
     overflow-y: auto;
-    padding-right: 0.5rem;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 }
 
 @media (max-width: 900px) {
+  .docs-sidebar-slot {
+    min-height: 0 !important;
+  }
+
   .docs-sidebar {
     position: static;
     max-height: none;
@@ -577,6 +588,10 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   border-top: 1px solid var(--border);
 }
 
+.docs-main {
+  min-width: 0;
+}
+
 .docs-header h1 {
   font-family: var(--font-serif);
   font-size: 2.25rem;
@@ -594,6 +609,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 .docs-content {
   display: grid;
   gap: 2.5rem;
+  min-width: 0;
 }
 
 .doc-section h2 {
@@ -1282,6 +1298,8 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 @media (max-width: 900px) {
   .docs-shell {
     grid-template-columns: 1fr;
+    max-width: calc(100% - 1rem);
+    padding-inline: 0.5rem;
   }
 
   .docs-sidebar-slot {

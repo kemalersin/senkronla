@@ -7,6 +7,6 @@ export const config = {
   matcher: [
     '/',
     '/(tr)/:path*',
-    '/((?!api|_next|_next/static|_next/image|favicon.ico|.*\\..*).*)',
+    '/((?!api/|_next|_next/static|_next/image|favicon.ico|.*\\..*).*)',
   ],
 }
