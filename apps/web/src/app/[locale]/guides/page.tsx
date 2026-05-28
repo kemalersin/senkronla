@@ -72,6 +72,13 @@ export default async function GuidesPage({ params }: PageProps) {
 
   return (
     <DocsLayout title={t('title')} intro={t('intro')} nav={nav}>
+      <DocCallout variant="info" title={t('esrCalloutTitle')}>
+        <p>{t('esrCalloutBody')}</p>
+        <p>
+          <Link href="/guides/esr">{t('esrCalloutLink')}</Link>
+        </p>
+      </DocCallout>
+
       <DocSection id="concepts" title={t('sections.concepts.title')}>
         <p>{t('sections.concepts.p1')}</p>
         <DocsTable headers={[t('table.term'), t('table.meaning')]} rows={conceptRows} />
@@ -83,6 +90,9 @@ export default async function GuidesPage({ params }: PageProps) {
       <DocSection id="checklist" title={t('sections.checklist.title')}>
         <p>{t('sections.checklist.p1')}</p>
         <DocStepList steps={checklistSteps} />
+        <p>
+          <Link href="/guides/esr">{t('esrCalloutLink')}</Link>
+        </p>
       </DocSection>
 
       <DocSection id="first-device" title={t('sections.firstDevice.title')}>

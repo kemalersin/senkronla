@@ -6,6 +6,7 @@
   "nav": {
     "home": "Home",
     "guides": "Guides",
+    "esr": "ESR",
     "sdk": "SDK",
     "api": "API",
     "github": "GitHub"
@@ -83,7 +84,10 @@
   },
   "guides": {
     "title": "Integration guides",
-    "intro": "Start here if you are wiring Senkronla into your product for the first time. It is open source and self-hosted — you run the relay on your own servers. We explain every concept in plain language; you do not need to know our codebase beforehand.",
+    "intro": "Start here if you are wiring Senkronla into your product for the first time. It is open source and self-hosted — run the relay on your own servers. We explain every concept in plain language; you do not need to know our codebase beforehand.",
+    "esrCalloutTitle": "Need to deploy the relay first?",
+    "esrCalloutBody": "Follow the ESR setup guide to run the API on your own infrastructure before integrating the SDK.",
+    "esrCalloutLink": "ESR setup guide →",
     "nav": {
       "concepts": "Core concepts",
       "checklist": "Checklist",
@@ -121,7 +125,7 @@
         "steps": {
           "s1": {
             "title": "Get your relay URL",
-            "body": "You need a running Senkronla relay. This documentation uses {relayUrl}."
+            "body": "You need a running Senkronla relay. Follow the ESR setup guide or use {relayUrl} for this documentation."
           },
           "s2": {
             "title": "Install the SDK",
@@ -250,6 +254,138 @@
         "next": "Reference:",
         "sdkLink": "SDK docs",
         "apiLink": "API docs"
+      }
+    }
+  },
+  "esrGuide": {
+    "title": "ESR setup guide",
+    "intro": "Deploy the Envelope Sync Relay (ESR) on your own infrastructure. After the API is running, point your app at <tag>{relayUrl}</tag> and follow the integration guides.",
+    "nav": {
+      "overview": "Overview",
+      "prerequisites": "Prerequisites",
+      "docker": "Docker",
+      "local": "Local dev",
+      "config": "Configuration",
+      "verify": "Verify",
+      "production": "Production",
+      "next": "Next steps"
+    },
+    "table": {
+      "variable": "Variable",
+      "purpose": "Purpose"
+    },
+    "sections": {
+      "overview": {
+        "title": "What you are deploying",
+        "p1": "Senkronla ESR is a self-hosted relay API. It stores opaque <tag>ESR-DOC1</tag> envelopes, coordinates revisions, manages device pairing, and enforces slot limits — without reading your app payload.",
+        "li1": "REST API under <tag>/v1</tag> plus optional WebSocket notifications",
+        "li2": "PostgreSQL for metadata and a filesystem volume for blob storage",
+        "li3": "Operator tools: admin API, CLI unlock codes, and the web operator portal"
+      },
+      "prerequisites": {
+        "title": "Prerequisites",
+        "p1": "Before you deploy, prepare:",
+        "li1": "PostgreSQL 16+ (bundled via Docker Compose or your own instance)",
+        "li2": "Persistent storage for blobs (<tag>ESR_BLOB_PATH</tag>)",
+        "li3": "Long random secrets for <tag>ESR_ADMIN_TOKEN</tag> (min 32 characters)",
+        "li4": "TLS termination in production (Caddy, nginx, or a cloud load balancer)"
+      },
+      "docker": {
+        "title": "Docker Compose (recommended)",
+        "p1": "The fastest path for a full stack — API, web portal, and optional bundled Postgres:",
+        "bundledTitle": "Bundled Postgres",
+        "externalTitle": "Existing Postgres",
+        "externalP1": "Point <tag>ESR_DATABASE_URL</tag> at your instance and start without the bundled database profile:",
+        "tipTitle": "Web portal",
+        "tipBody": "The compose file also starts the docs portal on port 3000. Set <tag>NEXT_PUBLIC_API_URL</tag> to your public relay URL (e.g. <tag>https://yourdomain.com</tag>).",
+        "steps": {
+          "s1": {
+            "title": "Copy environment file",
+            "body": "Start from <tag>docker/.env.example</tag> and set secrets before production."
+          },
+          "s2": {
+            "title": "Choose database mode",
+            "body": "Use <tag>--profile bundled-db</tag> for a local Postgres container, or set <tag>ESR_DATABASE_URL</tag> for an external database."
+          },
+          "s3": {
+            "title": "Start services",
+            "body": "Migrations run automatically on API startup. API listens on port 8080 by default."
+          }
+        }
+      },
+      "local": {
+        "title": "Local development (monorepo)",
+        "p1": "Run from source when you are contributing or debugging the relay itself:",
+        "p2": "API: port 8080 · Swagger UI: <tag>/docs</tag> · Web portal: port 3000. Migrations also run on startup; run <tag>pnpm --filter @senkronla/server migrate</tag> manually if needed.",
+        "steps": {
+          "s1": {
+            "title": "Install dependencies",
+            "body": "Requires Node.js 22+ and pnpm 9+."
+          },
+          "s2": {
+            "title": "Start Postgres",
+            "body": "Use Docker Compose for a bundled database, or point <tag>ESR_DATABASE_URL</tag> in <tag>.env</tag> at your instance."
+          },
+          "s3": {
+            "title": "Configure secrets",
+            "body": "Copy <tag>.env.example</tag> to <tag>.env</tag> and set <tag>ESR_ADMIN_TOKEN</tag> and other values."
+          },
+          "s4": {
+            "title": "Run dev servers",
+            "body": "<tag>pnpm dev</tag> starts the API and web portal together."
+          }
+        }
+      },
+      "config": {
+        "title": "Key configuration",
+        "p1": "Environment variables override <tag>packages/server/config.example.yaml</tag>. Common settings:",
+        "warnTitle": "Production secrets",
+        "warnBody": "Never commit real tokens. Rotate <tag>ESR_ADMIN_TOKEN</tag> if leaked — it gates all admin and operator portal access.",
+        "rows": {
+          "database": "PostgreSQL connection string",
+          "publicUrl": "Public base URL (used in CLI, portal, and CORS checks)",
+          "adminToken": "Bearer token for admin API and operator portal login",
+          "blobPath": "Filesystem path for encrypted envelope blobs",
+          "freeLimit": "Free device slots per namespace (default 2)",
+          "limitMode": "<tag>payment</tag> or <tag>block</tag> when the device limit is reached",
+          "cors": "Comma-separated allowed origins — avoid <tag>*</tag> in production"
+        }
+      },
+      "verify": {
+        "title": "Verify the deployment",
+        "p1": "Confirm the relay is healthy before wiring your app:",
+        "p2": "Open <tag>/docs</tag> for interactive Swagger UI. Set your SDK <tag>relayUrl</tag> to <tag>{relayUrl}</tag> (must end with <tag>/v1</tag>).",
+        "steps": {
+          "s1": {
+            "title": "Health check",
+            "body": "<tag>GET /health</tag> should return 200 when database and blob storage are reachable."
+          },
+          "s2": {
+            "title": "Check Swagger",
+            "body": "Browse <tag>/docs</tag> to confirm the API surface matches your integration plan."
+          },
+          "s3": {
+            "title": "Smoke test",
+            "body": "Create a namespace from your app or run the SDK quick-start against this relay URL."
+          }
+        }
+      },
+      "production": {
+        "title": "Production checklist",
+        "p1": "Before serving real users:",
+        "li1": "Terminate TLS at a reverse proxy and set <tag>ESR_PUBLIC_URL</tag> to your HTTPS origin (e.g. <tag>https://yourdomain.com</tag>)",
+        "li2": "Enable <tag>server.trustProxy: true</tag> (or equivalent) so rate limits use the client IP",
+        "li3": "Restrict <tag>ESR_CORS_ORIGINS</tag> to your app domains",
+        "li4": "Schedule Postgres backups and snapshot the blob volume",
+        "operatorTitle": "Unlock codes",
+        "operatorBody": "After manual payment or support verification, generate slot unlock codes with the CLI (requires <tag>ESR_ADMIN_TOKEN</tag>):"
+      },
+      "next": {
+        "title": "Next steps",
+        "p1": "Relay is running — wire your product:",
+        "integrationLink": "Integration guide",
+        "sdkLink": "SDK reference",
+        "apiLink": "REST API"
       }
     }
   },
@@ -739,6 +875,7 @@
     "github": "GitHub",
     "donate": "Donate",
     "guides": "Guides",
+    "esr": "ESR",
     "sdk": "SDK",
     "api": "API",
     "operators": "Operators",

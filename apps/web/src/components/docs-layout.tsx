@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Link } from '@/i18n/navigation'
+import { Link, usePathname } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 
 export interface DocsNavItem {
@@ -18,6 +18,11 @@ interface DocsLayoutProps {
 
 export function DocsLayout({ title, intro, nav, children }: DocsLayoutProps) {
   const tNav = useTranslations('nav')
+  const pathname = usePathname()
+  const isGuidesIndex = pathname === '/guides'
+  const isEsrGuide = pathname === '/guides/esr'
+  const showGuidesBackLink = !isGuidesIndex
+  const showEsrLink = isGuidesIndex || pathname === '/sdk' || pathname === '/api'
   const [activeId, setActiveId] = useState(nav[0]?.id ?? '')
   const pendingNavIdRef = useRef<string | null>(null)
 
@@ -93,11 +98,20 @@ export function DocsLayout({ title, intro, nav, children }: DocsLayoutProps) {
               </a>
             ))}
           </nav>
-          <div className="docs-sidebar-footer">
-            <Link href="/guides" className="docs-nav-link">
-              ← {tNav('guides')}
-            </Link>
-          </div>
+          {(showEsrLink || showGuidesBackLink) && (
+            <div className="docs-sidebar-footer">
+              {showEsrLink && (
+                <Link href="/guides/esr" className="docs-nav-link" data-active={isEsrGuide ? 'true' : 'false'}>
+                  {tNav('esr')} →
+                </Link>
+              )}
+              {showGuidesBackLink && (
+                <Link href="/guides" className="docs-nav-link" data-active="false">
+                  ← {tNav('guides')}
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 

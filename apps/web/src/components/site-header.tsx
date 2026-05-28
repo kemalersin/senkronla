@@ -26,6 +26,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
   const links = [
     { href: '/', label: t('home') },
     { href: '/guides', label: t('guides') },
+    { href: '/guides/esr', label: t('esr') },
     { href: '/sdk', label: t('sdk') },
     { href: '/api', label: t('api') },
   ]

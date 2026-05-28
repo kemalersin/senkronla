@@ -1119,6 +1119,24 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   color: var(--accent);
 }
 
+.footer-inline-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.9375rem;
+}
+
+.footer-inline-links a {
+  display: inline;
+  margin-bottom: 0;
+}
+
+.footer-inline-links span {
+  color: var(--text-muted);
+}
+
 .footer-bottom {
   display: flex;
   flex-wrap: wrap;

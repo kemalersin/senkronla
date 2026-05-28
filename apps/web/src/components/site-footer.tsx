@@ -19,8 +19,13 @@ export function SiteFooter() {
           <div>
             <h4>{t('developers')}</h4>
             <Link href="/guides">{t('guides')}</Link>
-            <Link href="/sdk">{t('sdk')}</Link>
-            <Link href="/api">{t('api')}</Link>
+            <p className="footer-inline-links">
+              <Link href="/guides/esr">{t('esr')}</Link>
+              <span aria-hidden="true">·</span>
+              <Link href="/sdk">{t('sdk')}</Link>
+              <span aria-hidden="true">·</span>
+              <Link href="/api">{t('api')}</Link>
+            </p>
           </div>
           <div>
             <h4>{t('project')}</h4>

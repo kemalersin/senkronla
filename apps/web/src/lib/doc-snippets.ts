@@ -512,3 +512,17 @@ Content-Type: application/json
     } satisfies HttpExamplePair,
   }
 }
+
+export function createEsrGuideSnippets(exampleOrigin = 'https://yourdomain.com') {
+  const origin = exampleOrigin.replace(/\/$/, '')
+  return {
+    dockerEnv: `cp docker/.env.example .env`,
+    dockerBundled: `cd docker\ndocker compose --profile bundled-db up --build`,
+    dockerExternal: `# macOS/Windows — Postgres on host\nESR_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr\n\ncd docker\ndocker compose up api web`,
+    localPostgres: `cd docker && docker compose --profile bundled-db up postgres -d`,
+    localDev: `pnpm install\ncp .env.example .env\npnpm dev`,
+    healthCheck: `curl -s ${origin}/health`,
+    migrate: `pnpm --filter @senkronla/server migrate`,
+    unlockCode: `pnpm --filter @senkronla/cli exec senkronla generate-unlock-code \\\n  --namespace-id 550e8400-e29b-41d4-a716-446655440000 \\\n  --slots 3 \\\n  --note "Invoice #1234"`,
+  }
+}

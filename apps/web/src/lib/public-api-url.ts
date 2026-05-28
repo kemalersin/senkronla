@@ -1,4 +1,16 @@
+import type { Locale } from '@/i18n/config'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:8080'
+
+const EXAMPLE_RELAY_ORIGINS: Record<Locale, string> = {
+  tr: 'https://alanadiniz.com',
+  en: 'https://yourdomain.com',
+}
+
+/** Example relay origin for ESR setup docs (locale-specific placeholder, not deployment env). */
+export function getExampleRelayOrigin(locale: Locale): string {
+  return EXAMPLE_RELAY_ORIGINS[locale]
+}
 
 /** Origin from NEXT_PUBLIC_API_URL (no trailing slash, no /v1 suffix). */
 export function getPublicApiOrigin(): string {
@@ -9,6 +21,11 @@ export function getPublicApiOrigin(): string {
 /** REST base URL shown in SDK/API docs, e.g. https://sync.example.com/v1 */
 export function getRelayApiBaseUrl(): string {
   return `${getPublicApiOrigin()}/v1`
+}
+
+/** Example relay base URL for ESR setup guide. */
+export function getExampleRelayApiBaseUrl(locale: Locale): string {
+  return `${getExampleRelayOrigin(locale)}/v1`
 }
 
 function toWebSocketOrigin(origin: string): string {

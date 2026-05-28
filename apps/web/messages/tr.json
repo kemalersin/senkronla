@@ -6,6 +6,7 @@
   "nav": {
     "home": "Ana sayfa",
     "guides": "Rehberler",
+    "esr": "ESR",
     "sdk": "SDK",
     "api": "API",
     "github": "GitHub"
@@ -84,6 +85,9 @@
   "guides": {
     "title": "Entegrasyon rehberleri",
     "intro": "Senkronla'yı ürününüze ilk kez bağlıyorsanız buradan başlayın. Açık kaynak ve self-hosted bir projedir — relay'i kendi sunucunuzda çalıştırabilirsiniz. Her kavramı sade dilde anlatıyoruz; kod tabanımıza önceden hakim olmanız gerekmez.",
+    "esrCalloutTitle": "Önce relay'i kurmanız mı gerekiyor?",
+    "esrCalloutBody": "SDK entegrasyonuna geçmeden önce API'yi kendi altyapınızda çalıştırmak için ESR kurulum rehberini izleyin.",
+    "esrCalloutLink": "ESR kurulum rehberi →",
     "nav": {
       "concepts": "Temel kavramlar",
       "checklist": "Kontrol listesi",
@@ -121,7 +125,7 @@
         "steps": {
           "s1": {
             "title": "Relay URL'nizi alın",
-            "body": "Çalışan bir Senkronla relay'e ihtiyacınız var. Bu dokümantasyon {relayUrl} kullanır."
+            "body": "Çalışan bir Senkronla relay'e ihtiyacınız var. ESR kurulum rehberini izleyin veya bu dokümantasyon için {relayUrl} kullanın."
           },
           "s2": {
             "title": "SDK'yı kurun",
@@ -250,6 +254,138 @@
         "next": "Referans:",
         "sdkLink": "SDK dokümantasyonu",
         "apiLink": "API dokümantasyonu"
+      }
+    }
+  },
+  "esrGuide": {
+    "title": "ESR kurulum rehberi",
+    "intro": "Envelope Sync Relay'i (ESR) kendi altyapınızda çalıştırın. API ayakta olduktan sonra uygulamanızı <tag>{relayUrl}</tag> adresine yönlendirin ve entegrasyon rehberlerini izleyin.",
+    "nav": {
+      "overview": "Genel bakış",
+      "prerequisites": "Gereksinimler",
+      "docker": "Docker",
+      "local": "Yerel geliştirme",
+      "config": "Yapılandırma",
+      "verify": "Doğrulama",
+      "production": "Üretim",
+      "next": "Sonraki adımlar"
+    },
+    "table": {
+      "variable": "Değişken",
+      "purpose": "Amaç"
+    },
+    "sections": {
+      "overview": {
+        "title": "Ne kuruyorsunuz?",
+        "p1": "Senkronla ESR, self-hosted bir relay API'sidir. Opak <tag>ESR-DOC1</tag> zarflarını saklar, sürümleri koordine eder, cihaz eşleştirmesini yönetir ve slot limitlerini uygular — uygulama yükünüzü okumadan.",
+        "li1": "<tag>/v1</tag> altında REST API ve isteğe bağlı WebSocket bildirimleri",
+        "li2": "Meta veriler için PostgreSQL ve blob depolama için dosya sistemi",
+        "li3": "Operatör araçları: admin API, CLI açılış kodları ve web operatör paneli"
+      },
+      "prerequisites": {
+        "title": "Gereksinimler",
+        "p1": "Dağıtımdan önce hazırlayın:",
+        "li1": "PostgreSQL 16+ (Docker Compose ile veya kendi sunucunuzda)",
+        "li2": "Blob'lar için kalıcı depolama (<tag>ESR_BLOB_PATH</tag>)",
+        "li3": "<tag>ESR_ADMIN_TOKEN</tag> için uzun rastgele gizliler (en az 32 karakter)",
+        "li4": "Üretimde TLS sonlandırma (Caddy, nginx veya bulut yük dengeleyici)"
+      },
+      "docker": {
+        "title": "Docker Compose (önerilen)",
+        "p1": "Tam yığın için en hızlı yol — API, web portalı ve isteğe bağlı Postgres:",
+        "bundledTitle": "Dahili Postgres",
+        "externalTitle": "Mevcut Postgres",
+        "externalP1": "<tag>ESR_DATABASE_URL</tag>'yi kendi sunucunuza yönlendirin ve dahili veritabanı profili olmadan başlatın:",
+        "tipTitle": "Web portalı",
+        "tipBody": "Compose dosyası dokümantasyon portalını da 3000 portunda başlatır. <tag>NEXT_PUBLIC_API_URL</tag>'yi genel relay URL'nize ayarlayın (örn. <tag>https://alanadiniz.com</tag>).",
+        "steps": {
+          "s1": {
+            "title": "Ortam dosyasını kopyalayın",
+            "body": "<tag>docker/.env.example</tag> ile başlayın; üretim öncesi gizlileri ayarlayın."
+          },
+          "s2": {
+            "title": "Veritabanı modunu seçin",
+            "body": "Yerel Postgres konteyneri için <tag>--profile bundled-db</tag> kullanın veya harici veritabanı için <tag>ESR_DATABASE_URL</tag> ayarlayın."
+          },
+          "s3": {
+            "title": "Servisleri başlatın",
+            "body": "Migrasyonlar API başlangıcında otomatik çalışır. API varsayılan olarak 8080 portunu dinler."
+          }
+        }
+      },
+      "local": {
+        "title": "Yerel geliştirme (monorepo)",
+        "p1": "Relay'e katkı verirken veya hata ayıklarken kaynaktan çalıştırın:",
+        "p2": "API: 8080 · Swagger UI: <tag>/docs</tag> · Web portalı: 3000. Migrasyonlar başlangıçta da çalışır; gerekirse <tag>pnpm --filter @senkronla/server migrate</tag> ile elle uygulayın.",
+        "steps": {
+          "s1": {
+            "title": "Bağımlılıkları kurun",
+            "body": "Node.js 22+ ve pnpm 9+ gerekir."
+          },
+          "s2": {
+            "title": "Postgres'i başlatın",
+            "body": "Dahili veritabanı için Docker Compose kullanın veya <tag>.env</tag> içinde <tag>ESR_DATABASE_URL</tag> ayarlayın."
+          },
+          "s3": {
+            "title": "Gizlileri yapılandırın",
+            "body": "<tag>.env.example</tag> dosyasını <tag>.env</tag> olarak kopyalayın ve <tag>ESR_ADMIN_TOKEN</tag> ile diğer değerleri ayarlayın."
+          },
+          "s4": {
+            "title": "Geliştirme sunucularını çalıştırın",
+            "body": "<tag>pnpm dev</tag> API ve web portalını birlikte başlatır."
+          }
+        }
+      },
+      "config": {
+        "title": "Temel yapılandırma",
+        "p1": "Ortam değişkenleri <tag>packages/server/config.example.yaml</tag> dosyasını geçersiz kılar. Sık kullanılan ayarlar:",
+        "warnTitle": "Üretim gizlileri",
+        "warnBody": "Gerçek token'ları asla commit etmeyin. <tag>ESR_ADMIN_TOKEN</tag> sızdırılırsa yenileyin — tüm admin ve operatör paneli erişimini korur.",
+        "rows": {
+          "database": "PostgreSQL bağlantı dizesi",
+          "publicUrl": "Genel temel URL (CLI, portal ve CORS kontrollerinde kullanılır)",
+          "adminToken": "Admin API ve operatör paneli girişi için Bearer token",
+          "blobPath": "Şifreli zarf blob'ları için dosya sistemi yolu",
+          "freeLimit": "Namespace başına ücretsiz cihaz slotu (varsayılan 2)",
+          "limitMode": "Cihaz limiti dolunca <tag>payment</tag> veya <tag>block</tag>",
+          "cors": "Virgülle ayrılmış izin verilen origin'ler — üretimde <tag>*</tag> kullanmayın"
+        }
+      },
+      "verify": {
+        "title": "Dağıtımı doğrulayın",
+        "p1": "Uygulamanızı bağlamadan önce relay'in sağlıklı olduğunu doğrulayın:",
+        "p2": "Etkileşimli Swagger UI için <tag>/docs</tag> adresini açın. SDK <tag>relayUrl</tag> değerini <tag>{relayUrl}</tag> olarak ayarlayın (<tag>/v1</tag> ile bitmeli).",
+        "steps": {
+          "s1": {
+            "title": "Sağlık kontrolü",
+            "body": "Veritabanı ve blob depolama erişilebilirken <tag>GET /health</tag> 200 döndürmelidir."
+          },
+          "s2": {
+            "title": "Swagger'ı kontrol edin",
+            "body": "Entegrasyon planınıza uyduğunu doğrulamak için <tag>/docs</tag> adresine göz atın."
+          },
+          "s3": {
+            "title": "Duman testi",
+            "body": "Uygulamanızdan bir namespace oluşturun veya SDK hızlı başlangıcını bu relay URL'sine karşı çalıştırın."
+          }
+        }
+      },
+      "production": {
+        "title": "Üretim kontrol listesi",
+        "p1": "Gerçek kullanıcılara sunmadan önce:",
+        "li1": "TLS'i reverse proxy'de sonlandırın ve <tag>ESR_PUBLIC_URL</tag>'yi HTTPS origin'e ayarlayın (örn. <tag>https://alanadiniz.com</tag>)",
+        "li2": "Rate limit'lerin istemci IP'sini doğru kullanması için <tag>server.trustProxy: true</tag> etkinleştirin",
+        "li3": "<tag>ESR_CORS_ORIGINS</tag>'i uygulama domain'lerinizle sınırlayın",
+        "li4": "Postgres yedekleri planlayın ve blob biriminin anlık görüntüsünü alın",
+        "operatorTitle": "Açılış kodları",
+        "operatorBody": "Manuel ödeme veya destek onayı sonrası CLI ile slot açılış kodu üretin (<tag>ESR_ADMIN_TOKEN</tag> gerekir):"
+      },
+      "next": {
+        "title": "Sonraki adımlar",
+        "p1": "Relay çalışıyor — ürününüzü bağlayın:",
+        "integrationLink": "Entegrasyon rehberi",
+        "sdkLink": "SDK referansı",
+        "apiLink": "REST API"
       }
     }
   },
@@ -739,6 +875,7 @@
     "github": "GitHub",
     "donate": "Bağış yap",
     "guides": "Rehberler",
+    "esr": "ESR",
     "sdk": "SDK",
     "api": "API",
     "operators": "Operatörler",
