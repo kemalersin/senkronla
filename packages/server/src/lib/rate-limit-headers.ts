@@ -55,7 +55,7 @@ export function rateLimitsPayload(
   return Object.fromEntries(quotas.map((quota) => [quota.action, quota]))
 }
 
-export function withRateLimits<T extends Record<string, unknown>>(
+export function withRateLimits<T extends object>(
   request: FastifyRequest,
   payload: T,
 ): T & { rateLimits?: Record<string, RateLimitQuota> } {

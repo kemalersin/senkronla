@@ -1,13 +1,14 @@
 {
   "meta": {
     "title": "Senkronla — Sync API & SDK for your app",
-    "description": "Add multi-device sync to your product. Step-by-step SDK guides, REST API reference, and integration checklists for developers."
+    "description": "Open-source, self-hosted sync relay — add multi-device sync to your product. SDK guides, REST API reference, and integration checklists."
   },
   "nav": {
     "home": "Home",
     "guides": "Guides",
     "sdk": "SDK",
-    "api": "API"
+    "api": "API",
+    "github": "GitHub"
   },
   "theme": {
     "toggle": "Toggle color theme",
@@ -19,16 +20,20 @@
     "copied": "Copied"
   },
   "landing": {
-    "eyebrow": "For product teams building sync into their app",
     "title": "Your users' data, up to date on every device",
-    "subtitle": "Senkronla is a sync service you plug into your app. Users can work offline, pick up on another phone or laptop, and you stay in control of the experience — without reading their content.",
+    "subtitle": "Senkronla is a sync service you plug into your app. Run the relay on your own infrastructure — users can work offline, pick up on another phone or laptop, and you stay in control of the experience without reading their content.",
+    "badgesLabel": "Project highlights",
+    "badges": {
+      "openSource": "Open source",
+      "selfHosted": "Self-hosted"
+    },
     "ctaPrimary": "Start integrating",
     "ctaSecondary": "Browse SDK docs",
     "benefitsTitle": "Why teams use Senkronla?",
     "benefits": {
       "privacy": {
         "title": "Private by design",
-        "body": "Your app sends opaque data packages to the relay. Today v1 uses ENV-RAW1 snapshots (client-side encryption ENV-ENC1 is planned). Recovery phrases never leave the device — only a one-way proof is stored server-side."
+        "body": "Your app sends opaque data packages to the relay. Client-side encryption is used, and recovery phrases never leave the device — only a one-way proof is stored server-side."
       },
       "offline": {
         "title": "Works when the network doesn't",
@@ -78,7 +83,7 @@
   },
   "guides": {
     "title": "Integration guides",
-    "intro": "Start here if you are wiring Senkronla into your product for the first time. We explain every concept in plain language — you do not need to know our codebase beforehand.",
+    "intro": "Start here if you are wiring Senkronla into your product for the first time. It is open source and self-hosted — you run the relay on your own servers. We explain every concept in plain language; you do not need to know our codebase beforehand.",
     "nav": {
       "concepts": "Core concepts",
       "checklist": "Checklist",
@@ -728,8 +733,11 @@
     "tr": "Türkçe"
   },
   "footer": {
-    "tagline": "Sync infrastructure for product teams — SDK, API, and docs.",
+    "tagline": "Open-source, self-hosted sync infrastructure — SDK, API, and docs.",
     "developers": "Developers",
+    "project": "Project",
+    "github": "GitHub",
+    "donate": "Donate",
     "guides": "Guides",
     "sdk": "SDK",
     "api": "API",

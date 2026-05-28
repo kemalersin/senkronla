@@ -19,7 +19,10 @@ export default async function HomePage({ params }: PageProps) {
     <>
       <section className="landing-hero">
         <div className="container landing-hero-inner">
-          <p className="landing-eyebrow">{t('eyebrow')}</p>
+          <ul className="landing-badges" aria-label={t('badgesLabel')}>
+            <li>{t('badges.openSource')}</li>
+            <li>{t('badges.selfHosted')}</li>
+          </ul>
           <h1>{t('title')}</h1>
           <p className="landing-lead">{t('subtitle')}</p>
           <div className="hero-actions">

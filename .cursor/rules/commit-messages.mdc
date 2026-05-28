@@ -1,0 +1,58 @@
+---
+description: Conventional Commits format for git commit messages
+alwaysApply: true
+---
+
+# Commit Message Format
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for every commit:
+
+```
+<type>(<scope>): <subject>
+```
+
+## Format rules
+
+- **type** — required; one of: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `build`, `ci`, `chore`, `perf`
+- **scope** — optional but preferred; affected area in lowercase (e.g. `ci`, `server`, `web`, `client`, `protocol`)
+- **subject** — imperative mood, lowercase start, no trailing period, max ~72 chars
+- Focus on **why** or user-visible outcome, not a file list
+- Body (optional) — separate with blank line; explain motivation and breaking changes
+
+## Examples
+
+```
+fix(ci): resolve pnpm version conflict in GitHub Actions
+feat(client): add EsrSync reconnect backoff
+docs(envelope-sync-relay): add English translations under en/
+refactor(server): extract slot limit check into service
+chore(deps): bump turbo to 2.3.3
+```
+
+## Avoid
+
+```
+# ❌ No type
+Update CI workflow
+
+# ❌ Past tense / vague
+Fixed the bug
+
+# ❌ File dump
+changed ci.yml and package.json
+```
+
+## When creating commits
+
+1. Pick the narrowest accurate `type` and `scope`
+2. Draft subject as: "If applied, this commit will …"
+3. Use HEREDOC for multi-line messages:
+
+```bash
+git commit -m "$(cat <<'EOF'
+fix(ci): resolve pnpm version conflict in GitHub Actions
+
+Remove duplicate pnpm version from workflow; read from packageManager field.
+EOF
+)"
+```

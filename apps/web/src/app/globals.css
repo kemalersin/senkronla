@@ -197,6 +197,28 @@ html[data-theme='dark'] .shiki span {
   gap: 0.5rem;
 }
 
+.header-github-link {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.header-github-link svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.header-github-link:hover {
+  color: var(--text);
+  border-color: var(--accent-dim);
+}
+
 .logo {
   font-weight: 700;
   font-size: 1.125rem;
@@ -299,11 +321,24 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   max-width: 46rem;
 }
 
-.landing-eyebrow {
-  font-size: 0.875rem;
+.landing-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-badges li {
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--accent);
-  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
 }
 
 .landing-hero h1 {
@@ -1069,11 +1104,24 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 }
 
 .footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 0.875rem;
+}
+
+.footer-bottom a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.footer-bottom a:hover {
+  color: var(--accent);
 }
 
 .sdk-meta {

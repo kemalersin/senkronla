@@ -1,13 +1,14 @@
 {
   "meta": {
     "title": "Senkronla — Uygulamanız için senkron API ve SDK",
-    "description": "Ürününüze çok cihazlı senkron ekleyin. Geliştiriciler için adım adım SDK rehberleri, REST API referansı ve entegrasyon kontrol listeleri."
+    "description": "Açık kaynak, self-hosted senkron relay — ürününüze çok cihazlı senkron ekleyin. SDK rehberleri, REST API referansı ve entegrasyon kontrol listeleri."
   },
   "nav": {
     "home": "Ana sayfa",
     "guides": "Rehberler",
     "sdk": "SDK",
-    "api": "API"
+    "api": "API",
+    "github": "GitHub"
   },
   "theme": {
     "toggle": "Renk temasını değiştir",
@@ -19,16 +20,20 @@
     "copied": "Kopyalandı"
   },
   "landing": {
-    "eyebrow": "Uygulamasına senkron ekleyen ürün ekipleri için",
     "title": "Kullanıcı verileri her cihazda güncel kalsın",
-    "subtitle": "Senkronla, uygulamanıza entegre ettiğiniz bir senkron hizmetidir. Kullanıcılar çevrimdışı çalışabilir, başka bir telefonda veya bilgisayarda kaldığı yerden devam edebilir; deneyimin kontrolü sizde kalır — içeriği okumadan.",
+    "subtitle": "Senkronla, uygulamanıza entegre ettiğiniz bir senkron hizmetidir. Relay'i kendi altyapınızda çalıştırın — kullanıcılar çevrimdışı çalışabilir, başka bir telefonda veya bilgisayarda kaldığı yerden devam edebilir; deneyimin kontrolü sizde kalır, içeriği okumadan.",
+    "badgesLabel": "Proje özellikleri",
+    "badges": {
+      "openSource": "Açık kaynak",
+      "selfHosted": "Self-hosted"
+    },
     "ctaPrimary": "Entegrasyona başla",
     "ctaSecondary": "SDK dokümantasyonu",
     "benefitsTitle": "Ekipler neden Senkronla'yı kullanmalı?",
     "benefits": {
       "privacy": {
         "title": "Gizlilik odaklı",
-        "body": "Uygulamanız relay'e okunamaz veri paketleri gönderir. v1 bugün ENV-RAW1 anlık görüntüleri kullanır (istemci tarafı şifreleme ENV-ENC1 planlanıyor). Kurtarma ifadesi cihazdan çıkmaz — sunucuda yalnızca tek yönlü kanıt saklanır."
+        "body": "Uygulamanız relay'e okunamaz veri paketleri gönderir. İstemci taraflı şifreleme kullanılır ve kurtarma ifadesi cihazdan çıkmaz — sunucuda yalnızca tek yönlü kanıt saklanır."
       },
       "offline": {
         "title": "Ağ yokken de çalışır",
@@ -78,7 +83,7 @@
   },
   "guides": {
     "title": "Entegrasyon rehberleri",
-    "intro": "Senkronla'yı ürününüze ilk kez bağlıyorsanız buradan başlayın. Her kavramı sade dilde anlatıyoruz — kod tabanımıza önceden hakim olmanız gerekmez.",
+    "intro": "Senkronla'yı ürününüze ilk kez bağlıyorsanız buradan başlayın. Açık kaynak ve self-hosted bir projedir — relay'i kendi sunucunuzda çalıştırabilirsiniz. Her kavramı sade dilde anlatıyoruz; kod tabanımıza önceden hakim olmanız gerekmez.",
     "nav": {
       "concepts": "Temel kavramlar",
       "checklist": "Kontrol listesi",
@@ -728,8 +733,11 @@
     "tr": "Türkçe"
   },
   "footer": {
-    "tagline": "Ürün ekipleri için senkron altyapısı — SDK, API ve dokümantasyon.",
+    "tagline": "Açık kaynak, self-hosted senkron altyapısı — SDK, API ve dokümantasyon.",
     "developers": "Geliştiriciler",
+    "project": "Proje",
+    "github": "GitHub",
+    "donate": "Bağış yap",
     "guides": "Rehberler",
     "sdk": "SDK",
     "api": "API",

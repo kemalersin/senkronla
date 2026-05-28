@@ -1,7 +1,7 @@
 import cors from '@fastify/cors'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
-import Fastify from 'fastify'
+import Fastify, { type FastifyReply } from 'fastify'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,7 +17,7 @@ import {
 } from './lib/rate-limit-headers.js'
 import { registerApiRoutes } from './routes/index.js'
 import { NotificationHub } from './services/notification-hub.js'
-import { isAppError } from './errors/app-error.js'
+import { type AppError, isAppError } from './errors/app-error.js'
 import {
   enforceRateLimit,
   getGlobalIpRateLimitRule,

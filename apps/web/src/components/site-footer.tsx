@@ -1,5 +1,8 @@
+'use client'
+
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
+import { DONATE_URL, GITHUB_REPO_URL } from '@/lib/site-links'
 
 export function SiteFooter() {
   const t = useTranslations('footer')
@@ -19,10 +22,22 @@ export function SiteFooter() {
             <Link href="/sdk">{t('sdk')}</Link>
             <Link href="/api">{t('api')}</Link>
           </div>
+          <div>
+            <h4>{t('project')}</h4>
+            <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
+              {t('github')}
+            </a>
+            <a href={DONATE_URL} target="_blank" rel="noopener noreferrer">
+              {t('donate')}
+            </a>
+          </div>
         </div>
       </div>
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} Senkronla</span>
+        <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
+          {t('github')}
+        </a>
       </div>
     </footer>
   )
