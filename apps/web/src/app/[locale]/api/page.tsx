@@ -7,6 +7,7 @@ import { DocStepList } from '@/components/doc-step-list'
 import { DocTag } from '@/components/doc-tag'
 import { DocsLayout } from '@/components/docs-layout'
 import { DocsTable } from '@/components/docs-table'
+import { Link } from '@/i18n/navigation'
 import { createApiSnippets } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
 import {
@@ -37,6 +38,7 @@ export default async function ApiPage({ params }: PageProps) {
   setRequestLocale(locale)
 
   const t = await getTranslations('api')
+  const tGuides = await getTranslations('guides')
   const relayApiBaseUrl = getRelayApiBaseUrl()
   const apiOrigin = getPublicApiOrigin()
   const apiSnippets = createApiSnippets(relayApiBaseUrl)
@@ -82,6 +84,13 @@ export default async function ApiPage({ params }: PageProps) {
 
   return (
     <DocsLayout title={t('title')} intro={t.rich('intro', withDocRich())} nav={nav}>
+      <DocCallout variant="info" title={tGuides('agentsCalloutTitle')}>
+        <p>{tGuides('agentsCalloutBody')}</p>
+        <p>
+          <Link href="/guides/agents">{tGuides('agentsCalloutLink')}</Link>
+        </p>
+      </DocCallout>
+
       <DocSection id="overview" title={t('sections.overview.title')}>
         <p>{t.rich('sections.overview.p1', withDocRich())}</p>
         <p>{t.rich('sections.overview.p2', withDocRich())}</p>

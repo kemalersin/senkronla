@@ -5,6 +5,7 @@ import { DocCallout } from '@/components/doc-callout'
 import { DocSection } from '@/components/doc-section'
 import { DocsLayout } from '@/components/docs-layout'
 import { DocsTable } from '@/components/docs-table'
+import { Link } from '@/i18n/navigation'
 import { createGuideSnippets } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
 import { getRelayApiBaseUrl } from '@/lib/public-api-url'
@@ -67,6 +68,7 @@ export default async function SdkPage({ params }: PageProps) {
   setRequestLocale(locale)
 
   const t = await getTranslations('sdk')
+  const tGuides = await getTranslations('guides')
   const relayUrl = getRelayApiBaseUrl()
   const snippets = createGuideSnippets(relayUrl)
   const rich = withDocRich({ relayUrl })
@@ -115,6 +117,13 @@ export default async function SdkPage({ params }: PageProps) {
 
   return (
     <DocsLayout title={t('title')} intro={t.rich('intro', withDocRich())} nav={nav}>
+      <DocCallout variant="info" title={tGuides('agentsCalloutTitle')}>
+        <p>{tGuides('agentsCalloutBody')}</p>
+        <p>
+          <Link href="/guides/agents">{tGuides('agentsCalloutLink')}</Link>
+        </p>
+      </DocCallout>
+
       <DocSection id="quick-start" title={t('sections.quickStart.title')}>
         <p>{t('sections.quickStart.p1')}</p>
         <DocCallout variant="tip" title={t('sections.quickStart.tipTitle')}>

@@ -7,6 +7,7 @@
     "home": "Home",
     "guides": "Guides",
     "esr": "ESR",
+    "agents": "Agents",
     "sdk": "SDK",
     "api": "API",
     "github": "GitHub"
@@ -88,6 +89,9 @@
     "esrCalloutTitle": "Need to deploy the relay first?",
     "esrCalloutBody": "Follow the ESR setup guide to run the API on your own infrastructure before integrating the SDK.",
     "esrCalloutLink": "ESR setup guide →",
+    "agentsCalloutTitle": "Building with an AI agent?",
+    "agentsCalloutBody": "Fetch a single Markdown file with SDK and REST integration essentials — no relay deployment steps.",
+    "agentsCalloutLink": "Agents guide →",
     "nav": {
       "concepts": "Core concepts",
       "checklist": "Checklist",
@@ -384,6 +388,86 @@
         "title": "Next steps",
         "p1": "Relay is running — wire your product:",
         "integrationLink": "Integration guide",
+        "sdkLink": "SDK reference",
+        "apiLink": "REST API"
+      }
+    }
+  },
+  "agentsGuide": {
+    "title": "Agents guide",
+    "intro": "Give AI coding agents a single Markdown file with everything they need to integrate the SDK or REST API — without relay deployment noise.",
+    "nav": {
+      "overview": "Overview",
+      "standards": "May 2026 standards",
+      "files": "Agent files",
+      "usage": "How to use",
+      "scope": "Scope",
+      "next": "Next steps"
+    },
+    "sections": {
+      "overview": {
+        "title": "Why agent docs?",
+        "p1": "Human guides on this site are great for learning, but coding agents work best with one dense, link-stable Markdown file they can fetch in a single request.",
+        "li1": "SDK integration via <tag>@senkronla/client</tag> and <tag>EsrSync</tag>",
+        "li2": "REST bootstrap, push/pull, pairing, and error codes under <tag>/v1</tag>",
+        "li3": "Pointers to full human docs when the agent needs more detail"
+      },
+      "standards": {
+        "title": "How agent docs work (May 2026)",
+        "p1": "Two complementary conventions emerged for AI discoverability — use the right one for your audience:",
+        "llmsTitle": "llms.txt (website manifest)",
+        "llmsBody": "Proposed at <tag>llmstxt.org</tag> and widely adopted by documentation sites (Anthropic, Stripe, Cloudflare, Cursor, and others). Place <tag>/llms.txt</tag> at your site root: a short Markdown index with curated links to the best files for inference-time lookup. Optional <tag>## Optional</tag> section marks secondary links agents may skip when context is tight.",
+        "agentsMdTitle": "AGENTS.md (repository onboarding)",
+        "agentsMdBody": "Stewarded by the Agentic AI Foundation (Linux Foundation). An <tag>AGENTS.md</tag> in a repo root tells coding agents how to build, test, and follow conventions inside that codebase. Closest file in the tree wins — useful for monorepos, not for public product docs.",
+        "calloutTitle": "What Senkronla publishes",
+        "calloutBody": "This portal ships llms.txt plus dedicated agent integration Markdown files (SDK + REST only). ESR deployment stays in the human ESR guide — operators and app integrators have different jobs."
+      },
+      "files": {
+        "title": "Download or link",
+        "p1": "Fetch these URLs from your deployment origin (prepend your portal hostname if the agent runs off-site). Each file is a self-contained ~500-line integration reference:",
+        "enLink": "/agents/en.md",
+        "enDesc": "English — SDK + REST integration reference",
+        "trLink": "/agents/tr.md",
+        "trDesc": "Turkish — SDK + REST entegrasyon referansı",
+        "llmsLink": "/llms.txt",
+        "llmsDesc": "Site manifest listing agent and human doc links",
+        "p2": "Recommended default for English agents: /agents/en.md. For Turkish prompts: /agents/tr.md."
+      },
+      "usage": {
+        "title": "Feeding files to agents",
+        "p1": "Copy the Markdown URL into your agent context, or paste the raw file at the start of a session:",
+        "steps": {
+          "s1": {
+            "title": "Cursor / Copilot / Claude Code",
+            "body": "Add the agent Markdown URL to project docs, or @-mention the fetched file in chat. For repos, you can symlink or copy content into <tag>AGENTS.md</tag> — but keep the portal URL canonical for non-repo workflows."
+          },
+          "s2": {
+            "title": "Custom automation",
+            "body": "Fetch <tag>/llms.txt</tag> first, then pull <tag>/agents/en.md</tag> (or <tag>/agents/tr.md</tag>) into your prompt. Expand linked human pages only when the task needs endpoint-level detail."
+          },
+          "s3": {
+            "title": "Relay URL",
+            "body": "Agent files use placeholder relay URLs. Replace with your deployment's <tag>/v1</tag> base before generating integration code."
+          },
+          "s4": {
+            "title": "Keep context small",
+            "body": "Start with the agent file alone. Open <tag>/sdk</tag> or <tag>/api</tag> human reference only for method signatures, quotas, or exhaustive error lists."
+          }
+        }
+      },
+      "scope": {
+        "title": "In scope vs out of scope",
+        "p1": "Agent files target application integrators:",
+        "li1": "In: <tag>EsrSync.connect</tag>, adapters, sync loop, pairing, recovery, REST namespace bootstrap",
+        "li2": "In: Required callbacks, revision conflicts, device limits, key error codes",
+        "li3": "Out: Docker Compose, Postgres, <tag>ESR_*</tag> env vars, unlock codes, operator portal",
+        "li4": "Out: Relay deployment — see human <tag>/guides/esr</tag> instead",
+        "p2": "If the task is \"deploy Senkronla on a server\", use the ESR setup guide, not the agent integration file."
+      },
+      "next": {
+        "title": "Human docs",
+        "p1": "Agents file is a shortcut — your team still has full references:",
+        "guidesLink": "Integration guides",
         "sdkLink": "SDK reference",
         "apiLink": "REST API"
       }
@@ -876,6 +960,7 @@
     "donate": "Donate",
     "guides": "Guides",
     "esr": "ESR",
+    "agents": "Agents",
     "sdk": "SDK",
     "api": "API",
     "operators": "Operators",

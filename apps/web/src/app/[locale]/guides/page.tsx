@@ -72,12 +72,21 @@ export default async function GuidesPage({ params }: PageProps) {
 
   return (
     <DocsLayout title={t('title')} intro={t('intro')} nav={nav}>
-      <DocCallout variant="info" title={t('esrCalloutTitle')}>
-        <p>{t('esrCalloutBody')}</p>
-        <p>
-          <Link href="/guides/esr">{t('esrCalloutLink')}</Link>
-        </p>
-      </DocCallout>
+      <div className="doc-callout-stack">
+        <DocCallout variant="info" title={t('esrCalloutTitle')}>
+          <p>{t('esrCalloutBody')}</p>
+          <p>
+            <Link href="/guides/esr">{t('esrCalloutLink')}</Link>
+          </p>
+        </DocCallout>
+
+        <DocCallout variant="info" title={t('agentsCalloutTitle')}>
+          <p>{t('agentsCalloutBody')}</p>
+          <p>
+            <Link href="/guides/agents">{t('agentsCalloutLink')}</Link>
+          </p>
+        </DocCallout>
+      </div>
 
       <DocSection id="concepts" title={t('sections.concepts.title')}>
         <p>{t('sections.concepts.p1')}</p>

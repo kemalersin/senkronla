@@ -21,8 +21,11 @@ export function DocsLayout({ title, intro, nav, children }: DocsLayoutProps) {
   const pathname = usePathname()
   const isGuidesIndex = pathname === '/guides'
   const isEsrGuide = pathname === '/guides/esr'
+  const isAgentsGuide = pathname === '/guides/agents'
   const showGuidesBackLink = !isGuidesIndex
   const showEsrLink = isGuidesIndex || pathname === '/sdk' || pathname === '/api'
+  const showAgentsLink =
+    (isGuidesIndex || pathname === '/sdk' || pathname === '/api') && !isEsrGuide && !isAgentsGuide
   const [activeId, setActiveId] = useState(nav[0]?.id ?? '')
   const pendingNavIdRef = useRef<string | null>(null)
 
@@ -98,11 +101,16 @@ export function DocsLayout({ title, intro, nav, children }: DocsLayoutProps) {
               </a>
             ))}
           </nav>
-          {(showEsrLink || showGuidesBackLink) && (
+          {(showEsrLink || showAgentsLink || showGuidesBackLink) && (
             <div className="docs-sidebar-footer">
               {showEsrLink && (
                 <Link href="/guides/esr" className="docs-nav-link" data-active={isEsrGuide ? 'true' : 'false'}>
                   {tNav('esr')} →
+                </Link>
+              )}
+              {showAgentsLink && (
+                <Link href="/guides/agents" className="docs-nav-link" data-active={isAgentsGuide ? 'true' : 'false'}>
+                  {tNav('agents')} →
                 </Link>
               )}
               {showGuidesBackLink && (

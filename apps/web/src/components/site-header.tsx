@@ -27,6 +27,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
     { href: '/', label: t('home') },
     { href: '/guides', label: t('guides') },
     { href: '/guides/esr', label: t('esr') },
+    { href: '/guides/agents', label: t('agents') },
     { href: '/sdk', label: t('sdk') },
     { href: '/api', label: t('api') },
   ]

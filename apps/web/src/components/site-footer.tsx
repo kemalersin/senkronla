@@ -22,6 +22,8 @@ export function SiteFooter() {
             <p className="footer-inline-links">
               <Link href="/guides/esr">{t('esr')}</Link>
               <span aria-hidden="true">·</span>
+              <Link href="/guides/agents">{t('agents')}</Link>
+              <span aria-hidden="true">·</span>
               <Link href="/sdk">{t('sdk')}</Link>
               <span aria-hidden="true">·</span>
               <Link href="/api">{t('api')}</Link>

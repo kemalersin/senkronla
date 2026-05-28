@@ -7,6 +7,7 @@
     "home": "Ana sayfa",
     "guides": "Rehberler",
     "esr": "ESR",
+    "agents": "Agents",
     "sdk": "SDK",
     "api": "API",
     "github": "GitHub"
@@ -88,6 +89,9 @@
     "esrCalloutTitle": "Önce relay'i kurmanız mı gerekiyor?",
     "esrCalloutBody": "SDK entegrasyonuna geçmeden önce API'yi kendi altyapınızda çalıştırmak için ESR kurulum rehberini izleyin.",
     "esrCalloutLink": "ESR kurulum rehberi →",
+    "agentsCalloutTitle": "Yapay zeka agent'ı ile mi geliştiriyorsunuz?",
+    "agentsCalloutBody": "SDK ve REST entegrasyonu için tek bir Markdown dosyası — relay kurulum adımları yok.",
+    "agentsCalloutLink": "Agents rehberi →",
     "nav": {
       "concepts": "Temel kavramlar",
       "checklist": "Kontrol listesi",
@@ -384,6 +388,86 @@
         "title": "Sonraki adımlar",
         "p1": "Relay çalışıyor — ürününüzü bağlayın:",
         "integrationLink": "Entegrasyon rehberi",
+        "sdkLink": "SDK referansı",
+        "apiLink": "REST API"
+      }
+    }
+  },
+  "agentsGuide": {
+    "title": "Agents rehberi",
+    "intro": "Kod yazan yapay zeka agent'larına SDK veya REST API entegrasyonu için gereken her şeyi tek bir Markdown dosyasında verin — relay dağıtım detayları olmadan.",
+    "nav": {
+      "overview": "Genel bakış",
+      "standards": "Mayıs 2026 standartları",
+      "files": "Agent dosyaları",
+      "usage": "Nasıl kullanılır",
+      "scope": "Kapsam",
+      "next": "Sonraki adımlar"
+    },
+    "sections": {
+      "overview": {
+        "title": "Neden agent dokümantasyonu?",
+        "p1": "Bu sitedeki insan rehberleri öğrenmek için idealdir; kod yazan agent'lar ise tek istekte alınabilecek yoğun, bağlantıları sabit bir Markdown dosyasıyla en iyi çalışır.",
+        "li1": "<tag>@senkronla/client</tag> ve <tag>EsrSync</tag> ile SDK entegrasyonu",
+        "li2": "<tag>/v1</tag> altında REST bootstrap, push/pull, eşleştirme ve hata kodları",
+        "li3": "Agent daha fazla ayrıntı gerektiğinde tam insan dokümantasyonuna yönlendirmeler"
+      },
+      "standards": {
+        "title": "Agent dokümantasyonu nasıl çalışır (Mayıs 2026)",
+        "p1": "Yapay zeka keşfedilebilirliği için iki tamamlayıcı sözleşme yaygınlaştı — doğru kitle için doğru olanı kullanın:",
+        "llmsTitle": "llms.txt (site manifesti)",
+        "llmsBody": "<tag>llmstxt.org</tag> adresinde önerildi ve dokümantasyon sitelerinde yaygın (Anthropic, Stripe, Cloudflare, Cursor ve diğerleri). Site köküne <tag>/llms.txt</tag> koyun: çıkarım sırasında arama için en iyi dosyalara küratörlü bağlantılar içeren kısa bir Markdown indeksi. İsteğe bağlı <tag>## Optional</tag> bölümü, bağlam daraldığında agent'ların atlayabileceği ikincil bağlantıları işaretler.",
+        "agentsMdTitle": "AGENTS.md (depo onboarding)",
+        "agentsMdBody": "Agentic AI Foundation (Linux Foundation) tarafından yönetilir. Depo kökündeki <tag>AGENTS.md</tag>, kod yazan agent'lara o kod tabanında nasıl derleneceğini, test edileceğini ve kurallara uyulacağını söyler. En yakın dosya kazanır — monorepo'lar için uygun, halka açık ürün dokümantasyonu için değil.",
+        "calloutTitle": "Senkronla ne yayınlıyor",
+        "calloutBody": "Bu portal llms.txt ve ayrı agent entegrasyon Markdown dosyaları (yalnızca SDK + REST) sunar. ESR dağıtımı insan ESR rehberinde kalır — operatörler ve uygulama entegratörlerinin işleri farklıdır."
+      },
+      "files": {
+        "title": "İndir veya bağlantı ver",
+        "p1": "Bu URL'leri dağıtım origin'inizden çekin (agent site dışındaysa portal ana makine adınızı ekleyin). Her dosya ~500 satırlık bağımsız bir entegrasyon referansıdır:",
+        "enLink": "/agents/en.md",
+        "enDesc": "İngilizce — SDK + REST entegrasyon referansı",
+        "trLink": "/agents/tr.md",
+        "trDesc": "Türkçe — SDK + REST entegrasyon referansı",
+        "llmsLink": "/llms.txt",
+        "llmsDesc": "Agent ve insan dokümantasyon bağlantılarını listeleyen site manifesti",
+        "p2": "İngilizce agent'lar için önerilen varsayılan: /agents/en.md. Türkçe prompt'lar için: /agents/tr.md."
+      },
+      "usage": {
+        "title": "Dosyaları agent'lara verme",
+        "p1": "Markdown URL'sini agent bağlamına kopyalayın veya oturum başında ham dosyayı yapıştırın:",
+        "steps": {
+          "s1": {
+            "title": "Cursor / Copilot / Claude Code",
+            "body": "Agent Markdown URL'sini proje dokümantasyonuna ekleyin veya sohbette getirilen dosyayı @ ile anın. Depolar için içeriği <tag>AGENTS.md</tag>'ye symlink veya kopya yapabilirsiniz — ancak depo dışı iş akışları için portal URL'sini kanonik tutun."
+          },
+          "s2": {
+            "title": "Özel otomasyon",
+            "body": "Önce <tag>/llms.txt</tag>'yi çekin, ardından <tag>/agents/en.md</tag> (veya <tag>/agents/tr.md</tag>) dosyasını prompt'unuza ekleyin. Bağlantılı insan sayfalarını yalnızca görev uç nokta düzeyinde ayrıntı gerektirdiğinde açın."
+          },
+          "s3": {
+            "title": "Relay URL",
+            "body": "Agent dosyaları yer tutucu relay URL'leri kullanır. Entegrasyon kodu üretmeden önce dağıtımınızın <tag>/v1</tag> taban URL'si ile değiştirin."
+          },
+          "s4": {
+            "title": "Bağlamı küçük tutun",
+            "body": "Yalnızca agent dosyasıyla başlayın. Metod imzaları, kotalar veya kapsamlı hata listeleri için <tag>/sdk</tag> veya <tag>/api</tag> insan referansını açın."
+          }
+        }
+      },
+      "scope": {
+        "title": "Kapsam içi ve dışı",
+        "p1": "Agent dosyaları uygulama entegratörlerini hedefler:",
+        "li1": "Dahil: <tag>EsrSync.connect</tag>, adapter'lar, senkron döngüsü, eşleştirme, kurtarma, REST namespace bootstrap",
+        "li2": "Dahil: Zorunlu callback'ler, revision çakışmaları, cihaz limitleri, önemli hata kodları",
+        "li3": "Hariç: Docker Compose, Postgres, <tag>ESR_*</tag> ortam değişkenleri, açılış kodları, operatör paneli",
+        "li4": "Hariç: Relay dağıtımı — bunun yerine insan <tag>/guides/esr</tag> rehberini kullanın",
+        "p2": "Görev \"Senkronla'yı sunucuya kurmak\" ise agent entegrasyon dosyası değil, ESR kurulum rehberini kullanın."
+      },
+      "next": {
+        "title": "İnsan dokümantasyonu",
+        "p1": "Agent dosyası bir kısayol — ekibinizin tam referansları duruyor:",
+        "guidesLink": "Entegrasyon rehberleri",
         "sdkLink": "SDK referansı",
         "apiLink": "REST API"
       }
@@ -876,6 +960,7 @@
     "donate": "Bağış yap",
     "guides": "Rehberler",
     "esr": "ESR",
+    "agents": "Agents",
     "sdk": "SDK",
     "api": "API",
     "operators": "Operatörler",

@@ -1,0 +1,20 @@
+# Senkronla
+
+> Open-source, self-hosted Envelope Sync Relay for offline-first applications — integrate via JavaScript SDK or REST API.
+
+Senkronla stores opaque ESR-DOC1 envelopes and coordinates multi-device sync. This index lists agent-ready integration docs (SDK and REST). Relay deployment (ESR setup) is documented separately for operators.
+
+## Agent integration
+
+- [English agent guide](/agents/en.md): Comprehensive single-file SDK + REST reference (~500 lines) for AI coding agents
+- [Turkish agent guide](/agents/tr.md): Kapsamlı Türkçe SDK + REST agent entegrasyon rehberi
+
+## Human documentation
+
+- [Integration guides](/guides): Step-by-step product integration
+- [SDK reference](/sdk): EsrSync client API
+- [REST API](/api): HTTP endpoints and error codes
+
+## Optional
+
+- [ESR setup](/guides/esr): Self-hosted relay deployment (operators — not app integration)
