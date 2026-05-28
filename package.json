@@ -2,6 +2,7 @@
   "name": "senkronla",
   "private": true,
   "description": "Senkronla — self-hosted zero-knowledge envelope sync relay",
+  "license": "MIT",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
