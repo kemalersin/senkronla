@@ -1560,41 +1560,10 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 .operator-apps-origin-list > li,
 .operator-apps-bundle-list > li {
-  position: relative;
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 0.65rem;
   background: var(--bg-card);
-}
-
-.operator-apps-origin-item--removable {
-  padding-right: 2.35rem;
-}
-
-.operator-apps-origin-remove {
-  position: absolute;
-  top: 0.35rem;
-  right: 0.35rem;
-  width: 1.75rem;
-  height: 1.75rem;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 0.4rem;
-  background: var(--bg-elevated);
-  color: var(--text-muted);
-  font-size: 1.125rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.operator-apps-origin-remove:hover:not(:disabled) {
-  color: var(--text);
-  border-color: var(--accent-dim);
-}
-
-.operator-apps-origin-remove:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .operator-apps-origin-row,

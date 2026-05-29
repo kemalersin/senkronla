@@ -901,26 +901,7 @@ export function OperatorAppsPanel({
                           const verifyError = originVerifyErrors[origin.id]
 
                           return (
-                          <li
-                            key={origin.id}
-                            className={
-                              selectedApp.status !== 'archived'
-                                ? 'operator-apps-origin-item operator-apps-origin-item--removable'
-                                : 'operator-apps-origin-item'
-                            }
-                          >
-                            {selectedApp.status !== 'archived' && (
-                              <button
-                                type="button"
-                                className="operator-apps-origin-remove"
-                                aria-label={t('apps.removeOrigin')}
-                                title={t('apps.removeOrigin')}
-                                disabled={Boolean(verifyingOriginId) || actionLoading}
-                                onClick={() => void handleDeleteOrigin(origin.id)}
-                              >
-                                ×
-                              </button>
-                            )}
+                          <li key={origin.id}>
                             <div className="operator-apps-origin-row">
                               <code className="operator-apps-origin-url">{origin.origin}</code>
                               <div className="operator-apps-origin-actions">
@@ -954,6 +935,16 @@ export function OperatorAppsPanel({
                                       {t('apps.verify')}
                                     </button>
                                   )
+                                )}
+                                {selectedApp.status !== 'archived' && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    disabled={Boolean(verifyingOriginId) || actionLoading}
+                                    onClick={() => void handleDeleteOrigin(origin.id)}
+                                  >
+                                    {t('apps.removeOrigin')}
+                                  </button>
                                 )}
                               </div>
                             </div>
