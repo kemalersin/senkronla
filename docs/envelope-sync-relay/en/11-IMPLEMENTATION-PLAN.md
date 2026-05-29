@@ -274,15 +274,28 @@ import { RelayClient, SyncEngine } from '@esr/client'
 
 Agent must deliver this script in working form.
 
-## 10. Known limitations (v1 release notes)
+## 10. Multi-document (spec v1.2)
 
-- Single document `primary` per namespace
+**Spec:** [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md). **Shipped** (2026-05).
+
+| Sub-phase | Scope | Status |
+|-----------|--------|--------|
+| 7a | Server: parametric routes, blob, envelope schemaVersion 2, `GET /documents` | done |
+| 7b | WebSocket `documentId` + optional subscribe filter | done |
+| 7c | Client: RelayClient, SyncState, EsrSync `documents[]` | done |
+| 7d | OpenAPI, web docs, operator guide, examples | done |
+
+**Definition of done:** Two documents in one namespace sync independently; primary-only clients against a current server unchanged; integration tests in doc 15 §13.
+
+## 11. Known limitations (current release)
+
+- Multi-document uses `documents[]` in `@senkronla/client` (see doc 14 §5.2)
 - No payment webhook (manual unlock only)
 - Filesystem blob only
 - No revision history UI
 - English/Turkish error messages — implementer picks one for server; client maps codes
 
-## 11. Agent instructions
+## 12. Agent instructions
 
 Implementation agent must:
 

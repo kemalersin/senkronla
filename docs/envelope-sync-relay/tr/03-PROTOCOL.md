@@ -175,12 +175,14 @@ THEN conflict → user chooses remote | local
 - Envelope `deviceId` = bu kalıcı cihaz kimliği
 - ESR server `devices.id` (DB) farklı olabilir; eşleme istemci sorumluluğu
 
-## 9. Versiyon yükseltme (gelecek)
+## 9. Versiyon yükseltme
 
 | schemaVersion | Değişiklik |
 |---------------|------------|
-| 1 | İlk sürüm |
-| 2+ | Ayrı migration doc; v1 sunucu v2 zarfı reddeder (`415` veya `422`) |
+| 1 | İlk sürüm; `documentId` `"primary"` olmalı |
+| 2 | Serbest `documentId` — [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md); eski sunucu `422 ENVELOPE_INVALID` |
+
+Tam çoklu döküman spesifikasyonu: **[15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md)** (spec v1.2).
 
 ## 10. Test vektörleri (implementer oluşturmalı)
 

@@ -6,7 +6,7 @@ export const RATE_LIMIT_ACTION = {
   recover: 'recover',
   pairDevice: 'pair_device',
   pairingToken: 'pairing_token',
-  putPrimary: 'put_primary',
+  putDocument: 'put_document',
   globalIp: 'global_ip',
 } as const
 
@@ -188,12 +188,12 @@ export function getPairingTokenRateLimitRule(config: ServerConfig): RateLimitRul
   }
 }
 
-export function getPutPrimaryRateLimitRule(config: ServerConfig): RateLimitRule {
+export function getPutDocumentRateLimitRule(config: ServerConfig): RateLimitRule {
   return {
-    action: RATE_LIMIT_ACTION.putPrimary,
+    action: RATE_LIMIT_ACTION.putDocument,
     limit: config.limits.rateLimit.pushPerHourPerDevice,
     windowSeconds: 3600,
-    message: 'Document push rate limit exceeded',
+    message: 'Document PUT rate limit exceeded',
   }
 }
 

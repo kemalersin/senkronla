@@ -18,6 +18,7 @@ const sectionKeys = [
   'quick-start',
   'install',
   'connect',
+  'multi-document',
   'adapter',
   'storage',
   'methods',
@@ -46,16 +47,16 @@ const methodExampleKeys = [
 
 const METHOD_LABELS: Record<(typeof methodExampleKeys)[number], string> = {
   ensureNamespace: 'ensureNamespace()',
-  sync: 'sync()',
-  notifyLocalChange: 'notifyLocalChange()',
-  flushPush: 'flushPush()',
+  sync: 'sync(documentId?)',
+  notifyLocalChange: 'notifyLocalChange(documentId?)',
+  flushPush: 'flushPush(documentId?)',
   startPairing: 'startPairing()',
   joinPairing: 'joinPairing(code)',
   recover: 'recover(phrase)',
   listDevices: 'listDevices()',
   revokeDevice: 'revokeDevice(id)',
   redeemUnlockCode: 'redeemUnlockCode(code)',
-  resolveConflict: 'resolveConflict(choice)',
+  resolveConflict: 'resolveConflict(choice, documentId?)',
   getStatus: 'getStatus()',
 }
 
@@ -81,10 +82,12 @@ export default async function SdkPage({ params }: PageProps) {
   const optionRows = [
     ['relayUrl', t.rich('sections.connect.options.relayUrl', withDocRich())],
     ['document', t.rich('sections.connect.options.document', withDocRich())],
+    ['documents', t.rich('sections.connect.options.documents', withDocRich())],
     ['storage', t.rich('sections.connect.options.storage', withDocRich())],
     ['onRecoveryPhrase', t.rich('sections.connect.options.onRecoveryPhrase', withDocRich())],
     ['onConflict', t.rich('sections.connect.options.onConflict', withDocRich())],
     ['onDeviceLimit', t.rich('sections.connect.options.onDeviceLimit', withDocRich())],
+    ['onDocumentStatusChange', t.rich('sections.connect.options.onDocumentStatusChange', withDocRich())],
     ['pushDebounceMs', t.rich('sections.connect.options.pushDebounceMs', withDocRich())],
     ['notificationsEnabled', t.rich('sections.connect.options.notificationsEnabled', withDocRich())],
     ['persistRecoveryPhrase', t.rich('sections.connect.options.persistRecoveryPhrase', withDocRich())],
@@ -144,6 +147,15 @@ export default async function SdkPage({ params }: PageProps) {
         <p>{t.rich('sections.connect.p2', withDocRich())}</p>
         <p className="doc-subheading">{t('sections.connect.exampleTitle')}</p>
         <CodeBlock code={snippets.connectOptions} language="typescript" />
+      </DocSection>
+
+      <DocSection id="multi-document" title={t('sections.multiDocument.title')}>
+        <p>{t.rich('sections.multiDocument.p1', withDocRich())}</p>
+        <p>{t.rich('sections.multiDocument.p2', withDocRich())}</p>
+        <CodeBlock code={snippets.multiDocumentSync} language="typescript" />
+        <DocCallout variant="tip" title={t('sections.multiDocument.tipTitle')}>
+          <p>{t.rich('sections.multiDocument.tipBody', withDocRich())}</p>
+        </DocCallout>
       </DocSection>
 
       <DocSection id="adapter" title={t('sections.adapter.title')}>
@@ -209,11 +221,13 @@ export default async function SdkPage({ params }: PageProps) {
         </ul>
         <CodeBlock
           code={`await sync.ensureNamespace()
-await sync.sync()
+await sync.sync() // all documents
 
-store.onChange(() => sync.notifyLocalChange())
+store.onChange(() => sync.notifyLocalChange('primary'))
+settings.onChange(() => sync.notifyLocalChange('settings'))
+await sync.sync('settings') // optional: one document only
 window.addEventListener('focus', () => void sync.sync())
-await sync.flushPush() // before logout`}
+await sync.flushPush() // all pending; or flushPush('primary')`}
           language="typescript"
         />
       </DocSection>
@@ -233,7 +247,7 @@ await sync.flushPush() // before logout`}
         <CodeBlock
           code={`onConflict: async (ctx) => {
   const keepRemote = await ui.confirm(
-    'Replace local data with version from ' + ctx.remoteMeta.writtenAt + '?'
+    \`Replace \${ctx.documentId} with version from \${ctx.remoteMeta.writtenAt}?\`
   )
   return keepRemote ? 'remote' : 'local'
 }`}
@@ -249,6 +263,7 @@ await sync.flushPush() // before logout`}
         <ul className="doc-list">
           <li>{t.rich('sections.notifications.li1', withDocRich())}</li>
           <li>{t.rich('sections.notifications.li2', withDocRich())}</li>
+          <li>{t.rich('sections.notifications.li3', withDocRich())}</li>
         </ul>
       </DocSection>
 

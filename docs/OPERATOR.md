@@ -23,6 +23,19 @@ Copy `.env.example` to `.env` or use `packages/server/config.example.yaml` as `c
 | `ESR_DEFAULT_FREE_DEVICE_LIMIT` | Free device slots per namespace |
 | `ESR_ON_LIMIT_MODE` | `payment` or `block` when limit reached |
 | `ESR_CORS_ORIGINS` | Comma-separated allowed origins (avoid `*` in production) |
+| `ESR_MAX_DOCUMENTS_PER_NAMESPACE` | Max documents per namespace ( default `32`, `0` = unlimited) |
+| `ESR_ALLOWED_DOCUMENT_IDS` | Optional comma-separated document ID allowlist (e.g. `primary,settings`) |
+
+### Multi-document
+
+Each namespace can hold multiple opaque envelopes (`primary`, `settings`, etc.). The relay stores one row per document in `document_heads` and blobs keyed by `(namespace, documentId, revision)`.
+
+- **`sync.maxDocumentsPerNamespace`** (env `ESR_MAX_DOCUMENTS_PER_NAMESPACE`): caps how many distinct document IDs a namespace may create. Default **32**. Set **0** for no cap.
+- **`sync.allowedDocumentIds`** (env `ESR_ALLOWED_DOCUMENT_IDS`): when non-empty, only listed IDs are accepted on push; useful to lock a deployment to known document types.
+- **Operator portal:** the namespace table shows **Documents** (count) and **Primary head** (revision/size of `primary` only).
+- **Admin overview:** the `documents` stat is total `document_heads` rows across all namespaces.
+
+See [15-MULTI-DOCUMENT.md](envelope-sync-relay/en/15-MULTI-DOCUMENT.md) for protocol and client integration.
 
 ### Production CORS
 

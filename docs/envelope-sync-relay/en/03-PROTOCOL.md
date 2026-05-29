@@ -175,12 +175,14 @@ THEN conflict → user chooses remote | local
 - Envelope `deviceId` = this persistent device identity
 - ESR server `devices.id` (DB) may differ; mapping is client responsibility
 
-## 9. Version upgrade (future)
+## 9. Version upgrade
 
 | schemaVersion | Change |
 |---------------|--------|
-| 1 | Initial version |
-| 2+ | Separate migration doc; v1 server rejects v2 envelope (`415` or `422`) |
+| 1 | Initial version; `documentId` must be `"primary"` |
+| 2 | Arbitrary `documentId` per [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md); v1 server rejects with `422 ENVELOPE_INVALID` |
+
+Full multi-document specification: **[15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md)** (spec v1.2).
 
 ## 10. Test vectors (implementer must create)
 

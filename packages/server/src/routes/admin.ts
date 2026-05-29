@@ -36,7 +36,7 @@ const rateLimitListQuerySchema = listQuerySchema.extend({
       RATE_LIMIT_ACTION.recover,
       RATE_LIMIT_ACTION.pairDevice,
       RATE_LIMIT_ACTION.pairingToken,
-      RATE_LIMIT_ACTION.putPrimary,
+      RATE_LIMIT_ACTION.putDocument,
       RATE_LIMIT_ACTION.globalIp,
     ])
     .optional(),

@@ -149,7 +149,7 @@ sequenceDiagram
 
 Her authenticated device aynı namespace'teki **herhangi bir** cihazı kaldırabilir (evrensel basitlik).
 
-v2 opsiyon: yalnızca host veya `canManageDevices` flag.
+Gelecek seçenek: yalnızca host veya `canManageDevices` flag.
 
 ## 5. Host kavramı
 

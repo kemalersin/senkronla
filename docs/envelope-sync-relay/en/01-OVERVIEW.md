@@ -27,7 +27,7 @@ The server operates at the **document unit** level; not at entity/record level.
 | Term | Definition |
 |------|------------|
 | **Namespace** | Logical container for synchronized data. Usually a workspace, vault, or profile. **UUID v4 required** (global uniqueness). |
-| **Document** | Single document within a namespace. v1 supports `primary` only. |
+| **Document** | Snapshot within a namespace (`documentId`, default `primary`). Multiple independent documents per namespace — [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md). |
 | **Envelope (ESR-DOC1)** | Outer JSON envelope written to server; metadata + opaque payload. |
 | **Payload** | Inner JSON string produced by the application (plain or encrypted by the application). |
 | **Revision** | Monotonically unique version identifier (ULID recommended). Each successful push creates a new revision. |
@@ -80,7 +80,7 @@ Client A pushes → relay broadcasts `head_changed` WS → Client B HTTP pull �
 
 ## 6. Non-goals (v1)
 
-- Multiple documents per namespace (v2)
+- Multiple documents per namespace — **documented in:** [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) (spec v1.2)
 - WebDAV/S3 transport (separate client transport; server always HTTP)
 - Federation (multi-relay federation)
 - Admin web UI (v1: config file + CLI sufficient; admin API optional)

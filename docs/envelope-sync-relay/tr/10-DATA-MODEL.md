@@ -7,7 +7,7 @@ erDiagram
   namespaces ||--o{ devices : has
   namespaces ||--o{ pairing_tokens : has
   namespaces ||--o{ unlock_events : has
-  namespaces ||--o| document_heads : has
+  namespaces ||--o{ document_heads : has
   document_heads ||--o{ document_revisions : optional_history
   unlock_codes ||--o| unlock_events : generates
 
@@ -74,6 +74,8 @@ erDiagram
     timestamptz created_at
   }
 ```
+
+> **Çalışma zamanı:** Namespace başına birden fazla `document_id` desteklenir (üst sınır `sync.maxDocumentsPerNamespace`). Eski istemciler yalnızca `primary` kullanır. Bkz. [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md).
 
 ## 2. DDL (referans)
 

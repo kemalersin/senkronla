@@ -50,6 +50,8 @@ export default async function EsrGuidePage({ params }: PageProps) {
     ['ESR_DEFAULT_FREE_DEVICE_LIMIT', t('sections.config.rows.freeLimit')],
     ['ESR_ON_LIMIT_MODE', t.rich('sections.config.rows.limitMode', rich)],
     ['ESR_CORS_ORIGINS', t.rich('sections.config.rows.cors', rich)],
+    ['ESR_MAX_DOCUMENTS_PER_NAMESPACE', t('sections.config.rows.maxDocuments')],
+    ['ESR_ALLOWED_DOCUMENT_IDS', t('sections.config.rows.allowedDocIds')],
   ]
 
   const dockerSteps = [1, 2, 3].map((n) => ({

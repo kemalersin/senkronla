@@ -19,6 +19,7 @@ All API errors use the following JSON body:
 | HTTP | code | Description | details |
 |------|------|-------------|---------|
 | 400 | VALIDATION_ERROR | Request body or path invalid | `{ fields: [...] }` |
+| 400 | INVALID_DOCUMENT_ID | Path `documentId` format invalid | `{ documentId }` |
 | 400 | PAIRING_CODE_INVALID | Code wrong, expired, or already used | — |
 | 400 | UNLOCK_CODE_INVALID | Unlock code invalid or expired | — |
 | 401 | UNAUTHORIZED | Authorization header missing | — |
@@ -29,6 +30,8 @@ All API errors use the following JSON body:
 | 403 | DEVICE_LIMIT_BLOCKED | Slots full; block mode, no payment | `{ maxDevices, activeDevices }` |
 | 403 | LAST_DEVICE_PROTECTED | Last device cannot be removed | — |
 | 403 | CONTENT_TYPE_NOT_ALLOWED | contentType not in whitelist | — |
+| 403 | DOCUMENT_LIMIT_REACHED | `maxDocumentsPerNamespace` exceeded | `{ maxDocumentsPerNamespace, documentCount }` |
+| 403 | DOCUMENT_ID_NOT_ALLOWED | `documentId` not in `allowedDocumentIds` | `{ documentId, allowedDocumentIds }` |
 | 404 | NOT_FOUND | General record not found | — |
 | 404 | NAMESPACE_NOT_FOUND | Namespace not found | — |
 | 404 | DOCUMENT_NOT_FOUND | No push yet (no head) | — |
@@ -38,7 +41,8 @@ All API errors use the following JSON body:
 | 409 | UNLOCK_CODE_ALREADY_REDEEMED | Code already used | — |
 | 413 | ENVELOPE_TOO_LARGE | maxEnvelopeBytes exceeded | `{ maxBytes, actualBytes }` |
 | 422 | ENVELOPE_INVALID | Magic, schema, sha256 error | `{ reason: string }` |
-| 429 | RATE_LIMIT_EXCEEDED | Rate limit | `{ retryAfterSeconds }` |
+| 422 | ENVELOPE_DOCUMENT_MISMATCH | Envelope `documentId` ≠ path `documentId` | `{ envelopeDocumentId, pathDocumentId }` |
+| 429 | RATE_LIMIT_EXCEEDED | Rate limit | `{ retryAfterSeconds, action, rateLimit }` — `rateLimit` has `action`, `limit`, `remaining` (0), `resetAfterSeconds`, `windowSeconds`; also `Retry-After` and `RateLimit-*` headers |
 | 500 | INTERNAL_ERROR | Unexpected server error | — |
 
 ## Client mapping (recommended)

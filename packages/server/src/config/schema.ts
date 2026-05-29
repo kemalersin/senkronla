@@ -77,6 +77,8 @@ export const serverConfigSchema = z.object({
     .object({
       maxEnvelopeBytes: z.coerce.number().int().positive().default(52_428_800),
       allowedContentTypes: z.array(z.string()).default([]),
+      maxDocumentsPerNamespace: z.coerce.number().int().nonnegative().default(32),
+      allowedDocumentIds: z.array(z.string()).default([]),
     })
     .default({}),
   unlock: z

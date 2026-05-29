@@ -3,7 +3,7 @@ import type { RateLimitAction, RateLimitQuota } from '../services/rate-limit-ser
 
 const ACTION_HEADER_SUFFIX: Partial<Record<RateLimitAction, string>> = {
   global_ip: '',
-  put_primary: 'Push',
+  put_document: 'PutDocument',
   recover: 'Recover',
   pair_device: 'Pair',
   pairing_token: 'PairingToken',
@@ -72,9 +72,9 @@ export const RATE_LIMIT_EXPOSED_HEADERS = [
   'RateLimit-Limit',
   'RateLimit-Remaining',
   'RateLimit-Reset',
-  'RateLimit-Push-Limit',
-  'RateLimit-Push-Remaining',
-  'RateLimit-Push-Reset',
+  'RateLimit-PutDocument-Limit',
+  'RateLimit-PutDocument-Remaining',
+  'RateLimit-PutDocument-Reset',
   'RateLimit-Recover-Limit',
   'RateLimit-Recover-Remaining',
   'RateLimit-Recover-Reset',

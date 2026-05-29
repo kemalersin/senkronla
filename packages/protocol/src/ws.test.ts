@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseWsServerMessage, WsServerMessageSchema } from './ws.js'
+import { parseWsClientMessage, parseWsServerMessage, WsServerMessageSchema } from './ws.js'
 
 describe('ws messages', () => {
   it('parses head_changed', () => {
@@ -17,5 +17,16 @@ describe('ws messages', () => {
 
   it('rejects invalid message', () => {
     expect(() => WsServerMessageSchema.parse({ type: 'unknown' })).toThrow()
+  })
+
+  it('parses subscribe with documentIds', () => {
+    const message = parseWsClientMessage({
+      type: 'subscribe',
+      documentIds: ['primary', 'settings'],
+    })
+    expect(message.type).toBe('subscribe')
+    if (message.type === 'subscribe') {
+      expect(message.documentIds).toEqual(['primary', 'settings'])
+    }
   })
 })

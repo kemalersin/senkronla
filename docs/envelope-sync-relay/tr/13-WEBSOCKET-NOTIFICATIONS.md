@@ -116,7 +116,7 @@ type WsServerMessage =
 type WsClientMessage =
   | { type: 'auth'; token: string }           // yalnızca header auth yoksa
   | { type: 'pong'; ts: string }              // ping yanıtı
-  | { type: 'subscribe'; documentId: 'primary' }  // opsiyonel; path yeterli v1
+  | { type: 'subscribe'; documentId?: string; documentIds?: string[] }  // opsiyonel filtre 
 ```
 
 ### 4.3 Zod (packages/protocol)

@@ -41,6 +41,7 @@ interface NamespaceRow {
   purchasedSlots: number
   activeDevices: number
   createdAt: string
+  documentCount: number
   documentRevision: string | null
   documentWrittenAt: string | null
   documentSizeBytes: number | null
@@ -86,7 +87,7 @@ const RATE_LIMIT_FILTER_ACTIONS = [
   'recover',
   'pair_device',
   'pairing_token',
-  'put_primary',
+  'put_document',
 ] as const
 
 interface ListFetchOptions {
@@ -133,8 +134,8 @@ function rateLimitActionLabel(
       return t('rateLimitActions.pair_device')
     case 'pairing_token':
       return t('rateLimitActions.pairing_token')
-    case 'put_primary':
-      return t('rateLimitActions.put_primary')
+    case 'put_document':
+      return t('rateLimitActions.put_document')
     default:
       return action
   }
@@ -639,7 +640,8 @@ export function OperatorPortal() {
                       <th>{t('columns.label')}</th>
                       <th>{t('columns.devices')}</th>
                       <th>{t('columns.slots')}</th>
-                      <th>{t('columns.document')}</th>
+                      <th>{t('columns.documentCount')}</th>
+                      <th>{t('columns.primaryHead')}</th>
                       <th>{t('columns.created')}</th>
                     </tr>
                   </thead>
@@ -650,6 +652,7 @@ export function OperatorPortal() {
                         <td>{row.namespaceLabel}</td>
                         <td>{row.activeDevices}</td>
                         <td>{row.freeDeviceLimit + row.purchasedSlots}</td>
+                        <td>{row.documentCount}</td>
                         <td>
                           {row.documentRevision
                             ? `${row.documentRevision.slice(0, 8)}… (${formatBytes(row.documentSizeBytes ?? 0)})`

@@ -1,4 +1,5 @@
 import {
+  isValidDocumentId,
   parseEnvelope,
   verifyEnvelope,
   type EsrDocEnvelope,
@@ -9,12 +10,12 @@ import { AppError } from '../errors/app-error.js'
 import { buildBlobKey, readBlob, writeBlob } from '../blob/store.js'
 import {
   enforceRateLimit,
-  getPutPrimaryRateLimitRule,
+  getPutDocumentRateLimitRule,
 } from './rate-limit-service.js'
 import type { DeviceAuthContext } from '../types/context.js'
 import type { NamespaceRow } from '../types/db.js'
-import type { DocumentHeadRow } from '../types/document.js'
-import { toDocumentHeadMeta } from '../types/document.js'
+import type { DocumentHeadListItem, DocumentHeadRow } from '../types/document.js'
+import { toDocumentHeadListItem, toDocumentHeadMeta } from '../types/document.js'
 
 export interface PushDocumentInput {
   expectedRevision?: string | null
@@ -35,6 +36,28 @@ function envelopeByteSize(envelope: EsrDocEnvelope): number {
   return Buffer.byteLength(JSON.stringify(envelope), 'utf8')
 }
 
+export function assertValidDocumentIdParam(documentId: string): void {
+  if (!isValidDocumentId(documentId)) {
+    throw new AppError(400, 'INVALID_DOCUMENT_ID', 'documentId format is invalid', {
+      documentId,
+    })
+  }
+}
+
+function assertDocumentIdAllowed(config: ServerConfig, documentId: string): void {
+  const allowed = config.sync.allowedDocumentIds
+  if (allowed.length === 0) {
+    return
+  }
+
+  if (!allowed.includes(documentId)) {
+    throw new AppError(403, 'DOCUMENT_ID_NOT_ALLOWED', 'documentId is not allowed by server policy', {
+      documentId,
+      allowedDocumentIds: allowed,
+    })
+  }
+}
+
 function assertContentTypeAllowed(config: ServerConfig, contentType: string): void {
   const allowed = config.sync.allowedContentTypes
   if (allowed.length === 0) return
@@ -47,11 +70,30 @@ function assertContentTypeAllowed(config: ServerConfig, contentType: string): vo
   }
 }
 
+function assertEnvelopeDocumentPolicy(envelope: EsrDocEnvelope, documentId: string): void {
+  if (envelope.schemaVersion === 1 && envelope.documentId !== 'primary') {
+    throw new AppError(422, 'ENVELOPE_INVALID', 'schemaVersion 1 requires documentId primary', {
+      reason: 'schemaVersion 1 documentId mismatch',
+    })
+  }
+
+  if (envelope.documentId !== documentId) {
+    throw new AppError(422, 'ENVELOPE_DOCUMENT_MISMATCH', 'Envelope documentId does not match path', {
+      pathDocumentId: documentId,
+      envelopeDocumentId: envelope.documentId,
+    })
+  }
+}
+
 function validateEnvelopeForPush(
   config: ServerConfig,
   namespaceId: string,
+  documentId: string,
   envelopeInput: unknown,
 ): EsrDocEnvelope {
+  assertValidDocumentIdParam(documentId)
+  assertDocumentIdAllowed(config, documentId)
+
   let envelope: EsrDocEnvelope
 
   try {
@@ -62,9 +104,11 @@ function validateEnvelopeForPush(
     })
   }
 
+  assertEnvelopeDocumentPolicy(envelope, documentId)
+
   const verification = verifyEnvelope(envelope, {
     namespaceId,
-    documentId: 'primary',
+    documentId,
   })
 
   if (!verification.ok) {
@@ -89,29 +133,79 @@ function validateEnvelopeForPush(
 async function getHeadForUpdate(
   client: DbQueryable,
   namespaceUuid: string,
+  documentId: string,
 ): Promise<DocumentHeadRow | null> {
   const result = await client.query<DocumentHeadRow>(
     `SELECT namespace_uuid, document_id, revision, blob_key, content_sha256, content_magic,
             size_bytes, writer_device_id, written_at
      FROM document_heads
-     WHERE namespace_uuid = $1 AND document_id = 'primary'
+     WHERE namespace_uuid = $1 AND document_id = $2
      FOR UPDATE`,
-    [namespaceUuid],
+    [namespaceUuid, documentId],
   )
 
   return result.rows[0] ?? null
 }
 
-export async function getDocumentHeadMeta(
+async function countDocuments(client: DbQueryable, namespaceUuid: string): Promise<number> {
+  const result = await client.query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM document_heads WHERE namespace_uuid = $1`,
+    [namespaceUuid],
+  )
+
+  return Number(result.rows[0]?.count ?? 0)
+}
+
+async function assertDocumentLimit(
+  client: DbQueryable,
+  config: ServerConfig,
+  namespaceUuid: string,
+  documentId: string,
+  isNewDocument: boolean,
+): Promise<void> {
+  const max = config.sync.maxDocumentsPerNamespace
+  if (max === 0 || !isNewDocument) {
+    return
+  }
+
+  const count = await countDocuments(client, namespaceUuid)
+  if (count >= max) {
+    throw new AppError(403, 'DOCUMENT_LIMIT_REACHED', 'Maximum documents per namespace reached', {
+      maxDocumentsPerNamespace: max,
+      documentId,
+    })
+  }
+}
+
+export async function listDocumentHeads(
   pool: DbQueryable,
   namespaceUuid: string,
-): Promise<DocumentHeadRow | null> {
+): Promise<DocumentHeadListItem[]> {
   const result = await pool.query<DocumentHeadRow>(
     `SELECT namespace_uuid, document_id, revision, blob_key, content_sha256, content_magic,
             size_bytes, writer_device_id, written_at
      FROM document_heads
-     WHERE namespace_uuid = $1 AND document_id = 'primary'`,
+     WHERE namespace_uuid = $1
+     ORDER BY document_id ASC`,
     [namespaceUuid],
+  )
+
+  return result.rows.map(toDocumentHeadListItem)
+}
+
+export async function getDocumentHeadMeta(
+  pool: DbQueryable,
+  namespaceUuid: string,
+  documentId: string,
+): Promise<DocumentHeadRow | null> {
+  assertValidDocumentIdParam(documentId)
+
+  const result = await pool.query<DocumentHeadRow>(
+    `SELECT namespace_uuid, document_id, revision, blob_key, content_sha256, content_magic,
+            size_bytes, writer_device_id, written_at
+     FROM document_heads
+     WHERE namespace_uuid = $1 AND document_id = $2`,
+    [namespaceUuid, documentId],
   )
 
   return result.rows[0] ?? null
@@ -135,14 +229,15 @@ export async function pushDocument(
   config: ServerConfig,
   namespace: NamespaceRow,
   deviceAuth: DeviceAuthContext,
+  documentId: string,
   input: PushDocumentInput,
 ): Promise<PushDocumentResult> {
-  const pushRateLimit = await enforceRateLimit(pool, config, getPutPrimaryRateLimitRule(config), {
+  const pushRateLimit = await enforceRateLimit(pool, config, getPutDocumentRateLimitRule(config), {
     deviceUuid: deviceAuth.deviceUuid,
   })
 
-  const envelope = validateEnvelopeForPush(config, namespace.namespace_id, input.envelope)
-  const blobKey = buildBlobKey(namespace.namespace_id, envelope.revision)
+  const envelope = validateEnvelopeForPush(config, namespace.namespace_id, documentId, input.envelope)
+  const blobKey = buildBlobKey(namespace.namespace_id, documentId, envelope.revision)
   const serialized = JSON.stringify(envelope)
   const sizeBytes = Buffer.byteLength(serialized, 'utf8')
 
@@ -151,10 +246,12 @@ export async function pushDocument(
   try {
     await client.query('BEGIN')
 
-    const currentHead = await getHeadForUpdate(client, namespace.id)
+    const currentHead = await getHeadForUpdate(client, namespace.id, documentId)
     const expectedRevision = input.expectedRevision ?? null
 
     if (!currentHead) {
+      await assertDocumentLimit(client, config, namespace.id, documentId, true)
+
       if (expectedRevision) {
         throw new AppError(409, 'REVISION_CONFLICT', 'Remote revision differs from expected', {
           expectedRevision,
@@ -193,7 +290,7 @@ export async function pushDocument(
          WHERE namespace_uuid = $1 AND document_id = $2`,
         [
           namespace.id,
-          'primary',
+          documentId,
           envelope.revision,
           blobKey,
           envelope.contentSha256,
@@ -208,9 +305,10 @@ export async function pushDocument(
         `INSERT INTO document_heads (
            namespace_uuid, document_id, revision, blob_key, content_sha256,
            content_magic, size_bytes, writer_device_id, written_at
-         ) VALUES ($1, 'primary', $2, $3, $4, $5, $6, $7, $8)`,
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           namespace.id,
+          documentId,
           envelope.revision,
           blobKey,
           envelope.contentSha256,

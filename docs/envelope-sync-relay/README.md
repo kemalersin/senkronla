@@ -22,6 +22,8 @@ Both versions cover the same content. Choose the language you prefer.
 | Agent handoff (TR) | [tr/AGENT-HANDOFF.md](./tr/AGENT-HANDOFF.md) |
 | Agent handoff (EN) | [en/AGENT-HANDOFF.md](./en/AGENT-HANDOFF.md) |
 | OpenAPI spec | [openapi.yaml](./openapi.yaml) |
+| Multi-document (spec doc 15) (EN) | [en/15-MULTI-DOCUMENT.md](./en/15-MULTI-DOCUMENT.md) |
+| Çoklu döküman (belge 15) (TR) | [tr/15-MULTI-DOCUMENT.md](./tr/15-MULTI-DOCUMENT.md) |
 
 ---
 
@@ -29,7 +31,7 @@ Both versions cover the same content. Choose the language you prefer.
 
 | Field | Value |
 |-------|-------|
-| Spec version | 1.1.0 |
+| Spec version | 1.2.0 |
 | Protocol magic | `ESR-DOC1` |
 | API prefix | `/v1` |
 | Min. TLS | 1.2 |

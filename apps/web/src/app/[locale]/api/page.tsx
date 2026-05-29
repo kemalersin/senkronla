@@ -65,6 +65,10 @@ export default async function ApiPage({ params }: PageProps) {
     ['REVISION_CONFLICT', '409', t.rich('sections.errors.rows.conflict', withDocRich())],
     ['ENVELOPE_TOO_LARGE', '413', t.rich('sections.errors.rows.tooLarge', withDocRich())],
     ['ENVELOPE_INVALID', '422', t.rich('sections.errors.rows.envelope', withDocRich())],
+    ['INVALID_DOCUMENT_ID', '400', t.rich('sections.errors.rows.invalidDocumentId', withDocRich())],
+    ['DOCUMENT_LIMIT_REACHED', '403', t.rich('sections.errors.rows.documentLimit', withDocRich())],
+    ['DOCUMENT_ID_NOT_ALLOWED', '403', t.rich('sections.errors.rows.documentNotAllowed', withDocRich())],
+    ['ENVELOPE_DOCUMENT_MISMATCH', '422', t.rich('sections.errors.rows.envelopeDocumentMismatch', withDocRich())],
     ['RATE_LIMIT_EXCEEDED', '429', t.rich('sections.errors.rows.rateLimit', withDocRich())],
     ['PAIRING_CODE_INVALID', '400', t.rich('sections.errors.rows.pairing', withDocRich())],
     ['UNLOCK_CODE_INVALID', '400', t.rich('sections.errors.rows.unlock', withDocRich())],
@@ -140,20 +144,28 @@ export default async function ApiPage({ params }: PageProps) {
         <DocsTable
           headers={[t('table.method'), t('table.path'), t('table.purpose')]}
           rows={[
-            ['GET', <DocTag key="meta">.../documents/primary/head/meta</DocTag>, t('sections.documents.meta')],
-            ['GET', <DocTag key="head">.../documents/primary/head</DocTag>, t('sections.documents.head')],
-            ['PUT', <DocTag key="put">.../documents/primary</DocTag>, t('sections.documents.put')],
+            ['GET', <DocTag key="list">.../documents</DocTag>, t('sections.documents.list')],
+            [
+              'GET',
+              <DocTag key="meta">.../documents/{'{documentId}'}/head/meta</DocTag>,
+              t('sections.documents.meta'),
+            ],
+            ['GET', <DocTag key="head">.../documents/{'{documentId}'}/head</DocTag>, t('sections.documents.head')],
+            ['PUT', <DocTag key="put">.../documents/{'{documentId}'}</DocTag>, t('sections.documents.put')],
           ]}
           tagFirstColumn={false}
         />
+        <p>{t.rich('sections.documents.parametricPath', withDocRich())}</p>
         <p>{t.rich('sections.documents.p2', withDocRich())}</p>
         <p>{t.rich('sections.documents.p3', withDocRich())}</p>
+        <DocEndpointHeading label={t('sections.documents.listExample')} />
+        <DocHttpExample {...exampleProps} {...apiSnippets.listDocuments} />
         <DocEndpointHeading label={t('sections.documents.metaExample')} />
         <DocHttpExample {...exampleProps} {...apiSnippets.getDocumentHeadMeta} />
         <DocEndpointHeading label={t('sections.documents.headExample')} />
         <DocHttpExample {...exampleProps} {...apiSnippets.getDocumentHead} />
-        <DocEndpointHeading label={t('sections.documents.pushFirstExample')} />
-        <DocHttpExample {...exampleProps} {...apiSnippets.pushDocumentFirst} />
+        <DocEndpointHeading label={t('sections.documents.pushCreateExample')} />
+        <DocHttpExample {...exampleProps} {...apiSnippets.pushDocumentCreate} />
         <DocEndpointHeading label={t('sections.documents.pushUpdateExample')} />
         <DocHttpExample {...exampleProps} {...apiSnippets.pushDocumentUpdate} />
         <DocEndpointHeading label={t('sections.documents.conflictExample')} />
@@ -228,8 +240,40 @@ export default async function ApiPage({ params }: PageProps) {
           tagFirstColumn={false}
         />
         <p className="doc-subheading">{t('sections.relayQuotas.responseTitle')}</p>
-        <p>{t.rich('sections.relayQuotas.responseP1', withDocRich())}</p>
-        <p>{t.rich('sections.relayQuotas.responseP2', withDocRich())}</p>
+        <p>{t.rich('sections.relayQuotas.responseIntro', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.relayQuotas.responseHeadersTitle')}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.relayQuotas.responseHeaderGeneral', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseHeaderPut', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseHeaderPairRecover', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t.rich('sections.relayQuotas.responseJsonTitle', withDocRich())}</p>
+        <p>{t.rich('sections.relayQuotas.responseJsonIntro', withDocRich())}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.relayQuotas.responseJsonKeys', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseJsonFields', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseJsonPut', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t.rich('sections.relayQuotas.responseRoutesTitle', withDocRich())}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.relayQuotas.responseRoutePut', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseRouteHead', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseRouteList', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseRouteRecover', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseRoutePairingToken', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseRoutePair', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t('sections.relayQuotas.responseRoutesWithoutTitle')}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.relayQuotas.responseRoutesWithout', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t.rich('sections.relayQuotas.responseErrorsTitle', withDocRich())}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.relayQuotas.responseErrorRetry', withDocRich())}</li>
+          <li>{t.rich('sections.relayQuotas.responseErrorNoTopLevel', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t('sections.relayQuotas.responseExampleTitle')}</p>
+        <CodeBlock code={apiSnippets.rateLimitResponseShape} language="jsonc" />
       </DocSection>
 
       <DocSection id="errors" title={t('sections.errors.title')}>

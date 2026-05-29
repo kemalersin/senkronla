@@ -35,6 +35,22 @@ components:
       scheme: bearer
       bearerFormat: admin_api_token
 
+  parameters:
+    NamespaceId:
+      name: namespaceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z][a-z0-9_-]{0,62}$'
+
   schemas:
     ErrorBody:
       type: object
@@ -96,8 +112,7 @@ components:
           const: ESR-DOC1
         schemaVersion:
           type: integer
-          minimum: 1
-          maximum: 1
+          enum: [1, 2]
         namespaceId:
           type: string
           format: uuid
@@ -105,7 +120,8 @@ components:
           type: string
         documentId:
           type: string
-          const: primary
+          pattern: '^[a-z][a-z0-9_-]{0,62}$'
+          description: schemaVersion 1 requires `primary`; schemaVersion 2 allows any valid id
         revision:
           type: string
         deviceId:
@@ -159,6 +175,46 @@ components:
         isCurrent:
           type: boolean
 
+    RateLimitQuota:
+      type: object
+      required: [action, limit, remaining, resetAfterSeconds, windowSeconds]
+      properties:
+        action:
+          type: string
+          enum: [global_ip, put_document, recover, pair_device, pairing_token]
+          description: Internal action id; JSON `rateLimits` keys match this value (document PUT uses `put_document`).
+        limit:
+          type: integer
+        remaining:
+          type: integer
+        resetAfterSeconds:
+          type: integer
+          description: Seconds until the oldest event in the sliding window expires.
+        windowSeconds:
+          type: integer
+
+    RateLimits:
+      type: object
+      description: Optional on success when limits.rateLimit.enabled; keys are action ids.
+      additionalProperties:
+        $ref: '#/components/schemas/RateLimitQuota'
+
+    PushDocumentResult:
+      type: object
+      required: [revision, writtenAt, contentSha256, writerDeviceId]
+      properties:
+        revision:
+          type: string
+        writtenAt:
+          type: string
+          format: date-time
+        contentSha256:
+          type: string
+        writerDeviceId:
+          type: string
+        rateLimits:
+          $ref: '#/components/schemas/RateLimits'
+
   responses:
     Error400:
       description: Bad request
@@ -190,6 +246,36 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorBody'
+    Error429:
+      description: |
+        Rate limit exceeded (`RATE_LIMIT_EXCEEDED`). No top-level `rateLimits` on errors —
+        use `error.details.rateLimit` (single quota). Matching `RateLimit-*` or prefixed
+        headers (e.g. `RateLimit-PutDocument-*` for `put_document`).
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ErrorBody'
+              - type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      details:
+                        type: object
+                        properties:
+                          retryAfterSeconds:
+                            type: integer
+                          action:
+                            type: string
+                            enum: [global_ip, put_document, recover, pair_device, pairing_token]
+                          rateLimit:
+                            $ref: '#/components/schemas/RateLimitQuota'
 
 paths:
   /health:
@@ -334,11 +420,13 @@ paths:
                   type: string
       responses:
         '201':
-          description: Paired
+          description: Paired (may include `rateLimits` with `global_ip` and `pair_device`)
         '400':
           $ref: '#/components/responses/Error400'
         '403':
           $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/devices/{deviceId}:
     delete:
@@ -385,9 +473,11 @@ paths:
                   type: integer
       responses:
         '201':
-          description: Token created
+          description: Token created (may include `rateLimits` with `global_ip` and `pairing_token`)
         '403':
           $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/recover:
     post:
@@ -420,11 +510,141 @@ paths:
                   type: string
       responses:
         '200':
-          description: Recovered
+          description: Recovered (may include `rateLimits` in body)
         '401':
           $ref: '#/components/responses/Error401'
         '429':
-          description: Rate limited
+          $ref: '#/components/responses/Error429'
+
+  /namespaces/{namespaceId}/documents:
+    get:
+      tags: [Documents]
+      summary: List document heads in namespace
+      security:
+        - DeviceToken: []
+      parameters:
+        - name: namespaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK (may include `rateLimits` with `global_ip`)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [documents]
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/DocumentHeadMeta'
+                        - type: object
+                          required: [documentId]
+                          properties:
+                            documentId:
+                              type: string
+                  rateLimits:
+                    $ref: '#/components/schemas/RateLimits'
+        '429':
+          $ref: '#/components/responses/Error429'
+
+  /namespaces/{namespaceId}/documents/{documentId}/head/meta:
+    get:
+      tags: [Documents]
+      summary: Get head metadata for a document
+      security:
+        - DeviceToken: []
+      parameters:
+        - $ref: '#/components/parameters/NamespaceId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: OK (may include `rateLimits` with `global_ip`)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/DocumentHeadMeta'
+                  - type: object
+                    properties:
+                      rateLimits:
+                        $ref: '#/components/schemas/RateLimits'
+        '400':
+          description: Invalid documentId
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+
+  /namespaces/{namespaceId}/documents/{documentId}/head:
+    get:
+      tags: [Documents]
+      summary: Get full head envelope for a document
+      security:
+        - DeviceToken: []
+      parameters:
+        - $ref: '#/components/parameters/NamespaceId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: OK (may include `rateLimits` with `global_ip`)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EsrDocEnvelope'
+                  - type: object
+                    properties:
+                      rateLimits:
+                        $ref: '#/components/schemas/RateLimits'
+        '400':
+          description: Invalid documentId
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+
+  /namespaces/{namespaceId}/documents/{documentId}:
+    put:
+      tags: [Documents]
+      summary: Push new revision for a document
+      security:
+        - DeviceToken: []
+      parameters:
+        - $ref: '#/components/parameters/NamespaceId'
+        - $ref: '#/components/parameters/DocumentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [envelope]
+              properties:
+                expectedRevision:
+                  type: string
+                  nullable: true
+                envelope:
+                  $ref: '#/components/schemas/EsrDocEnvelope'
+      responses:
+        '201':
+          description: Pushed (includes `rateLimits` with `global_ip` and `put_document` when enabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushDocumentResult'
+        '403':
+          description: Document limit or id not allowed
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          description: Invalid envelope or documentId mismatch
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/primary/head/meta:
     get:
@@ -440,13 +660,20 @@ paths:
             type: string
       responses:
         '200':
-          description: OK
+          description: OK (may include `rateLimits` with `global_ip`)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentHeadMeta'
+                allOf:
+                  - $ref: '#/components/schemas/DocumentHeadMeta'
+                  - type: object
+                    properties:
+                      rateLimits:
+                        $ref: '#/components/schemas/RateLimits'
         '404':
           $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/primary/head:
     get:
@@ -462,13 +689,20 @@ paths:
             type: string
       responses:
         '200':
-          description: OK
+          description: OK (may include `rateLimits` with `global_ip`)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EsrDocEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/EsrDocEnvelope'
+                  - type: object
+                    properties:
+                      rateLimits:
+                        $ref: '#/components/schemas/RateLimits'
         '404':
           $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/primary:
     put:
@@ -497,11 +731,17 @@ paths:
                   $ref: '#/components/schemas/EsrDocEnvelope'
       responses:
         '201':
-          description: Pushed
+          description: Pushed (includes `rateLimits` with `global_ip` and `put_document` when enabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushDocumentResult'
         '409':
           $ref: '#/components/responses/Error409'
         '422':
           description: Invalid envelope
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/limits:
     get:
@@ -560,7 +800,91 @@ paths:
         '409':
           $ref: '#/components/responses/Error409'
 
+  /admin/overview:
+    get:
+      tags: [Admin]
+      summary: Relay overview stats
+      security:
+        - AdminToken: []
+      responses:
+        '200':
+          description: Overview counts
+
+  /admin/namespaces:
+    get:
+      tags: [Admin]
+      summary: List namespaces
+      security:
+        - AdminToken: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated namespaces
+
+  /admin/unlock-events:
+    get:
+      tags: [Admin]
+      summary: List unlock events
+      security:
+        - AdminToken: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated unlock events
+
+  /admin/rate-limit-events:
+    get:
+      tags: [Admin]
+      summary: List rate limit events
+      security:
+        - AdminToken: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated rate limit events
+
   /admin/unlock-codes:
+    get:
+      tags: [Admin]
+      summary: List unlock codes
+      security:
+        - AdminToken: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated unlock codes
     post:
       tags: [Admin]
       summary: Generate unlock code

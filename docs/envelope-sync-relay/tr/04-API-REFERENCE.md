@@ -285,12 +285,30 @@ POST /v1/namespaces/{namespaceId}/recover
 
 ## 6. Belge sync
 
+API **namespace başına çoklu döküman** destekler. Yollar `{documentId}` kullanır (`[a-z][a-z0-9_-]{0,62}`). Eski `/documents/primary/*` alias olarak kalır.
+
+| `schemaVersion` | Zarftaki `documentId` |
+|-----------------|----------------------|
+| `1` | `"primary"` olmalı |
+| `2` | Geçerli id; URL path ile eşleşmeli |
+
+### 6.0 Döküman head listesi
+
+```http
+GET /v1/namespaces/{namespaceId}/documents
+Authorization: Bearer {device_token}
+```
+
+**200:** `{ "documents": [ { "documentId", "revision", ... }, ... ] }` — henüz push yoksa `[]`.
+
 ### 6.1 Head meta (hafif)
 
 ```http
-GET /v1/namespaces/{namespaceId}/documents/primary/head/meta
+GET /v1/namespaces/{namespaceId}/documents/{documentId}/head/meta
 Authorization: Bearer {device_token}
 ```
+
+Alias: `GET .../documents/primary/head/meta`
 
 **200:**
 
@@ -310,18 +328,20 @@ Authorization: Bearer {device_token}
 ### 6.2 Head tam envelope
 
 ```http
-GET /v1/namespaces/{namespaceId}/documents/primary/head
-Authorization: Bearer {device_token}
+GET /v1/namespaces/{namespaceId}/documents/{documentId}/head
 ```
+
+Alias: `GET .../documents/primary/head`
 
 **200:** Tam `EsrDocEnvelope` JSON.
 
 ### 6.3 Push
 
 ```http
-PUT /v1/namespaces/{namespaceId}/documents/primary
-Authorization: Bearer {device_token}
+PUT /v1/namespaces/{namespaceId}/documents/{documentId}
 ```
+
+Alias: `PUT .../documents/primary`
 
 **Body:**
 
@@ -367,6 +387,12 @@ Authorization: Bearer {device_token}
 ```
 
 **422:** envelope validation / sha256 mismatch → `ENVELOPE_INVALID`
+
+**422:** zarf `documentId` ≠ path → `ENVELOPE_DOCUMENT_MISMATCH`
+
+**400:** geçersiz `{documentId}` → `INVALID_DOCUMENT_ID`
+
+**403:** döküman limiti → `DOCUMENT_LIMIT_REACHED`
 
 ### 6.4 Device last seen (opsiyonel heartbeat)
 
@@ -517,15 +543,59 @@ WebSocket uçları: [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS
 
 ## 10. Rate limiting
 
-| Endpoint grubu | Limit |
-|----------------|-------|
-| POST recover | 5 / saat / namespace |
-| POST devices (pair) | 20 / saat / namespace |
-| POST pairing-tokens | 30 / saat / namespace |
-| PUT primary | 120 / saat / device |
-| Genel | 300 req / dk / IP |
+`limits.rateLimit` ile yapılandırılır ([07-SERVER-CONFIGURATION.md](./07-SERVER-CONFIGURATION.md)). Açıkken sayaçlar PostgreSQL'de kayan pencere ile tutulur.
 
-Aşım: **429** `RATE_LIMIT_EXCEEDED`, `Retry-After` header.
+| Aksiyon anahtarı (JSON) | HTTP başlık öneki | Varsayılan limit | Kapsam |
+|-------------------------|-------------------|------------------|--------|
+| `global_ip` | `RateLimit-*` | 300 / dakika | İstemci IP |
+| `put_document` | `RateLimit-PutDocument-*` | 120 / saat | Cihaz (`device_uuid`) |
+| `pair_device` | `RateLimit-Pair-*` | 20 / saat | Namespace |
+| `pairing_token` | `RateLimit-PairingToken-*` | 30 / saat | Namespace |
+| `recover` | `RateLimit-Recover-*` | 5 / saat | Namespace |
+
+`global_ip` dışında: `GET /health`, metrik yolu, Swagger `/docs`, WebSocket `.../notifications`.
+
+**Belge PUT kotası:** Her başarılı `PUT /v1/namespaces/{namespaceId}/documents/{documentId}` (`primary` ve diğer id'ler) bir `put_document` olayı tüketir. Yalnızca ilk push istisnası yoktur.
+
+### 10.1 Başarılı yanıtlarda kota
+
+**Başlıklar:** İstekte izlenen tüm kotalar için `onSend` ile gönderilir (`RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`; belge PUT/kurtarma/eşleştirme önekli adlar yukarıda). `Reset` = penceredeki en eski olayın süresinin dolmasına kalan saniye.
+
+**JSON gövde `rateLimits`:** Yalnızca `withRateLimits()` kullanan rotalarda:
+
+| Metod | Yol | Tipik `rateLimits` anahtarları |
+|-------|-----|--------------------------------|
+| PUT | `.../documents/{documentId}` | `global_ip`, `put_document` |
+| GET | `.../documents/{documentId}/head/meta` | yalnızca `global_ip` |
+| GET | `.../documents/{documentId}/head` | yalnızca `global_ip` |
+| GET | `.../documents` | yalnızca `global_ip` |
+| POST | `.../recover` | `global_ip`, `recover` |
+| POST | `.../pairing-tokens` | `global_ip`, `pairing_token` |
+| POST | `.../devices` (eşleştirme) | `global_ip`, `pair_device` |
+
+`rateLimits` yok: `POST /v1/namespaces`, `GET /v1/namespaces/{id}`, `GET .../devices`, `GET .../limits`, unlock, `DELETE .../devices/{id}` (başlıklarda `global_ip` olabilir).
+
+Örnek giriş:
+
+```json
+"put_document": {
+  "action": "put_document",
+  "limit": 120,
+  "remaining": 119,
+  "resetAfterSeconds": 3600,
+  "windowSeconds": 3600
+}
+```
+
+### 10.2 Rate limit hataları
+
+Aşım: **429** `RATE_LIMIT_EXCEEDED`.
+
+- Başlık: `Retry-After` (saniye)
+- Başlık: aşılan aksiyon için ilgili `RateLimit-*`
+- Gövde: `error.details.retryAfterSeconds`, `error.details.action`, `error.details.rateLimit` (tek kota nesnesi). Hata yanıtında üst düzey `rateLimits` yok.
+
+Bkz. [12-ERROR-CODES.md](./12-ERROR-CODES.md).
 
 ## 11. CORS
 

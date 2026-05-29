@@ -285,12 +285,57 @@ POST /v1/namespaces/{namespaceId}/recover
 
 ## 6. Document sync
 
+The API supports **multiple documents per namespace**. Paths use `{documentId}` (lowercase `[a-z][a-z0-9_-]{0,62}`). Legacy `/documents/primary/*` routes remain valid aliases.
+
+| `schemaVersion` | `documentId` in envelope |
+|-----------------|--------------------------|
+| `1` | Must be `"primary"` |
+| `2` | Any valid id; must match URL path |
+
+### 6.0 List document heads
+
+```http
+GET /v1/namespaces/{namespaceId}/documents
+Authorization: Bearer {device_token}
+```
+
+**200:**
+
+```json
+{
+  "documents": [
+    {
+      "documentId": "primary",
+      "revision": "01JF...",
+      "writtenAt": "...",
+      "deviceId": "...",
+      "contentSha256": "...",
+      "contentMagic": "ENV-RAW1",
+      "sizeBytes": 128
+    },
+    {
+      "documentId": "settings",
+      "revision": "01JK...",
+      "writtenAt": "...",
+      "deviceId": "...",
+      "contentSha256": "...",
+      "contentMagic": "ENV-ENC1",
+      "sizeBytes": 512
+    }
+  ]
+}
+```
+
+Empty namespace (no push yet): `{ "documents": [] }`.
+
 ### 6.1 Head meta (lightweight)
 
 ```http
-GET /v1/namespaces/{namespaceId}/documents/primary/head/meta
+GET /v1/namespaces/{namespaceId}/documents/{documentId}/head/meta
 Authorization: Bearer {device_token}
 ```
+
+Alias: `GET .../documents/primary/head/meta`
 
 **200:**
 
@@ -310,7 +355,10 @@ Authorization: Bearer {device_token}
 ### 6.2 Head full envelope
 
 ```http
-GET /v1/namespaces/{namespaceId}/documents/primary/head
+GET /v1/namespaces/{namespaceId}/documents/{documentId}/head
+```
+
+Alias: `GET .../documents/primary/head`
 Authorization: Bearer {device_token}
 ```
 
@@ -319,7 +367,10 @@ Authorization: Bearer {device_token}
 ### 6.3 Push
 
 ```http
-PUT /v1/namespaces/{namespaceId}/documents/primary
+PUT /v1/namespaces/{namespaceId}/documents/{documentId}
+```
+
+Alias: `PUT .../documents/primary`
 Authorization: Bearer {device_token}
 ```
 
@@ -367,6 +418,12 @@ Authorization: Bearer {device_token}
 ```
 
 **422:** envelope validation / sha256 mismatch → `ENVELOPE_INVALID`
+
+**422:** envelope `documentId` ≠ path → `ENVELOPE_DOCUMENT_MISMATCH`
+
+**400:** invalid `{documentId}` path → `INVALID_DOCUMENT_ID`
+
+**403:** too many documents in namespace → `DOCUMENT_LIMIT_REACHED` (config `sync.maxDocumentsPerNamespace`, default 32)
 
 ### 6.4 Device last seen (optional heartbeat)
 
@@ -517,15 +574,59 @@ WebSocket endpoints: [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATION
 
 ## 10. Rate limiting
 
-| Endpoint group | Limit |
-|----------------|-------|
-| POST recover | 5 / hour / namespace |
-| POST devices (pair) | 20 / hour / namespace |
-| POST pairing-tokens | 30 / hour / namespace |
-| PUT primary | 120 / hour / device |
-| General | 300 req / min / IP |
+Configurable in `limits.rateLimit` (see [07-SERVER-CONFIGURATION.md](./07-SERVER-CONFIGURATION.md)). When enabled, counters use a sliding window in PostgreSQL.
 
-Exceeded: **429** `RATE_LIMIT_EXCEEDED`, `Retry-After` header.
+| Action key (JSON) | HTTP header prefix | Default limit | Scope |
+|-------------------|-------------------|---------------|--------|
+| `global_ip` | `RateLimit-*` | 300 / minute | Client IP |
+| `put_document` | `RateLimit-PutDocument-*` | 120 / hour | Device (`device_uuid`) |
+| `pair_device` | `RateLimit-Pair-*` | 20 / hour | Namespace |
+| `pairing_token` | `RateLimit-PairingToken-*` | 30 / hour | Namespace |
+| `recover` | `RateLimit-Recover-*` | 5 / hour | Namespace |
+
+Exempt from `global_ip`: `GET /health`, metrics path, Swagger `/docs`, WebSocket `.../notifications`.
+
+**Document PUT quota:** Every successful `PUT /v1/namespaces/{namespaceId}/documents/{documentId}` (including `primary` and non-primary ids) consumes one `put_document` event. There is no separate “first push only” rule.
+
+### 10.1 Quota in successful responses
+
+**Headers:** `onSend` emits all quotas tracked on the request (`RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`; document PUT/recover/pair use prefixed names above). `Reset` is seconds until the oldest event in the window expires.
+
+**JSON body `rateLimits`:** Present only on routes that call `withRateLimits()`:
+
+| Method | Path pattern | Typical keys in `rateLimits` |
+|--------|----------------|------------------------------|
+| PUT | `.../documents/{documentId}` | `global_ip`, `put_document` |
+| GET | `.../documents/{documentId}/head/meta` | `global_ip` only |
+| GET | `.../documents/{documentId}/head` | `global_ip` only |
+| GET | `.../documents` | `global_ip` only |
+| POST | `.../recover` | `global_ip`, `recover` |
+| POST | `.../pairing-tokens` | `global_ip`, `pairing_token` |
+| POST | `.../devices` (pair redeem) | `global_ip`, `pair_device` |
+
+No `rateLimits` object on: `POST /v1/namespaces`, `GET /v1/namespaces/{id}`, `GET .../devices`, `GET .../limits`, unlock, `DELETE .../devices/{id}` (headers may still include `global_ip`).
+
+Each entry shape:
+
+```json
+"put_document": {
+  "action": "put_document",
+  "limit": 120,
+  "remaining": 119,
+  "resetAfterSeconds": 3600,
+  "windowSeconds": 3600
+}
+```
+
+### 10.2 Rate limit errors
+
+Exceeded: **429** `RATE_LIMIT_EXCEEDED`.
+
+- Header: `Retry-After` (seconds)
+- Header: matching `RateLimit-*` for the exceeded action
+- Body: `error.details.retryAfterSeconds`, `error.details.action`, `error.details.rateLimit` (single quota object, same fields as above). No top-level `rateLimits` on errors.
+
+See [12-ERROR-CODES.md](./12-ERROR-CODES.md).
 
 ## 11. CORS
 

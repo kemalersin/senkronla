@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **multi-document:** `EsrSync.connect({ documents: [...] })`, document-scoped `SyncStateStore`, `RelayClient` `documentId` param, `listDocuments()`, `onDocumentStatusChange`, `notifyLocalChange(documentId)`, `sync(documentId)`, `flushPush(documentId)`
 - `RelayClient` — full REST API wrapper with device token persistence hooks
 - `SyncEngine` — pull/push, revision conflict detection, debounced push
 - `EsrSync` facade — `connect()`, `ensureNamespace`, pairing, recovery, scheduler

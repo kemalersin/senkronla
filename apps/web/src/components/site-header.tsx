@@ -72,6 +72,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
                 key={code}
                 href={pathname}
                 locale={code}
+                prefetch={false}
                 data-active={locale === code ? 'true' : 'false'}
               >
                 {tLocale(code)}

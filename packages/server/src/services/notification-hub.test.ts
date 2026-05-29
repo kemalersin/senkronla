@@ -37,6 +37,40 @@ describe('NotificationHub', () => {
     hub.destroy()
   })
 
+  it('filters head_changed by document subscription', () => {
+    const hub = new NotificationHub()
+    const received: string[] = []
+    const socket = mockSocket((payload) => received.push(payload))
+
+    hub.subscribe('ns-1', socket, {
+      namespaceId: 'ns-1',
+      deviceId: 'dev-1',
+      deviceUuid: 'uuid-1',
+    })
+    hub.setDocumentSubscription('ns-1', socket, ['settings'])
+
+    hub.broadcast('ns-1', {
+      type: 'head_changed',
+      documentId: 'primary',
+      revision: '01A',
+      contentSha256: 'a'.repeat(64),
+      writtenAt: new Date().toISOString(),
+      writerDeviceId: 'dev-2',
+    })
+    hub.broadcast('ns-1', {
+      type: 'head_changed',
+      documentId: 'settings',
+      revision: '01B',
+      contentSha256: 'b'.repeat(64),
+      writtenAt: new Date().toISOString(),
+      writerDeviceId: 'dev-2',
+    })
+
+    expect(received).toHaveLength(1)
+    expect(JSON.parse(received[0]!).documentId).toBe('settings')
+    hub.destroy()
+  })
+
   it('tracks namespace and device connection counts', () => {
     const hub = new NotificationHub()
     const socket = mockSocket(() => {})

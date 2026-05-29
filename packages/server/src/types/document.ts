@@ -19,6 +19,10 @@ export interface DocumentHeadMeta {
   sizeBytes: number
 }
 
+export interface DocumentHeadListItem extends DocumentHeadMeta {
+  documentId: string
+}
+
 export function toDocumentHeadMeta(row: DocumentHeadRow): DocumentHeadMeta {
   return {
     revision: row.revision,
@@ -27,5 +31,12 @@ export function toDocumentHeadMeta(row: DocumentHeadRow): DocumentHeadMeta {
     contentSha256: row.content_sha256,
     contentMagic: row.content_magic,
     sizeBytes: Number(row.size_bytes),
+  }
+}
+
+export function toDocumentHeadListItem(row: DocumentHeadRow): DocumentHeadListItem {
+  return {
+    documentId: row.document_id,
+    ...toDocumentHeadMeta(row),
   }
 }

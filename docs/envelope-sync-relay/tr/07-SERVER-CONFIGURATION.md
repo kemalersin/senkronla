@@ -52,11 +52,14 @@ limits:
     mode: payment
     slotPackages: [3, 5, 10]
 
-  # Rate limits (see API doc)
+  # Rate limits — API yanıt anahtarları: global_ip, put_document, recover, pair_device, pairing_token
   rateLimit:
     enabled: true
-    recoverPerHour: 5
-    pairingPerHour: 20
+    recoverPerHour: 5              # recover
+    pairingPerHour: 20             # pair_device
+    pairingTokensPerHour: 30       # pairing_token
+    pushPerHourPerDevice: 120      # put_document (başlıklar: RateLimit-PutDocument-*)
+    generalPerMinutePerIp: 300     # global_ip
 
 pairing:
   codeTtlSeconds: 600
@@ -65,6 +68,8 @@ pairing:
 
 sync:
   maxEnvelopeBytes: 52428800             # 50 MB
+  maxDocumentsPerNamespace: 32           # document_heads satır üst sınırı; 0 = sınırsız
+  allowedDocumentIds: []                 # boş = geçerli herhangi bir id; dolu = allowlist
   allowedContentTypes: []                # empty = all allowed; örn. application/vnd.*.snapshot+json
 
 unlock:
@@ -119,6 +124,9 @@ ESR_ON_LIMIT_MODE=payment          # payment | block
 ESR_SLOT_PACKAGES=3,5,10
 ESR_WEBSOCKET_ENABLED=true
 ESR_WS_PING_INTERVAL=30
+ESR_MAX_ENVELOPE_BYTES=52428800
+ESR_MAX_DOCUMENTS_PER_NAMESPACE=32      # 0 = sınırsız
+ESR_ALLOWED_DOCUMENT_IDS=primary,settings   # isteğe bağlı virgülle ayrılmış allowlist
 ```
 
 ## 4. docker-compose.yml (referans)

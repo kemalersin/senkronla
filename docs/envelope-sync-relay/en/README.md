@@ -29,6 +29,7 @@ The service is designed to transport an **encrypted snapshot envelope** for any 
 | 12 | [12-ERROR-CODES.md](./12-ERROR-CODES.md) | HTTP error codes and client retry policy |
 | 13 | [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS.md) | WebSocket push-to-pull notifications (v1.1) |
 | 14 | [openapi.yaml](../openapi.yaml) | Machine-readable REST API definition |
+| 15 | [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) | **Multi-document per namespace (spec v1.2)** |
 
 ---
 
@@ -72,13 +73,15 @@ This specification is application-agnostic. Each consumer app should maintain it
 
 **v1.1.0:** WebSocket notification channel — see [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS.md).
 
-**v1.2.0 (planned):** `@esr/client` `EsrSync` facade — see [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md).
+**v1.2.0 (shipped):** `@senkronla/client` `EsrSync` facade — see [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md).
+
+**v1.2.0:** Multiple documents per namespace — server, client SDK, WS subscribe, docs — see [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md).
 
 ---
 
 | Field | Value |
 |-------|-------|
-| Spec version | 1.1.0 |
+| Spec version | 1.2.0 (multi-document in v1.2) |
 | Protocol magic | `ESR-DOC1` |
 | API prefix | `/v1` |
 | Min. TLS | 1.2 |

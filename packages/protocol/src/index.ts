@@ -1,7 +1,7 @@
 /** ESR-DOC1 envelope magic string */
 export const ESR_DOC1_MAGIC = 'ESR-DOC1' as const
 
-/** Supported envelope schema version */
+/** Supported envelope schema version (v1) */
 export const ENVELOPE_SCHEMA_VERSION = 1 as const
 
 export { isValidNamespaceId, generateNamespaceId } from './identity.js'
@@ -21,11 +21,21 @@ export {
   type RecoveryKeyProof,
 } from './recovery.js'
 export {
+  DocumentIdSchema,
+  DOCUMENT_ID_PATTERN,
+  isValidDocumentId,
+} from './document-id.js'
+export {
+  ENVELOPE_SCHEMA_VERSION_V2,
   EsrDocEnvelopeSchema,
+  EsrDocEnvelopeV1Schema,
+  EsrDocEnvelopeV2Schema,
   InnerContentMagic,
   parseEnvelope,
   verifyEnvelope,
   type EsrDocEnvelope,
+  type EsrDocEnvelopeV1,
+  type EsrDocEnvelopeV2,
   type InnerContentMagic as InnerContentMagicType,
   type VerifyEnvelopeFailure,
   type VerifyEnvelopeOptions,

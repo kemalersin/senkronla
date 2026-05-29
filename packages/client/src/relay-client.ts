@@ -159,12 +159,25 @@ export class RelayClient {
     return data
   }
 
-  async getHeadMeta(namespaceId: string): Promise<HeadMeta | null> {
+  async listDocuments(
+    namespaceId: string,
+  ): Promise<{ documents: Array<HeadMeta & { documentId: string }> }> {
+    const token = await this.authToken()
+    const { data } = await this.request<{ documents: Array<HeadMeta & { documentId: string }> }>(
+      'GET',
+      `/namespaces/${namespaceId}/documents`,
+      undefined,
+      token,
+    )
+    return data
+  }
+
+  async getHeadMeta(namespaceId: string, documentId = 'primary'): Promise<HeadMeta | null> {
     const token = await this.authToken()
     try {
       const { data } = await this.request<HeadMeta>(
         'GET',
-        `/namespaces/${namespaceId}/documents/primary/head/meta`,
+        `/namespaces/${namespaceId}/documents/${documentId}/head/meta`,
         undefined,
         token,
       )
@@ -177,11 +190,11 @@ export class RelayClient {
     }
   }
 
-  async getHead(namespaceId: string): Promise<EsrDocEnvelope> {
+  async getHead(namespaceId: string, documentId = 'primary'): Promise<EsrDocEnvelope> {
     const token = await this.authToken()
     const { data } = await this.request<EsrDocEnvelope>(
       'GET',
-      `/namespaces/${namespaceId}/documents/primary/head`,
+      `/namespaces/${namespaceId}/documents/${documentId}/head`,
       undefined,
       token,
     )
@@ -190,9 +203,10 @@ export class RelayClient {
 
   async pushDocument(input: PushDocumentInput): Promise<PushDocumentResult> {
     const token = await this.authToken()
+    const documentId = input.documentId ?? 'primary'
     const { data } = await this.request<PushDocumentResult>(
       'PUT',
-      `/namespaces/${input.namespaceId}/documents/primary`,
+      `/namespaces/${input.namespaceId}/documents/${documentId}`,
       {
         expectedRevision: input.expectedRevision ?? null,
         envelope: input.envelope,

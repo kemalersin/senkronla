@@ -63,7 +63,7 @@ describe('SyncEngine', () => {
       pushDocument: vi.fn(),
     } as unknown as RelayClient
 
-    const engine = new SyncEngine(client, adapter, state)
+    const engine = new SyncEngine(client, adapter, state, 'primary')
     const result = await engine.syncFull()
 
     expect(result.status).toBe('ok')
@@ -84,7 +84,7 @@ describe('SyncEngine', () => {
       pushDocument: vi.fn(),
     } as unknown as RelayClient
 
-    const engine = new SyncEngine(client, adapter, state)
+    const engine = new SyncEngine(client, adapter, state, 'primary')
     const result = await engine.syncFull()
 
     expect(result.status).toBe('conflict')

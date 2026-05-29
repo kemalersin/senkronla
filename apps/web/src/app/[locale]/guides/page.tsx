@@ -17,6 +17,7 @@ interface PageProps {
 const sectionKeys = [
   'concepts',
   'checklist',
+  'multi-document',
   'first-device',
   'second-device',
   'recovery',
@@ -46,7 +47,8 @@ export default async function GuidesPage({ params }: PageProps) {
     ['recovery phrase', t.rich('sections.concepts.rows.recoveryPhrase', withDocRich())],
     ['revision', t.rich('sections.concepts.rows.revision', withDocRich())],
     ['envelope', t.rich('sections.concepts.rows.envelope', withDocRich())],
-    ['primary document', t.rich('sections.concepts.rows.primaryDocument', withDocRich())],
+    ['document', t.rich('sections.concepts.rows.document', withDocRich())],
+    ['primary', t.rich('sections.concepts.rows.primaryDocument', withDocRich())],
     ['pairing code', t.rich('sections.concepts.rows.pairingCode', withDocRich())],
   ]
 
@@ -101,6 +103,15 @@ export default async function GuidesPage({ params }: PageProps) {
         <DocStepList steps={checklistSteps} />
         <p>
           <Link href="/guides/esr">{t('esrCalloutLink')}</Link>
+        </p>
+      </DocSection>
+
+      <DocSection id="multi-document" title={t('sections.multiDocument.title')}>
+        <p>{t.rich('sections.multiDocument.p1', withDocRich())}</p>
+        <p>{t.rich('sections.multiDocument.p2', withDocRich())}</p>
+        <CodeBlock code={snippets.multiDocumentSync} language="typescript" />
+        <p>
+          <Link href="/sdk#multi-document">{t('sections.multiDocument.sdkLink')}</Link>
         </p>
       </DocSection>
 

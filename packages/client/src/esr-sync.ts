@@ -7,6 +7,7 @@ import {
 } from '@senkronla/protocol'
 import { EsrError, isEsrError, isOfflineError } from './errors.js'
 import { EsrSyncScheduler } from './esr-sync-scheduler.js'
+import { resolveDocumentSlots } from './esr-sync-slots.js'
 import { NotificationClient } from './notification-client.js'
 import { RelayClient } from './relay-client.js'
 import { SyncEngine } from './sync-engine.js'
@@ -22,6 +23,13 @@ import type {
   PairingHostResult,
   SyncRunResult,
 } from './types.js'
+
+interface DocumentSyncSlot {
+  documentId: string
+  adapter: DocumentAdapter
+  state: SyncStateStore
+  engine: SyncEngine
+}
 
 function defaultDeviceLabel(): string {
   if (typeof navigator !== 'undefined' && navigator.userAgent) {
@@ -41,15 +49,30 @@ function buildLimitsFromDetails(details: unknown): NamespaceLimits {
   }
 }
 
+function aggregateStatus(slots: DocumentSyncSlot[], fallback: EsrSyncStatus): EsrSyncStatus {
+  if (slots.some((slot) => slot.engine.getPendingConflict())) {
+    return 'conflict'
+  }
+
+  if (slots.some((slot) => slot.state.hasLocalChanges())) {
+    return 'pending_push'
+  }
+
+  return fallback
+}
+
 export class EsrSync {
   readonly namespaceId: string
   readonly relayUrl: string
   readonly relay: RelayClient
+  readonly documentIds: readonly string[]
+  /** Primary (or sole) document adapter — backward compatible shorthand. */
+  readonly adapter: DocumentAdapter
 
   private readonly options: EsrSyncConnectOptions
-  private readonly adapter: DocumentAdapter
-  private readonly state: SyncStateStore
-  private readonly engine: SyncEngine
+  private readonly slots: DocumentSyncSlot[]
+  private readonly slotById: Map<string, DocumentSyncSlot>
+  private readonly sharedState: SyncStateStore
   private notifications: NotificationClient | null
   private scheduler: EsrSyncScheduler | null = null
   private enabled: boolean
@@ -58,56 +81,68 @@ export class EsrSync {
 
   private constructor(
     options: EsrSyncConnectOptions,
-    adapter: DocumentAdapter,
+    slots: DocumentSyncSlot[],
     relay: RelayClient,
-    state: SyncStateStore,
-    engine: SyncEngine,
+    sharedState: SyncStateStore,
     notifications: NotificationClient | null,
     enabled: boolean,
   ) {
     this.options = options
-    this.adapter = adapter
-    this.namespaceId = adapter.namespaceId()
+    this.slots = slots
+    this.slotById = new Map(slots.map((slot) => [slot.documentId, slot]))
+    this.documentIds = slots.map((slot) => slot.documentId)
+    this.adapter = slots.find((slot) => slot.documentId === 'primary')?.adapter ?? slots[0]!.adapter
+    this.namespaceId = this.adapter.namespaceId()
     this.relayUrl = options.relayUrl.replace(/\/$/, '')
     this.relay = relay
-    this.state = state
-    this.engine = engine
+    this.sharedState = sharedState
     this.notifications = notifications
     this.enabled = enabled
     this.status = enabled ? 'idle' : 'disabled'
   }
 
   static async connect(options: EsrSyncConnectOptions): Promise<EsrSync> {
-    const adapter = options.document
+    const resolved = resolveDocumentSlots(options)
+    const namespaceId = resolved[0]!.adapter.namespaceId()
     const clientDeviceId = await getOrCreateClientDeviceId(options.storage)
-    const state = new SyncStateStore(options.storage, adapter.namespaceId())
+    const sharedState = new SyncStateStore(options.storage, namespaceId, 'primary')
 
     const relay = new RelayClient({
       baseUrl: options.relayUrl,
       clientDeviceId,
-      getDeviceToken: () => state.getDeviceToken(),
-      onDeviceToken: (token) => state.setDeviceToken(token),
+      getDeviceToken: () => sharedState.getDeviceToken(),
+      onDeviceToken: (token) => sharedState.setDeviceToken(token),
       fetch: options.fetch,
     })
 
-    const engine = new SyncEngine(relay, adapter, state, {
-      onConflict: options.onConflict,
-    })
+    const slots: DocumentSyncSlot[] = []
 
-    if (options.pushDebounceMs !== undefined) {
-      engine.setPushDebounceMs(options.pushDebounceMs)
+    for (const { documentId, adapter } of resolved) {
+      const state = new SyncStateStore(options.storage, namespaceId, documentId)
+      await state.migrateLegacyRevisionState()
+
+      const engine = new SyncEngine(relay, adapter, state, documentId, {
+        onConflict: options.onConflict,
+      })
+
+      if (options.pushDebounceMs !== undefined) {
+        engine.setPushDebounceMs(options.pushDebounceMs)
+      }
+
+      slots.push({ documentId, adapter, state, engine })
     }
 
-    const enabled = options.enabled !== false
     let instanceRef!: EsrSync
 
     const notificationsEnabled = options.notificationsEnabled !== false
+    const documentIds = slots.map((slot) => slot.documentId)
     const notifications = notificationsEnabled
       ? new NotificationClient({
           relayUrl: options.relayUrl,
           client: relay,
-          namespaceId: adapter.namespaceId(),
-          getDeviceToken: () => state.getDeviceToken(),
+          namespaceId,
+          documentIds,
+          getDeviceToken: () => sharedState.getDeviceToken(),
           mode:
             options.notificationMode ??
             (options.websocketEnabled === false ? 'poll_only' : 'ws_with_poll_fallback'),
@@ -117,12 +152,17 @@ export class EsrSync {
           onConnectionStateChange: () => {
             instanceRef.handleNotificationStateChange()
           },
-          onHeadChanged: async (meta) => {
+          onHeadChanged: async ({ documentId, meta }) => {
             if (!instanceRef.enabled) {
               return
             }
 
-            const result = await engine.handleRemoteHeadMeta(meta)
+            const slot = instanceRef.slotById.get(documentId)
+            if (!slot) {
+              return
+            }
+
+            const result = await slot.engine.handleRemoteHeadMeta(meta)
             if (result.status === 'conflict' && result.ctx) {
               await instanceRef.handleConflict(result.ctx)
             }
@@ -130,7 +170,8 @@ export class EsrSync {
         })
       : null
 
-    const instance = new EsrSync(options, adapter, relay, state, engine, notifications, enabled)
+    const enabled = options.enabled !== false
+    const instance = new EsrSync(options, slots, relay, sharedState, notifications, enabled)
     instanceRef = instance
 
     if (enabled) {
@@ -146,6 +187,23 @@ export class EsrSync {
     }
 
     return instance
+  }
+
+  getSlot(documentId: string): DocumentSyncSlot | undefined {
+    return this.slotById.get(documentId)
+  }
+
+  private slotsForDocument(documentId?: string): DocumentSyncSlot[] {
+    if (!documentId) {
+      return this.slots
+    }
+
+    const slot = this.slotById.get(documentId)
+    if (!slot) {
+      throw new EsrError('ESR_CLIENT_UNKNOWN_DOCUMENT_ID', `Unknown documentId: ${documentId}`)
+    }
+
+    return [slot]
   }
 
   enable(): void {
@@ -187,14 +245,14 @@ export class EsrSync {
     const namespaceId = this.resolveNamespaceId(opts?.namespaceId)
     const namespaceLabel = opts?.namespaceLabel ?? this.adapter.namespaceLabel()
 
-    const token = await this.state.getDeviceToken()
+    const token = await this.sharedState.getDeviceToken()
     if (token) {
       try {
         await this.relay.getNamespace(namespaceId)
         return { namespaceId, created: false }
       } catch (error) {
         if (isEsrError(error) && (error.code === 'DEVICE_TOKEN_INVALID' || error.code === 'UNAUTHORIZED')) {
-          await this.state.clearDeviceToken()
+          await this.sharedState.clearDeviceToken()
         } else if (!isOfflineError(error)) {
           await this.handleDeviceLimit(error)
           throw error
@@ -231,11 +289,12 @@ export class EsrSync {
     await this.options.onRecoveryPhrase({ phrase, namespaceId })
 
     if (this.options.persistRecoveryPhrase) {
-      await this.state.setRecoveryPhrase(phrase)
+      await this.sharedState.setRecoveryPhrase(phrase)
     }
 
-    this.state.markLocalMutation()
-    await this.engine.push()
+    const primarySlot = this.slotById.get('primary') ?? this.slots[0]!
+    primarySlot.state.markLocalMutation()
+    await primarySlot.engine.push()
 
     return { namespaceId, created: true, recoveryPhrase: phrase }
   }
@@ -264,12 +323,14 @@ export class EsrSync {
     await this.sync()
   }
 
-  async sync(): Promise<SyncRunResult> {
+  async sync(documentId?: string): Promise<SyncRunResult> {
     if (!this.enabled) {
       return { status: 'ok' }
     }
 
-    const token = await this.state.getDeviceToken()
+    const targets = this.slotsForDocument(documentId)
+
+    const token = await this.sharedState.getDeviceToken()
     if (!token) {
       const error = new EsrError(
         'ESR_CLIENT_NO_TOKEN',
@@ -282,29 +343,39 @@ export class EsrSync {
     this.setStatus('syncing')
 
     try {
-      let result = await this.engine.syncFull()
+      let firstConflict: ConflictContext | undefined
 
-      if (result.status === 'offline') {
-        this.setStatus('offline')
-        return { status: 'offline' }
+      for (const slot of targets) {
+        let result = await slot.engine.syncFull()
+
+        if (result.status === 'offline') {
+          this.setStatus('offline')
+          return { status: 'offline' }
+        }
+
+        if (result.status === 'conflict' && result.ctx) {
+          result = await this.handleConflict(result.ctx)
+        }
+
+        if (result.status === 'conflict' && result.ctx) {
+          firstConflict ??= result.ctx
+          continue
+        }
+
+        if (result.status === 'error' && result.error) {
+          this.recordError(result.error)
+          return { status: 'error', error: result.error }
+        }
       }
 
-      if (result.status === 'conflict' && result.ctx) {
-        result = await this.handleConflict(result.ctx)
-      }
-
-      if (result.status === 'conflict' && result.ctx) {
+      if (firstConflict) {
         this.setStatus('conflict')
-        return { status: 'conflict', ctx: result.ctx }
-      }
-
-      if (result.status === 'error' && result.error) {
-        this.recordError(result.error)
-        return { status: 'error', error: result.error }
+        return { status: 'conflict', ctx: firstConflict }
       }
 
       this.lastError = null
-      this.setStatus(this.notifications?.isConnected() ? 'ws_connected' : 'idle')
+      const base = this.notifications?.isConnected() ? 'ws_connected' : 'idle'
+      this.setStatus(aggregateStatus(this.slots, base))
       return { status: 'ok' }
     } catch (error) {
       if (isOfflineError(error)) {
@@ -319,19 +390,29 @@ export class EsrSync {
     }
   }
 
-  notifyLocalChange(): void {
+  notifyLocalChange(documentId?: string): void {
     if (!this.enabled) {
       return
     }
 
+    const targets = this.slotsForDocument(documentId)
+
+    for (const slot of targets) {
+      slot.engine.notifyLocalChange()
+      this.options.onDocumentStatusChange?.(slot.documentId, 'pending_push')
+    }
+
     this.setStatus('pending_push')
-    this.engine.notifyLocalChange()
   }
 
-  async flushPush(): Promise<void> {
-    const result = await this.engine.flushPush()
-    if (result.status === 'conflict' && result.ctx) {
-      await this.handleConflict(result.ctx)
+  async flushPush(documentId?: string): Promise<void> {
+    const targets = this.slotsForDocument(documentId)
+
+    for (const slot of targets) {
+      const result = await slot.engine.flushPush()
+      if (result.status === 'conflict' && result.ctx) {
+        await this.handleConflict(result.ctx)
+      }
     }
   }
 
@@ -366,14 +447,22 @@ export class EsrSync {
     await this.sync()
   }
 
-  async resolveConflict(choice: 'remote' | 'local'): Promise<void> {
-    const result = await this.engine.resolveConflict(choice)
-    if (result.status === 'conflict' && result.ctx) {
-      this.setStatus('conflict')
-      return
+  async resolveConflict(choice: 'remote' | 'local', documentId?: string): Promise<void> {
+    const targets = documentId
+      ? this.slotsForDocument(documentId)
+      : this.slots.filter((slot) => slot.engine.getPendingConflict())
+
+    for (const slot of targets) {
+      const result = await slot.engine.resolveConflict(choice)
+      if (result.status === 'conflict' && result.ctx) {
+        this.setStatus('conflict')
+        this.options.onDocumentStatusChange?.(slot.documentId, 'conflict')
+        return
+      }
     }
 
-    this.setStatus(this.notifications?.isConnected() ? 'ws_connected' : 'idle')
+    const base = this.notifications?.isConnected() ? 'ws_connected' : 'idle'
+    this.setStatus(aggregateStatus(this.slots, base))
   }
 
   getStatus(): EsrSyncStatus {
@@ -399,6 +488,7 @@ export class EsrSync {
 
   private async handleConflict(ctx: ConflictContext) {
     this.setStatus('conflict')
+    this.options.onDocumentStatusChange?.(ctx.documentId, 'conflict')
     const choice = await this.options.onConflict(ctx)
 
     if (choice === 'cancel') {
@@ -407,7 +497,14 @@ export class EsrSync {
       return { status: 'error' as const, error }
     }
 
-    return this.engine.resolveConflict(choice)
+    const slot = this.slotById.get(ctx.documentId)
+    if (!slot) {
+      const error = new EsrError('ESR_CLIENT_UNKNOWN_DOCUMENT_ID', `Unknown documentId: ${ctx.documentId}`)
+      this.recordError(error)
+      return { status: 'error' as const, error }
+    }
+
+    return slot.engine.resolveConflict(choice)
   }
 
   private async handleDeviceLimit(error: unknown): Promise<void> {

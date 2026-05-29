@@ -19,6 +19,7 @@ Tüm API hataları aşağıdaki JSON gövdesini kullanır:
 | HTTP | code | Açıklama | details |
 |------|------|----------|---------|
 | 400 | VALIDATION_ERROR | Request body veya path geçersiz | `{ fields: [...] }` |
+| 400 | INVALID_DOCUMENT_ID | Path `documentId` formatı geçersiz | `{ documentId }` |
 | 400 | PAIRING_CODE_INVALID | Kod yanlış, süresi dolmuş veya kullanılmış | — |
 | 400 | UNLOCK_CODE_INVALID | Unlock kodu geçersiz veya süresi dolmuş | — |
 | 401 | UNAUTHORIZED | Authorization header eksik | — |
@@ -29,6 +30,8 @@ Tüm API hataları aşağıdaki JSON gövdesini kullanır:
 | 403 | DEVICE_LIMIT_BLOCKED | Slot dolu; mod block, ödeme yok | `{ maxDevices, activeDevices }` |
 | 403 | LAST_DEVICE_PROTECTED | Son cihaz kaldırılamaz | — |
 | 403 | CONTENT_TYPE_NOT_ALLOWED | contentType whitelist'te yok | — |
+| 403 | DOCUMENT_LIMIT_REACHED | `maxDocumentsPerNamespace` aşıldı | `{ maxDocumentsPerNamespace, documentCount }` |
+| 403 | DOCUMENT_ID_NOT_ALLOWED | `documentId` `allowedDocumentIds` içinde değil | `{ documentId, allowedDocumentIds }` |
 | 404 | NOT_FOUND | Genel kayıt yok | — |
 | 404 | NAMESPACE_NOT_FOUND | Namespace bulunamadı | — |
 | 404 | DOCUMENT_NOT_FOUND | Henüz push yok (head yok) | — |
@@ -38,7 +41,8 @@ Tüm API hataları aşağıdaki JSON gövdesini kullanır:
 | 409 | UNLOCK_CODE_ALREADY_REDEEMED | Kod daha önce kullanılmış | — |
 | 413 | ENVELOPE_TOO_LARGE | maxEnvelopeBytes aşıldı | `{ maxBytes, actualBytes }` |
 | 422 | ENVELOPE_INVALID | Magic, schema, sha256 hatası | `{ reason: string }` |
-| 429 | RATE_LIMIT_EXCEEDED | Rate limit | `{ retryAfterSeconds }` |
+| 422 | ENVELOPE_DOCUMENT_MISMATCH | Zarf `documentId` ≠ path `documentId` | `{ envelopeDocumentId, pathDocumentId }` |
+| 429 | RATE_LIMIT_EXCEEDED | Rate limit | `{ retryAfterSeconds, action, rateLimit }` — `rateLimit`: `action`, `limit`, `remaining` (0), `resetAfterSeconds`, `windowSeconds`; ayrıca `Retry-After` ve `RateLimit-*` başlıkları |
 | 500 | INTERNAL_ERROR | Beklenmeyen sunucu hatası | — |
 
 ## İstemci eşlemesi (önerilen)

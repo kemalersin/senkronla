@@ -47,6 +47,8 @@ pairing:
 
 sync:
   maxEnvelopeBytes: 52428800
+  maxDocumentsPerNamespace: 32   # 0 = unlimited; multi-document cap per namespace
+  allowedDocumentIds: []         # empty = any valid id; e.g. [primary, settings]
   allowedContentTypes: []
 
 unlock:

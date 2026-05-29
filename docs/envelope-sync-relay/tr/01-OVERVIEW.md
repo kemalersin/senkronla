@@ -27,7 +27,7 @@ Sunucu **belge biriminde** çalışır; entity/record seviyesinde değil.
 | Terim | Tanım |
 |-------|--------|
 | **Namespace** | Senkronize edilen mantıksal kapsayıcı. Genelde bir workspace, vault veya profil. **UUID v4 zorunlu** (global benzersizlik). |
-| **Document** | Namespace içindeki tek belge. v1'de yalnızca `primary` desteklenir. |
+| **Document** | Namespace içindeki snapshot (`documentId`, varsayılan `primary`). Namespace başına birden fazla bağımsız belge — [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md). |
 | **Envelope (ESR-DOC1)** | Sunucuya yazılan dış JSON zarf; metadata + opaque payload. |
 | **Payload** | Uygulamanın ürettiği iç JSON string (plain veya uygulama tarafından şifrelenmiş). |
 | **Revision** | Monoton benzersiz sürüm kimliği (ULID önerilir). Her başarılı push yeni revision. |
@@ -80,7 +80,7 @@ Client A push eder → relay `head_changed` WS yayınlar → Client B HTTP pull 
 
 ## 6. Non-goals (v1)
 
-- Çoklu document per namespace (v2)
+- Namespace başına çoklu döküman — **belgede:** [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) (spec v1.2)
 - WebDAV/S3 transport (ayrı client transport; server her zaman HTTP)
 - Federasyon (çoklu relay birleşimi)
 - Admin web UI (v1: config dosyası + CLI yeterli; admin API opsiyonel)

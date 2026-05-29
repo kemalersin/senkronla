@@ -274,15 +274,28 @@ import { RelayClient, SyncEngine } from '@esr/client'
 
 Agent bu script'i çalışır halde teslim etmeli.
 
-## 10. Bilinen sınırlamalar (v1 release notes)
+## 10. Çoklu döküman (spec v1.2)
 
-- Single document `primary` per namespace
+**Spec:** [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) (onay: 2026-05-29). **Uygulandı** (2026-05).
+
+| Alt faz | Kapsam | Durum |
+|---------|--------|--------|
+| 7a | Sunucu: parametrik rotalar, blob, schemaVersion 2, `GET /documents` | tamam |
+| 7b | WebSocket `documentId` + opsiyonel subscribe filtresi | tamam |
+| 7c | İstemci: RelayClient, SyncState, EsrSync `documents[]` | tamam |
+| 7d | OpenAPI, web dokümantasyonu, operatör rehberi, örnekler | tamam |
+
+**Bitti tanımı:** Aynı namespace'te iki döküman bağımsız sync; primary-only istemci + güncel sunucu değişmeden; doc 15 §13 entegrasyon testleri.
+
+## 11. Bilinen sınırlamalar (güncel sürüm)
+
+- Çoklu belge için `documents[]` kullanan `@senkronla/client` gerekir (bkz. belge 14 §5.2)
 - No payment webhook (manual unlock only)
 - Filesystem blob only
 - No revision history UI
 - English/Turkish error messages — implementer picks one for server; client maps codes
 
-## 11. Agent talimatları
+## 12. Agent talimatları
 
 Implementasyon agent'ı:
 

@@ -9,7 +9,7 @@ import type { RateLimitQuota } from '../services/rate-limit-service.js'
 describe('rate-limit-headers', () => {
   it('maps actions to header prefixes', () => {
     expect(rateLimitHeaderPrefix('global_ip')).toBe('RateLimit')
-    expect(rateLimitHeaderPrefix('put_primary')).toBe('RateLimit-Push')
+    expect(rateLimitHeaderPrefix('put_document')).toBe('RateLimit-PutDocument')
     expect(rateLimitHeaderPrefix('recover')).toBe('RateLimit-Recover')
   })
 
@@ -23,7 +23,7 @@ describe('rate-limit-headers', () => {
         windowSeconds: 60,
       },
       {
-        action: 'put_primary',
+        action: 'put_document',
         limit: 120,
         remaining: 119,
         resetAfterSeconds: 3600,

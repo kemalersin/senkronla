@@ -2,6 +2,7 @@ import websocket from '@fastify/websocket'
 import type { FastifyInstance } from 'fastify'
 import type { WebSocket } from 'ws'
 import {
+  isValidDocumentId,
   WS_SUBPROTOCOL,
   parseWsClientMessage,
   type WsServerMessage,
@@ -218,6 +219,35 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
             clearTimeout(pongTimer)
             pongTimer = undefined
           }
+          return
+        }
+
+        if (message.type === 'subscribe') {
+          const ids =
+            message.documentIds ??
+            (message.documentId ? [message.documentId] : null)
+
+          if (!ids || ids.length === 0) {
+            sendMessage(socket, {
+              type: 'error',
+              code: 'WS_INVALID_SUBSCRIBE',
+              message: 'subscribe requires documentIds or documentId',
+            })
+            return
+          }
+
+          for (const documentId of ids) {
+            if (!isValidDocumentId(documentId)) {
+              sendMessage(socket, {
+                type: 'error',
+                code: 'WS_INVALID_SUBSCRIBE',
+                message: `Invalid documentId: ${documentId}`,
+              })
+              return
+            }
+          }
+
+          hub.setDocumentSubscription(namespaceId, socket, ids)
         }
       })
 

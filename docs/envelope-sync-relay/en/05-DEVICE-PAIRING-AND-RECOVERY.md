@@ -149,7 +149,7 @@ sequenceDiagram
 
 Every authenticated device can remove **any** device in the same namespace (universal simplicity).
 
-v2 option: host only or `canManageDevices` flag.
+Future option: host only or `canManageDevices` flag.
 
 ## 5. Host concept
 

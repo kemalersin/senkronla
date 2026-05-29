@@ -1,4 +1,4 @@
-# 14 — `EsrSync` Facade (`@esr/client`)
+# 14 — `EsrSync` Facade (`@senkronla/client`)
 
 > **Varsayılan entegrasyon yolu.** Uygulamalar önce bu belgeyi okur; düşük seviye `RelayClient` yalnızca özel araçlar için (doc 09 § Advanced).
 
@@ -58,14 +58,14 @@ export function createLocalStorageAdapter(): EsrStorage
 export function createMemoryStorageAdapter(): EsrStorage
 ```
 
-SDK saklar (namespace başına scope `namespaceId` ile):
+SDK anahtarları `{namespaceId}:{documentId}:{mantıksalAnahtar}` biçimindedir (önek içermeyen eski `knownRemoteRevision` ilk okumada `primary`'ye taşınır).
 
-| Anahtar (mantıksal) | İçerik |
-|---------------------|--------|
-| `deviceToken` | Bearer token |
-| `knownRemoteRevision` | Son uzak head revision |
-| `recoveryPhrase` | Opsiyonel — yalnızca `persistRecoveryPhrase: true` ise |
-| Global `clientDeviceId` | Kalıcı cihaz UUID |
+| Anahtar (mantıksal) | Kapsam | İçerik |
+|---------------------|--------|--------|
+| `deviceToken` | namespace | Bearer token (oturumdaki tüm belgeler paylaşır) |
+| `knownRemoteRevision` | `documentId` başına | O belgenin son uzak head revizyonu |
+| `recoveryPhrase` | namespace | Opsiyonel — yalnızca `persistRecoveryPhrase: true` |
+| `clientDeviceId` | global | Kalıcı kurulum UUID |
 
 ---
 
@@ -106,11 +106,21 @@ export function createDocumentAdapter(opts: {
 ## 5. `EsrSync.connect()`
 
 ```typescript
+export interface EsrSyncDocumentSlot {
+  /** Yalnızca ilk slotta varsayılan `primary`; ek slotlarda zorunlu */
+  documentId?: string
+  adapter: DocumentAdapter
+}
+
 export interface EsrSyncConnectOptions {
   /** Örn. https://sync.example.com/v1 — sondaki slash yok */
   relayUrl: string
 
-  document: DocumentAdapter
+  /** Tek belge kısayolu (ilk slot = `primary`) */
+  document?: DocumentAdapter
+
+  /** Aynı namespace içinde çoklu belge  — bkz. §5.2 */
+  documents?: EsrSyncDocumentSlot[]
 
   storage: EsrStorage
 
@@ -149,12 +159,16 @@ export interface EsrSyncConnectOptions {
   /** Genel hata rozeti / log */
   onError?: (err: EsrError) => void
 
-  /** Durum rozeti (opsiyonel) */
+  /** Genel durum rozeti (opsiyonel) */
   onStatusChange?: (status: EsrSyncStatus) => void
+
+  /** Belge bazlı durum (opsiyonel; çoklu belgede önerilir) */
+  onDocumentStatusChange?: (documentId: string, status: EsrSyncStatus) => void
 }
 
 export interface ConflictContext {
   namespaceId: string
+  documentId: string
   knownRevision: string | null
   remoteRevision: string
   remoteMeta: HeadMeta
@@ -184,9 +198,13 @@ export class EsrSync {
   /** Mevcut namespace + token ile bağlan; yoksa ensureNamespace gerekir */
   readonly namespaceId: string
   readonly relayUrl: string
+  /** Bağlantı sırasındaki belge id'leri */
+  readonly documentIds: readonly string[]
 
   /** Gelişmiş: doğrudan HTTP istemci */
   readonly relay: RelayClient
+
+  getSlot(documentId: string): DocumentSyncSlot | undefined
 
   // --- Yaşam döngüsü ---
 
@@ -216,14 +234,14 @@ export class EsrSync {
 
   // --- Senkron ---
 
-  /** pull → conflict? → push — tam döngü */
-  sync(): Promise<SyncRunResult>
+  /** pull → conflict? → push — tam döngü; documentId verilmezse tüm slotlar */
+  sync(documentId?: string): Promise<SyncRunResult>
 
-  /** Yerel veri değişti (debounce push) */
-  notifyLocalChange(): void
+  /** Yerel veri değişti (debounce push); documentId verilmezse tüm slotlar */
+  notifyLocalChange(documentId?: string): void
 
   /** Bekleyen push'u hemen gönder (logout öncesi) */
-  flushPush(): Promise<void>
+  flushPush(documentId?: string): Promise<void>
 
   // --- Cihaz / limit ---
 
@@ -237,7 +255,7 @@ export class EsrSync {
 
   // --- Conflict (manuel; onConflict yeterli çoğu zaman) ---
 
-  resolveConflict(choice: 'remote' | 'local'): Promise<void>
+  resolveConflict(choice: 'remote' | 'local', documentId?: string): Promise<void>
 
   getStatus(): EsrSyncStatus
   getLastError(): EsrError | null
@@ -280,8 +298,39 @@ ELSE IF 409 NAMESPACE_EXISTS AND token yok:
 `namespaceId` kaynağı:
 
 1. `opts.namespaceId`
-2. yoksa `document.namespaceId()`
+2. yoksa ilk slot `adapter.namespaceId()`
 3. ikisi de geçersiz/boşsa `generateNamespaceId()` — uygulama dönen id'yi kalıcı kaydetmeli
+
+### 5.2 Çoklu belge
+
+Bir namespace'te **bağımsız anlık görüntüler** (ör. uygulama verisi + ayarlar) için kullanın. Her slot için ayrı `DocumentAdapter` gerekir. Tüm adapter'lar **aynı** `namespaceId()` döndürmelidir.
+
+```typescript
+const sync = await EsrSync.connect({
+  relayUrl: settings.relayUrl,
+  storage: createLocalStorageAdapter(),
+  documents: [
+    { adapter: appDocumentAdapter },
+    { documentId: 'settings', adapter: settingsDocumentAdapter },
+  ],
+  onRecoveryPhrase: async ({ phrase }) => ui.showRecovery(phrase),
+  onConflict: async (ctx) => {
+    console.log('Çakışma:', ctx.documentId)
+    return ui.askConflict(ctx.remoteMeta.writtenAt)
+  },
+  onDocumentStatusChange: (documentId, status) => ui.setDocBadge(documentId, status),
+})
+
+await sync.ensureNamespace()
+db.onAppChange(() => sync.notifyLocalChange('primary'))
+settings.onChange(() => sync.notifyLocalChange('settings'))
+await sync.sync('settings') // isteğe bağlı: yalnızca bir belge için tam döngü
+```
+
+- `primary` dışı zarflar `schemaVersion: 2` kullanır (`buildEnvelope` otomatik ayarlar).
+- `NotificationClient` tüm `documentIds` ile subscribe olur.
+- Örnek: `examples/multi-document-sync.ts` (`pnpm example:multi-document`).
+- Spec: [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) · REST: [04-API-REFERENCE.md](./04-API-REFERENCE.md).
 
 ---
 
@@ -291,8 +340,8 @@ ELSE IF 409 NAMESPACE_EXISTS AND token yok:
 
 | Tetikleyici | Aksiyon |
 |-------------|---------|
-| `notifyLocalChange()` | debounce → `push()` |
-| WS `head_changed` | `sync()` veya meta-only conflict check |
+| `notifyLocalChange(id?)` | debounce → bir veya tüm slotlar için `push()` |
+| WS `head_changed` | `documentId` başına → `sync()` veya meta çakışma kontrolü |
 | `document.visibilitychange` → visible | `sync()` |
 | `window.focus` | `sync()` |
 | interval (WS kopuk / yok) | `sync()` — `pullIntervalDisconnectedMs` |
@@ -405,8 +454,9 @@ Vitest: mock relay veya testcontainers; uygulama yalnızca adapter + callback mo
 - [ ] `EsrStorage` (veya `createLocalStorageAdapter`)
 - [ ] `EsrSync.connect` + `onRecoveryPhrase` + `onConflict`
 - [ ] `ensureNamespace` / `startPairing` / `joinPairing` UX
-- [ ] `notifyLocalChange` + `sync` hook'ları
+- [ ] `notifyLocalChange` + `sync` hook'ları (çoklu belgede `documentId` ile)
 - [ ] (Opsiyonel) `onDeviceLimit`, `redeemUnlockCode` UI
+- [ ] (Çoklu belge) `documents[]`, `onDocumentStatusChange`, id başına adapter
 
 ---
 
@@ -432,4 +482,4 @@ packages/client/src/
   index.ts              # public exports
 ```
 
-Faz: [11-IMPLEMENTATION-PLAN.md](./11-IMPLEMENTATION-PLAN.md) — Faz 6c.
+Yayında: spec v1.2 (`EsrSync` çoklu belge). Bkz. [11-IMPLEMENTATION-PLAN.md](./11-IMPLEMENTATION-PLAN.md) §10.

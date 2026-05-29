@@ -90,6 +90,7 @@ export interface RecoverResult {
 export interface PushDocumentInput {
   namespaceId: string
   envelope: EsrDocEnvelope
+  documentId?: string
   expectedRevision?: string | null
 }
 
@@ -126,9 +127,21 @@ export interface EsrStorage {
 
 export interface ConflictContext {
   namespaceId: string
+  documentId: string
   knownRevision: string | null
   remoteRevision: string
   remoteMeta: HeadMeta
+}
+
+export interface EsrSyncDocumentSlot {
+  /** Defaults to `primary` when omitted (single-document apps). */
+  documentId?: string
+  adapter: DocumentAdapter
+}
+
+export interface HeadChangedNotification {
+  documentId: string
+  meta: HeadMeta
 }
 
 export interface DeviceLimitContext {
@@ -151,7 +164,10 @@ export type EsrSyncStatus =
 
 export interface EsrSyncConnectOptions {
   relayUrl: string
-  document: DocumentAdapter
+  /** Shorthand for a single `primary` document. */
+  document?: DocumentAdapter
+  /** Multiple documents in the same namespace. */
+  documents?: EsrSyncDocumentSlot[]
   storage: EsrStorage
   /** Optional fetch override (tests, custom runtime) */
   fetch?: typeof fetch
@@ -171,6 +187,7 @@ export interface EsrSyncConnectOptions {
   onDeviceLimit?: (ctx: DeviceLimitContext) => void | Promise<void>
   onError?: (err: import('./errors.js').EsrError) => void
   onStatusChange?: (status: EsrSyncStatus) => void
+  onDocumentStatusChange?: (documentId: string, status: EsrSyncStatus) => void
 }
 
 export interface EnsureNamespaceResult {

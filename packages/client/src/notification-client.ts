@@ -1,7 +1,13 @@
 import { WS_SUBPROTOCOL, parseWsServerMessage, type WsHeadChanged } from '@senkronla/protocol'
 import { isOfflineError } from './errors.js'
 import type { RelayClient } from './relay-client.js'
-import type { HeadMeta, LimitsChangedPayload, NotificationConnectionState, NotificationMode } from './types.js'
+import type {
+  HeadChangedNotification,
+  HeadMeta,
+  LimitsChangedPayload,
+  NotificationConnectionState,
+  NotificationMode,
+} from './types.js'
 import { buildNotificationWsUrl } from './ws-url.js'
 
 export interface NotificationClientOptions {
@@ -9,7 +15,12 @@ export interface NotificationClientOptions {
   client: RelayClient
   namespaceId: string
   getDeviceToken: () => Promise<string | null>
-  onHeadChanged: (meta: HeadMeta) => void | Promise<void>
+  /** Called when any tracked document head changes. */
+  onHeadChanged: (notification: HeadChangedNotification) => void | Promise<void>
+  /** Documents to poll; defaults to `['primary']`. */
+  documentIds?: string[]
+  /** Send WS `subscribe` after auth (filters server push). Default true. */
+  sendSubscribe?: boolean
   onLimitsChanged?: (limits: LimitsChangedPayload) => void | Promise<void>
   onConnectionStateChange?: (state: NotificationConnectionState) => void
   mode?: NotificationMode
@@ -43,7 +54,8 @@ export class NotificationClient {
   private pollTimer: ReturnType<typeof setInterval> | undefined
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined
   private ws: WebSocket | null = null
-  private lastRevision: string | null = null
+  private readonly documentIds: string[]
+  private readonly lastRevisionByDocument = new Map<string, string>()
   private lastPingAt: number | null = null
   private reconnectAttempt = 0
   private running = false
@@ -53,7 +65,10 @@ export class NotificationClient {
   private onlineHandler: (() => void) | undefined
   private offlineHandler: (() => void) | undefined
 
-  constructor(private readonly options: NotificationClientOptions) {}
+  constructor(private readonly options: NotificationClientOptions) {
+    this.documentIds =
+      options.documentIds?.length ? [...options.documentIds] : ['primary']
+  }
 
   connect(): void {
     if (this.running) {
@@ -262,6 +277,7 @@ export class NotificationClient {
     if (message.type === 'auth_ok') {
       this.reconnectAttempt = 0
       this.setWsConnected(true)
+      this.sendSubscribeMessage()
       this.restartPollLoop()
       await this.catchUpHeadMeta()
       return
@@ -281,10 +297,15 @@ export class NotificationClient {
     }
 
     if (message.type === 'head_changed') {
+      if (!this.documentIds.includes(message.documentId)) {
+        return
+      }
+
       const meta = headChangedToMeta(message)
-      if (this.lastRevision !== meta.revision) {
-        this.lastRevision = meta.revision
-        await this.options.onHeadChanged(meta)
+      const last = this.lastRevisionByDocument.get(message.documentId)
+      if (last !== meta.revision) {
+        this.lastRevisionByDocument.set(message.documentId, meta.revision)
+        await this.options.onHeadChanged({ documentId: message.documentId, meta })
       }
       return
     }
@@ -355,33 +376,43 @@ export class NotificationClient {
   }
 
   private async catchUpHeadMeta(): Promise<void> {
-    try {
-      const meta = await this.options.client.getHeadMeta(this.options.namespaceId)
-      if (!meta) {
-        return
-      }
-
-      if (this.lastRevision !== meta.revision) {
-        this.lastRevision = meta.revision
-        await this.options.onHeadChanged(meta)
-      }
-    } catch (error) {
-      if (!isOfflineError(error)) {
-        throw error
-      }
-    }
+    await this.checkAllDocumentHeads()
   }
 
   private async pollOnce(): Promise<void> {
-    try {
-      const meta = await this.options.client.getHeadMeta(this.options.namespaceId)
-      if (!meta) {
-        return
-      }
+    await this.checkAllDocumentHeads()
+  }
 
-      if (this.lastRevision !== meta.revision) {
-        this.lastRevision = meta.revision
-        await this.options.onHeadChanged(meta)
+  private sendSubscribeMessage(): void {
+    if (this.options.sendSubscribe === false) {
+      return
+    }
+
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return
+    }
+
+    this.ws.send(
+      JSON.stringify({
+        type: 'subscribe',
+        documentIds: this.documentIds,
+      }),
+    )
+  }
+
+  private async checkAllDocumentHeads(): Promise<void> {
+    try {
+      for (const documentId of this.documentIds) {
+        const meta = await this.options.client.getHeadMeta(this.options.namespaceId, documentId)
+        if (!meta) {
+          continue
+        }
+
+        const last = this.lastRevisionByDocument.get(documentId)
+        if (last !== meta.revision) {
+          this.lastRevisionByDocument.set(documentId, meta.revision)
+          await this.options.onHeadChanged({ documentId, meta })
+        }
       }
     } catch (error) {
       if (!isOfflineError(error)) {

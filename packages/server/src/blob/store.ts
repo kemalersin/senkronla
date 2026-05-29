@@ -1,8 +1,16 @@
-import { isAbsolute, join, normalize, relative, resolve, sep } from 'node:path'
+import { isAbsolute, relative, resolve, sep } from 'node:path'
+import { isValidDocumentId } from '@senkronla/protocol'
 import { AppError } from '../errors/app-error.js'
 
-const BLOB_KEY_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/primary\/[A-Za-z0-9_-]+\.json$/i
+const UUID_SEGMENT =
+  '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+const DOCUMENT_ID_SEGMENT = '[a-z][a-z0-9_-]{0,62}'
+const REVISION_SEGMENT = '[A-Za-z0-9_-]+'
+
+const BLOB_KEY_PATTERN = new RegExp(
+  `^${UUID_SEGMENT}/${DOCUMENT_ID_SEGMENT}/${REVISION_SEGMENT}\\.json$`,
+  'i',
+)
 
 export function assertSafeBlobKey(blobKey: string): void {
   if (!BLOB_KEY_PATTERN.test(blobKey)) {
@@ -28,8 +36,12 @@ export function resolveBlobPath(blobRoot: string, blobKey: string): string {
   return absolutePath
 }
 
-export function buildBlobKey(namespaceId: string, revision: string): string {
-  return `${namespaceId}/primary/${revision}.json`
+export function buildBlobKey(namespaceId: string, documentId: string, revision: string): string {
+  if (!isValidDocumentId(documentId)) {
+    throw new AppError(500, 'INTERNAL_ERROR', 'Invalid documentId for blob key')
+  }
+
+  return `${namespaceId}/${documentId}/${revision}.json`
 }
 
 export async function writeBlob(blobRoot: string, blobKey: string, content: string): Promise<void> {

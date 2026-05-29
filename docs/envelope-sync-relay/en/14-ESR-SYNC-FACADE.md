@@ -1,4 +1,4 @@
-# 14 — `EsrSync` Facade (`@esr/client`)
+# 14 — `EsrSync` Facade (`@senkronla/client`)
 
 > **Default integration path.** Applications read this document first; low-level `RelayClient` only for special tooling (doc 09 § Advanced).
 
@@ -58,14 +58,14 @@ export function createLocalStorageAdapter(): EsrStorage
 export function createMemoryStorageAdapter(): EsrStorage
 ```
 
-SDK stores (scoped per namespace via `namespaceId`):
+SDK stores keys as `{namespaceId}:{documentId}:{logicalKey}` (legacy `knownRemoteRevision` without document prefix is migrated to `primary` on first read).
 
-| Key (logical) | Content |
-|---------------|---------|
-| `deviceToken` | Bearer token |
-| `knownRemoteRevision` | Last remote head revision |
-| `recoveryPhrase` | Optional — only when `persistRecoveryPhrase: true` |
-| Global `clientDeviceId` | Persistent device UUID |
+| Key (logical) | Scope | Content |
+|---------------|-------|---------|
+| `deviceToken` | namespace | Bearer token (shared across documents in one session) |
+| `knownRemoteRevision` | per `documentId` | Last remote head revision for that document |
+| `recoveryPhrase` | namespace | Optional — only when `persistRecoveryPhrase: true` |
+| `clientDeviceId` | global | Persistent install UUID |
 
 ---
 
@@ -106,11 +106,21 @@ export function createDocumentAdapter(opts: {
 ## 5. `EsrSync.connect()`
 
 ```typescript
+export interface EsrSyncDocumentSlot {
+  /** Defaults to `primary` for the first slot only; required for additional slots */
+  documentId?: string
+  adapter: DocumentAdapter
+}
+
 export interface EsrSyncConnectOptions {
   /** E.g. https://sync.example.com/v1 — no trailing slash */
   relayUrl: string
 
-  document: DocumentAdapter
+  /** Single-document shorthand (first slot = `primary`) */
+  document?: DocumentAdapter
+
+  /** Multiple documents in one namespace  — see §5.2 */
+  documents?: EsrSyncDocumentSlot[]
 
   storage: EsrStorage
 
@@ -149,12 +159,16 @@ export interface EsrSyncConnectOptions {
   /** General error badge / log */
   onError?: (err: EsrError) => void
 
-  /** Status badge (optional) */
+  /** Aggregate status badge (optional) */
   onStatusChange?: (status: EsrSyncStatus) => void
+
+  /** Per-document status (optional; recommended for multi-document) */
+  onDocumentStatusChange?: (documentId: string, status: EsrSyncStatus) => void
 }
 
 export interface ConflictContext {
   namespaceId: string
+  documentId: string
   knownRevision: string | null
   remoteRevision: string
   remoteMeta: HeadMeta
@@ -184,9 +198,13 @@ export class EsrSync {
   /** Connect with existing namespace + token; ensureNamespace required if missing */
   readonly namespaceId: string
   readonly relayUrl: string
+  /** Document ids in connect order (always includes `primary` when using default slot) */
+  readonly documentIds: readonly string[]
 
   /** Advanced: direct HTTP client */
   readonly relay: RelayClient
+
+  getSlot(documentId: string): DocumentSyncSlot | undefined
 
   // --- Lifecycle ---
 
@@ -216,14 +234,14 @@ export class EsrSync {
 
   // --- Sync ---
 
-  /** pull → conflict? → push — full cycle */
-  sync(): Promise<SyncRunResult>
+  /** pull → conflict? → push — full cycle; omit documentId to sync all slots */
+  sync(documentId?: string): Promise<SyncRunResult>
 
-  /** Local data changed (debounce push) */
-  notifyLocalChange(): void
+  /** Local data changed (debounce push); omit documentId to target all slots */
+  notifyLocalChange(documentId?: string): void
 
   /** Send pending push immediately (before logout) */
-  flushPush(): Promise<void>
+  flushPush(documentId?: string): Promise<void>
 
   // --- Device / limit ---
 
@@ -237,7 +255,7 @@ export class EsrSync {
 
   // --- Conflict (manual; onConflict enough most of the time) ---
 
-  resolveConflict(choice: 'remote' | 'local'): Promise<void>
+  resolveConflict(choice: 'remote' | 'local', documentId?: string): Promise<void>
 
   getStatus(): EsrSyncStatus
   getLastError(): EsrError | null
@@ -280,8 +298,40 @@ ELSE IF 409 NAMESPACE_EXISTS AND no token:
 `namespaceId` source:
 
 1. `opts.namespaceId`
-2. else `document.namespaceId()`
+2. else first slot `adapter.namespaceId()`
 3. if both invalid/empty `generateNamespaceId()` — application must persist returned id
+
+### 5.2 Multi-document
+
+Use when one namespace holds **independent snapshots** (e.g. app data + settings). Each slot needs its own `DocumentAdapter` (export/import). All adapters must return the **same** `namespaceId()`.
+
+```typescript
+const sync = await EsrSync.connect({
+  relayUrl: settings.relayUrl,
+  storage: createLocalStorageAdapter(),
+  documents: [
+    { adapter: appDocumentAdapter }, // documentId omitted → primary
+    { documentId: 'settings', adapter: settingsDocumentAdapter },
+  ],
+  onRecoveryPhrase: async ({ phrase }) => ui.showRecovery(phrase),
+  onConflict: async (ctx) => {
+    console.log('Conflict on', ctx.documentId)
+    return ui.askConflict(ctx.remoteMeta.writtenAt)
+  },
+  onDocumentStatusChange: (documentId, status) => ui.setDocBadge(documentId, status),
+})
+
+await sync.ensureNamespace()
+
+db.onAppChange(() => sync.notifyLocalChange('primary'))
+settings.onChange(() => sync.notifyLocalChange('settings'))
+await sync.sync('settings') // optional: full cycle for one document only
+```
+
+- Non-`primary` envelopes use `schemaVersion: 2` (SDK `buildEnvelope` handles this).
+- `NotificationClient` subscribes with all `documentIds`; WS `head_changed` includes `documentId`.
+- Example: `examples/multi-document-sync.ts` (`pnpm example:multi-document`).
+- Spec: [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) · REST: [04-API-REFERENCE.md](./04-API-REFERENCE.md) § Documents.
 
 ---
 
@@ -291,8 +341,8 @@ After `connect()` SDK auto-wires (when `enabled !== false`):
 
 | Trigger | Action |
 |---------|--------|
-| `notifyLocalChange()` | debounce → `push()` |
-| WS `head_changed` | `sync()` or meta-only conflict check |
+| `notifyLocalChange(id?)` | debounce → `push()` for one or all slots |
+| WS `head_changed` | per `documentId` → `sync()` or meta-only conflict check |
 | `document.visibilitychange` → visible | `sync()` |
 | `window.focus` | `sync()` |
 | interval (WS down / absent) | `sync()` — `pullIntervalDisconnectedMs` |
@@ -405,8 +455,9 @@ Vitest: mock relay or testcontainers; application only mocks adapter + callbacks
 - [ ] `EsrStorage` (or `createLocalStorageAdapter`)
 - [ ] `EsrSync.connect` + `onRecoveryPhrase` + `onConflict`
 - [ ] `ensureNamespace` / `startPairing` / `joinPairing` UX
-- [ ] `notifyLocalChange` + `sync` hooks
+- [ ] `notifyLocalChange` + `sync` hooks (per `documentId` when multi-document)
 - [ ] (Optional) `onDeviceLimit`, `redeemUnlockCode` UI
+- [ ] (Multi-document) `documents[]`, `onDocumentStatusChange`, separate adapters per id
 
 ---
 
@@ -432,4 +483,4 @@ packages/client/src/
   index.ts              # public exports
 ```
 
-Phase: [11-IMPLEMENTATION-PLAN.md](./11-IMPLEMENTATION-PLAN.md) — Phase 6c.
+Shipped in spec v1.2 (`EsrSync` multi-document). See [11-IMPLEMENTATION-PLAN.md](./11-IMPLEMENTATION-PLAN.md) §10.

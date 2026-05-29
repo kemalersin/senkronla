@@ -34,6 +34,7 @@ export interface AdminNamespaceRow {
   purchasedSlots: number
   activeDevices: number
   createdAt: string
+  documentCount: number
   documentRevision: string | null
   documentWrittenAt: string | null
   documentSizeBytes: number | null
@@ -151,6 +152,7 @@ export async function listAdminNamespaces(
     revision: string | null
     written_at: Date | null
     size_bytes: string | null
+    document_count: string
     total_count: string
   }>(
     `
@@ -168,6 +170,11 @@ export async function listAdminNamespaces(
       dh.revision,
       dh.written_at,
       dh.size_bytes::text,
+      (
+        SELECT COUNT(*)::text
+        FROM document_heads dh_all
+        WHERE dh_all.namespace_uuid = n.id
+      ) AS document_count,
       COUNT(*) OVER() AS total_count
     FROM namespaces n
     LEFT JOIN document_heads dh
@@ -193,6 +200,7 @@ export async function listAdminNamespaces(
       purchasedSlots: row.purchased_slots,
       activeDevices: Number(row.active_devices),
       createdAt: row.created_at.toISOString(),
+      documentCount: Number(row.document_count),
       documentRevision: row.revision,
       documentWrittenAt: row.written_at?.toISOString() ?? null,
       documentSizeBytes: row.size_bytes ? Number(row.size_bytes) : null,

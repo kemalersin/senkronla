@@ -5,7 +5,8 @@ import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
 import { generateDeviceToken, hashDeviceToken } from '../lib/crypto.js'
 import { buildLimitsResponse, getLimitsForNamespace } from './slot-service.js'
-import type { DocumentHeadRow, NamespaceRow } from '../types/db.js'
+import type { NamespaceRow } from '../types/db.js'
+import { getDocumentHeadMeta, listDocumentHeads } from './document-service.js'
 
 export interface CreateNamespaceInput {
   namespaceId: string
@@ -33,20 +34,6 @@ export async function findNamespaceByPublicId(
      FROM namespaces
      WHERE namespace_id = $1`,
     [namespaceId],
-  )
-
-  return result.rows[0] ?? null
-}
-
-export async function getDocumentHead(
-  pool: DbPool,
-  namespaceUuid: string,
-): Promise<DocumentHeadRow | null> {
-  const result = await pool.query<DocumentHeadRow>(
-    `SELECT revision, written_at, writer_device_id, content_sha256, content_magic, size_bytes, blob_key
-     FROM document_heads
-     WHERE namespace_uuid = $1 AND document_id = 'primary'`,
-    [namespaceUuid],
   )
 
   return result.rows[0] ?? null
@@ -140,22 +127,24 @@ export async function getNamespaceInfo(
     namespace.purchased_slots,
   )
 
-  const head = await getDocumentHead(pool, namespace.id)
+  const documents = await listDocumentHeads(pool, namespace.id)
+  const primaryHead = await getDocumentHeadMeta(pool, namespace.id, 'primary')
 
   return {
     namespaceId: namespace.namespace_id,
     namespaceLabel: namespace.namespace_label,
     limits: buildLimitsResponse(config, limits),
-    head: head
+    head: primaryHead
       ? {
-          revision: head.revision,
-          writtenAt: head.written_at.toISOString(),
-          deviceId: head.writer_device_id,
-          contentSha256: head.content_sha256,
-          contentMagic: head.content_magic,
-          sizeBytes: Number(head.size_bytes),
+          revision: primaryHead.revision,
+          writtenAt: primaryHead.written_at.toISOString(),
+          deviceId: primaryHead.writer_device_id,
+          contentSha256: primaryHead.content_sha256,
+          contentMagic: primaryHead.content_magic,
+          sizeBytes: Number(primaryHead.size_bytes),
         }
       : null,
-    lastSyncAt: head?.written_at.toISOString() ?? null,
+    documents,
+    lastSyncAt: primaryHead?.written_at.toISOString() ?? documents[0]?.writtenAt ?? null,
   }
 }

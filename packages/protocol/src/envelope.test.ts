@@ -18,6 +18,20 @@ describe('@senkronla/protocol envelope', () => {
     expect(result.ok).toBe(true)
   })
 
+  it('parses and verifies a non-primary settings fixture', () => {
+    const raw = readFileSync(join(fixturesDir, 'multi-document/valid-settings.json'), 'utf8')
+    const envelope = parseEnvelope(JSON.parse(raw))
+    expect(envelope.schemaVersion).toBe(2)
+    expect(envelope.documentId).toBe('settings')
+
+    const result = verifyEnvelope(envelope, {
+      namespaceId: envelope.namespaceId,
+      documentId: 'settings',
+    })
+
+    expect(result.ok).toBe(true)
+  })
+
   it('rejects sha256 mismatch', () => {
     const raw = readFileSync(join(fixturesDir, 'invalid-sha256-envelope.json'), 'utf8')
     const envelope = parseEnvelope(JSON.parse(raw))

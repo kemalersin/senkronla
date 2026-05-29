@@ -116,7 +116,7 @@ type WsServerMessage =
 type WsClientMessage =
   | { type: 'auth'; token: string }           // only when header auth unavailable
   | { type: 'pong'; ts: string }              // ping response
-  | { type: 'subscribe'; documentId: 'primary' }  // optional; path sufficient v1
+  | { type: 'subscribe'; documentId?: string; documentIds?: string[] }  // optional filter 
 ```
 
 ### 4.3 Zod (packages/protocol)
@@ -129,9 +129,9 @@ type WsClientMessage =
 
 ### 5.1 `head_changed`
 
-**When:** After successful `PUT .../documents/primary` (201).
+**When:** After successful `PUT .../documents/{documentId}` (201).
 
-**To whom:** All **open WS connections** subscribed to the same `namespaceId` — including the device that pushed (client no-ops if revision is known).
+**To whom:** Open WS connections in the same `namespaceId`. If the client sent `subscribe` with `documentIds`, only matching `documentId` values are delivered; otherwise all documents (v1 default).
 
 **Payload:** Same fields as `GET head/meta` (+ `writerDeviceId`).
 

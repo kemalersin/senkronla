@@ -74,10 +74,20 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
     }
   }
 
-  if (env.ESR_MAX_ENVELOPE_BYTES) {
+  if (env.ESR_MAX_ENVELOPE_BYTES || env.ESR_MAX_DOCUMENTS_PER_NAMESPACE || env.ESR_ALLOWED_DOCUMENT_IDS) {
     overrides.sync = {
       ...(overrides.sync as RawConfig),
-      maxEnvelopeBytes: env.ESR_MAX_ENVELOPE_BYTES,
+      ...(env.ESR_MAX_ENVELOPE_BYTES ? { maxEnvelopeBytes: env.ESR_MAX_ENVELOPE_BYTES } : {}),
+      ...(env.ESR_MAX_DOCUMENTS_PER_NAMESPACE
+        ? { maxDocumentsPerNamespace: env.ESR_MAX_DOCUMENTS_PER_NAMESPACE }
+        : {}),
+      ...(env.ESR_ALLOWED_DOCUMENT_IDS
+        ? {
+            allowedDocumentIds: env.ESR_ALLOWED_DOCUMENT_IDS.split(',')
+              .map((item) => item.trim())
+              .filter(Boolean),
+          }
+        : {}),
     }
   }
 

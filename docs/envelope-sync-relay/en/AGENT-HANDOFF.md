@@ -89,7 +89,7 @@ Public API contract (`openapi.yaml`, `ESR-DOC1`) must not change.
 - CRDT / entity merge
 - User accounts / OAuth
 - Subscription billing (one-time unlock only)
-- Multi-document per namespace (v2)
+- Multi-document per namespace — shipped; see [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md), [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md) §5.2
 
 ## First commands (agent)
 

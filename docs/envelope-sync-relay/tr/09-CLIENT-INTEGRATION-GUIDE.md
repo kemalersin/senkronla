@@ -9,8 +9,9 @@ Bu belge, **herhangi bir uygulamanın** Envelope Sync Relay ile nasıl entegre o
 | İhtiyaç | Belge / API |
 |---------|-------------|
 | Normal uygulama entegrasyonu | [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md) |
+| Namespace başına çoklu belge | [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md) §5.2 · [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) |
 | Çoklu namespace oturumu, özel akış | Bu belge — `RelayClient` |
-| Kimlik (namespaceId, recovery) | `@esr/protocol` — doc 14 §3 |
+| Kimlik (namespaceId, recovery) | `@senkronla/protocol` — doc 14 §3 |
 
 ## 1. Entegrasyon mimarisi
 
@@ -123,7 +124,7 @@ Recovery phrase her zaman `generateRecoveryPhrase()` ile üretilir (profil parol
 ## 4. RelayClient yapılandırması
 
 ```typescript
-import { RelayClient } from '@esr/client'
+import { RelayClient } from '@senkronla/client'
 
 const client = new RelayClient({
   baseUrl: 'https://sync.example.com/v1',
@@ -132,6 +133,24 @@ const client = new RelayClient({
   clientDeviceId: getOrCreateClientDeviceId(),
 })
 ```
+
+### 4.1 Belge kapsamlı HTTP
+
+Head/push metotları isteğe bağlı `documentId` alır (varsayılan `'primary'`):
+
+```typescript
+const docs = await client.listDocuments(namespaceId)
+const meta = await client.getHeadMeta(namespaceId, 'settings')
+const envelope = await client.getHead(namespaceId, 'settings')
+await client.pushDocument({
+  namespaceId,
+  documentId: 'settings',
+  envelope,
+  expectedRevision: meta?.revision ?? null,
+})
+```
+
+Yollar: `GET /documents`, `GET|PUT /documents/{documentId}/...` — bkz. [04-API-REFERENCE.md](./04-API-REFERENCE.md).
 
 ## 5. İlk kurulum akışı
 
@@ -215,11 +234,12 @@ class SyncEngine {
     private client: RelayClient,
     private adapter: DocumentAdapter,
     private state: SyncStateStore,
+    private documentId: string = 'primary',
   ) {}
 
   /** Tam döngü: pull → conflict check → push */
   async syncFull(): Promise<SyncResult> {
-    const meta = await this.client.getHeadMeta(this.adapter.namespaceId())
+    const meta = await this.client.getHeadMeta(this.adapter.namespaceId(), this.documentId)
     const known = this.state.knownRemoteRevision
 
     if (meta && meta.revision !== known) {
@@ -228,7 +248,7 @@ class SyncEngine {
         return { status: 'conflict', remoteMeta: meta }
       }
       if (decision === 'pull') {
-        const envelope = await this.client.getHead(this.adapter.namespaceId())
+        const envelope = await this.client.getHead(this.adapter.namespaceId(), this.documentId)
         await this.applyRemote(envelope)
       }
     }
@@ -256,6 +276,7 @@ class SyncEngine {
       namespaceId: this.adapter.namespaceId(),
       namespaceLabel: this.adapter.namespaceLabel(),
       documentJson: doc,
+      documentId: this.documentId,
       encrypt: this.adapter.encryption().enabled,
       password,
       deviceId: client.clientDeviceId,
@@ -266,6 +287,7 @@ class SyncEngine {
     try {
       const result = await this.client.pushDocument({
         namespaceId: this.adapter.namespaceId(),
+        documentId: this.documentId,
         expectedRevision: this.state.knownRemoteRevision,
         envelope,
       })
@@ -284,17 +306,24 @@ class SyncEngine {
 }
 ```
 
+## 7.1 Çoklu belge ile `EsrSync` (önerilen)
+
+Manuel çoklu `SyncEngine` yerine [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md) §5.2 kullanın. Tek `EsrSync.connect({ documents: [...] })` bağımsız motorlar, kapsamlı `SyncStateStore` ve tüm id'ler için WS subscribe sağlar.
+
 ## 8. Conflict çözümü (istemci UI)
 
 ```typescript
-async function resolveConflict(choice: 'remote' | 'local'): Promise<void> {
+async function resolveConflict(
+  choice: 'remote' | 'local',
+  documentId: string = 'primary',
+): Promise<void> {
   if (choice === 'remote') {
-    const envelope = await client.getHead(namespaceId)
+    const envelope = await client.getHead(namespaceId, documentId)
     await applyRemote(envelope)
     state.clearLocalMutation()
   } else {
     // force push — expectedRevision remote head ile güncelle veya overwrite policy
-    const meta = await client.getHeadMeta(namespaceId)
+    const meta = await client.getHeadMeta(namespaceId, documentId)
     state.setKnownRemoteRevision(meta.revision)
     await syncEngine.push() // may still 409 — then show error
   }
@@ -359,10 +388,11 @@ async function recoverNamespace(
 import { NotificationClient } from '@esr/client'
 
 const notifications = new NotificationClient({
-  baseUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.example.com/v1',
+  client,
   namespaceId: adapter.namespaceId(),
-  getDeviceToken: () => client.getDeviceToken(),
-  onHeadChanged: (meta) => syncEngine.handleRemoteHeadMeta(meta),
+  documentIds: ['primary', 'settings'],
+  onHeadChanged: ({ documentId, meta }) => syncEngineFor(documentId).handleRemoteHeadMeta(meta),
   pollIntervalMs: 45_000,       // WS connected iken seyrekleştirilebilir (örn. 300_000)
   pauseWhenHidden: true,
 })
@@ -416,8 +446,8 @@ await syncEngine.flushPush()
 ```json
 {
   "dependencies": {
-    "@esr/protocol": "^1.0.0",
-    "@esr/client": "^1.0.0"
+    "@senkronla/protocol": "workspace:*",
+    "@senkronla/client": "workspace:*"
   }
 }
 ```
@@ -441,6 +471,7 @@ Node: `undici` fetch, `crypto` module.
 
 - [ ] DocumentAdapter implement edildi
 - [ ] `RelayClient` + `SyncEngine` + `NotificationClient` birleşimi
-- [ ] `SyncStateStore` + token storage
+- [ ] `SyncStateStore` + token storage (`documentId` başına çoklu belgede)
+- [ ] `listDocuments` / parametrik head yolları veya `EsrSync` `documents[]`
 - [ ] Scheduler hook'ları (visibility, focus, debounce, poll)
 - [ ] Conflict / limit / recovery UX

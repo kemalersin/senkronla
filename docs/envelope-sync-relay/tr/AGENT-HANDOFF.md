@@ -89,7 +89,7 @@ Public API sözleşmesi (`openapi.yaml`, `ESR-DOC1`) değişmemeli.
 - CRDT / entity merge
 - User accounts / OAuth
 - Subscription billing (yalnızca one-time unlock)
-- Multi-document per namespace (v2)
+- Namespace başına çoklu döküman — yayında; bkz. [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md), [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md) §5.2
 
 ## İlk komut (agent)
 

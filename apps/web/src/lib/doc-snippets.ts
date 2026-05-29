@@ -14,43 +14,162 @@ const SAMPLE = {
   unlockCode: 'UNLK-7X9K-2M4P',
 } as const
 
-function sampleLimits(activeDevices = 1, nested = false) {
-  const prop = nested ? '    ' : '  '
-  const close = nested ? '  ' : ''
-  return `{
-${prop}"freeDeviceLimit": 2,
-${prop}"purchasedSlots": 0,
-${prop}"maxDevices": 2,
-${prop}"activeDevices": ${activeDevices},
-${prop}"canAddDevice": ${activeDevices < 2},
-${prop}"onLimitReached": {
-${prop}  "mode": "payment",
-${prop}  "slotPackages": [3, 5, 10]
-${prop}}
-${close}}`
+const JSON_INDENT = '  '
+
+function jsonIndent(depth: number): string {
+  return JSON_INDENT.repeat(depth)
 }
 
-function sampleEnvelope(revision: string = SAMPLE.revision, nested = false) {
-  const prop = nested ? '    ' : '  '
-  const close = nested ? '  ' : ''
+function sampleLimits(activeDevices = 1, depth = 0): string {
+  const d1 = jsonIndent(depth + 1)
+  const d2 = jsonIndent(depth + 2)
   return `{
-${prop}"magic": "ESR-DOC1",
-${prop}"schemaVersion": 1,
-${prop}"namespaceId": "${SAMPLE.namespaceId}",
-${prop}"namespaceLabel": "${SAMPLE.namespaceLabel}",
-${prop}"documentId": "primary",
-${prop}"revision": "${revision}",
-${prop}"deviceId": "${SAMPLE.deviceId}",
-${prop}"writtenAt": "${SAMPLE.writtenAt}",
-${prop}"contentType": "application/vnd.myapp+json",
-${prop}"contentMagic": "ENV-RAW1",
-${prop}"contentSha256": "${SAMPLE.contentSha256}",
-${prop}"payload": "eyJub3RlIjoiSGVsbG8ifQ=="
-${close}}`
+${d1}"freeDeviceLimit": 2,
+${d1}"purchasedSlots": 0,
+${d1}"maxDevices": 2,
+${d1}"activeDevices": ${activeDevices},
+${d1}"canAddDevice": ${activeDevices < 2},
+${d1}"onLimitReached": {
+${d2}"mode": "payment",
+${d2}"slotPackages": [3, 5, 10]
+${d1}}
+${jsonIndent(depth)}}`
+}
+
+/** Non-primary id used in API reference HTTP samples (same id across related examples). */
+const API_EXAMPLE_DOCUMENT_ID = 'notes'
+
+function envelopeContentType(documentId: string): string {
+  return documentId === 'primary'
+    ? 'application/vnd.myapp+json'
+    : 'application/vnd.example.notes+json'
+}
+
+function envelopeSchemaVersion(documentId: string): number {
+  return documentId === 'primary' ? 1 : 2
+}
+
+function envelopeFieldLines(
+  indent: string,
+  documentId: string,
+  revision: string,
+  writtenAt: string,
+): string {
+  return `${indent}"magic": "ESR-DOC1",
+${indent}"schemaVersion": ${envelopeSchemaVersion(documentId)},
+${indent}"namespaceId": "${SAMPLE.namespaceId}",
+${indent}"namespaceLabel": "${SAMPLE.namespaceLabel}",
+${indent}"documentId": "${documentId}",
+${indent}"revision": "${revision}",
+${indent}"deviceId": "${SAMPLE.deviceId}",
+${indent}"writtenAt": "${writtenAt}",
+${indent}"contentType": "${envelopeContentType(documentId)}",
+${indent}"contentMagic": "ENV-RAW1",
+${indent}"contentSha256": "${SAMPLE.contentSha256}",
+${indent}"payload": "eyJub3RlIjoiSGVsbG8ifQ=="`
+}
+
+function formatEnvelope(
+  documentId: string,
+  revision: string,
+  options?: { writtenAt?: string; depth?: number },
+): string {
+  const depth = options?.depth ?? 1
+  const writtenAt = options?.writtenAt ?? SAMPLE.writtenAt
+  return `{
+${envelopeFieldLines(jsonIndent(depth + 1), documentId, revision, writtenAt)}
+${jsonIndent(depth)}}`
+}
+
+function buildPushRequest(
+  documentId: string,
+  revision: string,
+  expectedRevision: string | null,
+  writtenAt?: string,
+): string {
+  const expectedLine =
+    expectedRevision === null
+      ? '  "expectedRevision": null,'
+      : `  "expectedRevision": "${expectedRevision}",`
+  return `{
+${expectedLine}
+  "envelope": ${formatEnvelope(documentId, revision, { writtenAt, depth: 1 })}
+}`
+}
+
+function pushCreatedResponse(
+  revision: string,
+  writtenAt: string,
+  contentSha256: string,
+  putDocumentRemaining: number,
+  globalIpRemaining: number,
+): string {
+  return `HTTP/1.1 201 Created
+RateLimit-PutDocument-Limit: 120
+RateLimit-PutDocument-Remaining: ${putDocumentRemaining}
+RateLimit-PutDocument-Reset: 3600
+
+{
+  "revision": "${revision}",
+  "writtenAt": "${writtenAt}",
+  "contentSha256": "${contentSha256}",
+  "writerDeviceId": "${SAMPLE.deviceId}",
+  ${rateLimitsJson([
+    ['global_ip', 300, globalIpRemaining, 42, 60],
+    ['put_document', 120, putDocumentRemaining, 3600, 3600],
+  ])}
+}`
 }
 
 function authHeader(token = SAMPLE.deviceToken) {
   return `Authorization: Bearer ${token}`
+}
+
+type RateLimitActionId = 'global_ip' | 'put_document' | 'recover' | 'pair_device' | 'pairing_token'
+
+function rateLimitQuotaJson(
+  action: RateLimitActionId,
+  limit: number,
+  remaining: number,
+  resetAfterSeconds: number,
+  windowSeconds: number,
+): string {
+  const d2 = jsonIndent(2)
+  const d3 = jsonIndent(3)
+  return `${d2}"${action}": {
+${d3}"action": "${action}",
+${d3}"limit": ${limit},
+${d3}"remaining": ${remaining},
+${d3}"resetAfterSeconds": ${resetAfterSeconds},
+${d3}"windowSeconds": ${windowSeconds}
+${d2}}`
+}
+
+function rateLimitsJson(quotas: Array<[RateLimitActionId, number, number, number, number]>): string {
+  const lines = quotas.map(([action, limit, remaining, reset, window]) =>
+    rateLimitQuotaJson(action, limit, remaining, reset, window),
+  )
+  return `"rateLimits": {
+${lines.join(',\n')}
+${jsonIndent(1)}}`
+}
+
+function rateLimitDetailJson(
+  action: RateLimitActionId,
+  limit: number,
+  remaining: number,
+  resetAfterSeconds: number,
+  windowSeconds: number,
+): string {
+  const d3 = jsonIndent(3)
+  const d4 = jsonIndent(4)
+  return `${d3}"rateLimit": {
+${d4}"action": "${action}",
+${d4}"limit": ${limit},
+${d4}"remaining": ${remaining},
+${d4}"resetAfterSeconds": ${resetAfterSeconds},
+${d4}"windowSeconds": ${windowSeconds}
+${d3}}`
 }
 
 export function createGuideSnippets(relayUrl: string) {
@@ -59,10 +178,14 @@ export function createGuideSnippets(relayUrl: string) {
   EsrSync,
   createDocumentAdapter,
   createLocalStorageAdapter,
+  generateNamespaceId,
 } from '@senkronla/client'
 
+const namespaceId = generateNamespaceId()
+// Persist before ensureNamespace — same id across reinstalls (or use your workspace UUID)
+
 const document = createDocumentAdapter({
-  namespaceId: '${SAMPLE.namespaceId}',
+  namespaceId,
   namespaceLabel: '${SAMPLE.namespaceLabel}',
   contentType: 'application/vnd.myapp+json',
   exportDocument: () => appStore.exportJson(),
@@ -78,12 +201,31 @@ const sync = await EsrSync.connect({
   },
   onConflict: async (ctx) => {
     return ui.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
+    // 'remote' | 'local' | 'cancel'
   },
 })
 
 await sync.ensureNamespace()
-await sync.sync()
-appStore.onChange(() => sync.notifyLocalChange())`,
+await sync.sync() // all documents on startup
+appStore.onChange(() => sync.notifyLocalChange('primary'))`,
+
+    multiDocumentSync: `const sync = await EsrSync.connect({
+  relayUrl: '${relayUrl}',
+  storage: createLocalStorageAdapter('myapp'),
+  documents: [
+    { adapter: mainDocumentAdapter },
+    { documentId: 'settings', adapter: settingsDocumentAdapter },
+  ],
+  onRecoveryPhrase: async ({ phrase }) => ui.showRecoveryModal(phrase),
+  onConflict: async (ctx) => {
+    console.log('Conflict on', ctx.documentId)
+    return 'remote'
+  },
+})
+
+await sync.ensureNamespace()
+sync.notifyLocalChange('settings')
+await sync.sync('settings') // pull + push for one document`,
 
     ensureNamespace: `// First launch — creates workspace and shows recovery phrase
 const { namespaceId, created, recoveryPhrase } = await sync.ensureNamespace({
@@ -96,9 +238,13 @@ if (created) {
 
 // Later launches — verifies stored device token
 const check = await sync.ensureNamespace()
-// { namespaceId: '${SAMPLE.namespaceId}', created: false }`,
+// { namespaceId, created: false }`,
 
-    sync: `const result = await sync.sync()
+    sync: `// All connected documents (default)
+const result = await sync.sync()
+
+// Single document
+const settingsResult = await sync.sync('settings')
 
 switch (result.status) {
   case 'ok':
@@ -116,14 +262,14 @@ switch (result.status) {
 }`,
 
     notifyLocalChange: `// Call after every local edit — debounced push (default 2s)
-appStore.onChange(() => {
-  sync.notifyLocalChange()
-})
+appStore.onChange(() => sync.notifyLocalChange('primary'))
+settingsStore.onChange(() => sync.notifyLocalChange('settings'))
 
 // getStatus() becomes 'pending_push' until push completes`,
 
     flushPush: `// Before logout or when you need an immediate upload
-await sync.flushPush()
+await sync.flushPush() // all slots with pending changes
+await sync.flushPush('settings') // one document
 
 // Skips debounce — pushes current snapshot right away`,
 
@@ -138,8 +284,8 @@ ui.showPairingScreen({
     joinPairing: `// Guest device — same namespaceId in the document adapter
 await sync.joinPairing('482913')
 
-// Stores device token, then runs sync() automatically
-// Pulls remote snapshot into your app via importDocument()`,
+// Stores device token, then runs sync() (all documents)
+// Pulls remote snapshots via importDocument() per slot`,
 
     recover: `// All devices lost — user enters 24-word phrase
 await sync.recover(
@@ -147,7 +293,7 @@ await sync.recover(
 )
 
 // Issues new device token; revokes every previously paired device
-// Then runs sync() to pull latest remote snapshot`,
+// Then runs sync() to pull latest remote snapshots (all documents)`,
 
     listDevices: `const { devices, limits } = await sync.listDevices()
 
@@ -167,9 +313,8 @@ await sync.redeemUnlockCode('${SAMPLE.unlockCode}')
 // Then retry pairing or check limits via listDevices()`,
 
     resolveConflict: `// Manual resolution when status is 'conflict'
-await sync.resolveConflict('remote') // accept server version
-// or
-await sync.resolveConflict('local')  // force-push local snapshot`,
+await sync.resolveConflict('remote', 'primary')
+await sync.resolveConflict('local', 'settings')`,
 
     getStatus: `const status = sync.getStatus()
 // 'idle' | 'syncing' | 'pending_push' | 'conflict' | 'offline' | 'ws_connected'
@@ -185,7 +330,11 @@ if (lastError) {
   storage: createLocalStorageAdapter('myapp'),
   deviceLabel: 'Alice laptop',
   onRecoveryPhrase: async ({ phrase }) => { /* required */ },
-  onConflict: async (ctx) => 'remote',
+  onConflict: async (ctx) => {
+    console.log('Conflict on', ctx.documentId)
+    return 'remote'
+  },
+  onDocumentStatusChange: (documentId, status) => ui.setDocBadge(documentId, status),
   onDeviceLimit: async (ctx) => {
     if (ctx.code === 'DEVICE_LIMIT_PAYMENT_REQUIRED') {
       ui.showUpgrade(ctx.slotPackages)
@@ -249,7 +398,7 @@ Content-Type: application/json
   "namespaceId": "${ns}",
   "deviceToken": "${SAMPLE.deviceToken}",
   "deviceId": "${SAMPLE.deviceId}",
-  "limits": ${sampleLimits(1, true)}
+  "limits": ${sampleLimits(1, 1)}
 }`,
     } satisfies HttpExamplePair,
 
@@ -259,7 +408,7 @@ ${auth}`,
       response: `{
   "namespaceId": "${ns}",
   "namespaceLabel": "${SAMPLE.namespaceLabel}",
-  "limits": ${sampleLimits(1, true)},
+  "limits": ${sampleLimits(1, 1)},
   "head": {
     "revision": "${SAMPLE.revision}",
     "writtenAt": "${SAMPLE.writtenAt}",
@@ -268,7 +417,46 @@ ${auth}`,
     "contentMagic": "ENV-RAW1",
     "sizeBytes": 128
   },
-  "lastSyncAt": "${SAMPLE.writtenAt}"
+  "lastSyncAt": "${SAMPLE.writtenAt}",
+  "documents": [
+    {
+      "documentId": "primary",
+      "revision": "${SAMPLE.revision}",
+      "writtenAt": "${SAMPLE.writtenAt}",
+      "deviceId": "${SAMPLE.deviceId}",
+      "contentSha256": "${SAMPLE.contentSha256}",
+      "contentMagic": "ENV-RAW1",
+      "sizeBytes": 128
+    }
+  ]
+}`,
+    } satisfies HttpExamplePair,
+
+    listDocuments: {
+      request: `GET ${v1}/namespaces/${ns}/documents
+${auth}`,
+      response: `{
+  "documents": [
+    {
+      "documentId": "primary",
+      "revision": "${SAMPLE.revision}",
+      "writtenAt": "${SAMPLE.writtenAt}",
+      "deviceId": "${SAMPLE.deviceId}",
+      "contentSha256": "${SAMPLE.contentSha256}",
+      "contentMagic": "ENV-RAW1",
+      "sizeBytes": 128
+    },
+    {
+      "documentId": "${API_EXAMPLE_DOCUMENT_ID}",
+      "revision": "01HZQXNOTESREV01",
+      "writtenAt": "2026-05-28T11:00:00.000Z",
+      "deviceId": "${SAMPLE.deviceId}",
+      "contentSha256": "${SAMPLE.contentSha256}",
+      "contentMagic": "ENV-RAW1",
+      "sizeBytes": 64
+    }
+  ],
+  ${rateLimitsJson([['global_ip', 300, 299, 42, 60]])}
 }`,
     } satisfies HttpExamplePair,
 
@@ -288,7 +476,11 @@ RateLimit-PairingToken-Reset: 3600
 {
   "code": "${SAMPLE.pairingCode}",
   "expiresAt": "2026-05-28T10:25:00.000Z",
-  "qrPayload": "esr://pair/v1/${ns}?code=${SAMPLE.pairingCode}&exp=1748427900&host=Alice%20laptop"
+  "qrPayload": "esr://pair/v1/${ns}?code=${SAMPLE.pairingCode}&exp=1748427900&host=Alice%20laptop",
+  ${rateLimitsJson([
+    ['global_ip', 300, 298, 42, 60],
+    ['pairing_token', 30, 29, 3600, 3600],
+  ])}
 }`,
     } satisfies HttpExamplePair,
 
@@ -309,7 +501,11 @@ RateLimit-Pair-Reset: 3600
 {
   "deviceToken": "dvt_guest_token_example_9876543210",
   "deviceId": "${SAMPLE.guestDeviceId}",
-  "limits": ${sampleLimits(2, true)}
+  "limits": ${sampleLimits(2, 1)},
+  ${rateLimitsJson([
+    ['global_ip', 300, 297, 42, 60],
+    ['pair_device', 20, 19, 3600, 3600],
+  ])}
 }`,
     } satisfies HttpExamplePair,
 
@@ -335,7 +531,7 @@ ${auth}`,
       "isCurrent": false
     }
   ],
-  "limits": ${sampleLimits(2, true)}
+  "limits": ${sampleLimits(2, 1)}
 }`,
     } satisfies HttpExamplePair,
 
@@ -366,75 +562,90 @@ RateLimit-Recover-Reset: 3600
   "deviceToken": "dvt_recovery_token_example_1122334455",
   "deviceId": "01HZPXDEVICERECOV01",
   "revokedDeviceCount": 2,
-  "limits": ${sampleLimits(1, true)}
+  "limits": ${sampleLimits(1, 1)},
+  ${rateLimitsJson([
+    ['global_ip', 300, 296, 42, 60],
+    ['recover', 5, 4, 3600, 3600],
+  ])}
 }`,
     } satisfies HttpExamplePair,
 
     getDocumentHeadMeta: {
-      request: `GET ${v1}/namespaces/${ns}/documents/primary/head/meta
+      request: `GET ${v1}/namespaces/${ns}/documents/${API_EXAMPLE_DOCUMENT_ID}/head/meta
 ${auth}`,
       response: `{
-  "revision": "${SAMPLE.revision}",
-  "writtenAt": "${SAMPLE.writtenAt}",
+  "revision": "01HZQXNOTESREV01",
+  "writtenAt": "2026-05-28T11:00:00.000Z",
   "deviceId": "${SAMPLE.deviceId}",
   "contentSha256": "${SAMPLE.contentSha256}",
   "contentMagic": "ENV-RAW1",
-  "sizeBytes": 128,
-  "rateLimits": {
-    "push": { "limit": 120, "remaining": 119, "reset": 3600 }
-  }
+  "sizeBytes": 64,
+  ${rateLimitsJson([['global_ip', 300, 299, 42, 60]])}
 }`,
     } satisfies HttpExamplePair,
 
     getDocumentHead: {
-      request: `GET ${v1}/namespaces/${ns}/documents/primary/head
+      request: `GET ${v1}/namespaces/${ns}/documents/${API_EXAMPLE_DOCUMENT_ID}/head
 ${auth}`,
-      response: sampleEnvelope(),
+      response: `{
+  "envelope": ${formatEnvelope(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV01', {
+    writtenAt: '2026-05-28T11:00:00.000Z',
+    depth: 1,
+  })},
+  ${rateLimitsJson([['global_ip', 300, 299, 42, 60]])}
+}`,
     } satisfies HttpExamplePair,
 
-    pushDocumentFirst: {
-      request: `PUT ${v1}/namespaces/${ns}/documents/primary
+    pushDocumentCreate: {
+      request: `PUT ${v1}/namespaces/${ns}/documents/${API_EXAMPLE_DOCUMENT_ID}
 ${auth}
 Content-Type: application/json
 
-{
-  "expectedRevision": null,
-  "envelope": ${sampleEnvelope('01HZQXNEWREVISION01', true)}
-}`,
-      response: `HTTP/1.1 201 Created
-RateLimit-Push-Limit: 120
-RateLimit-Push-Remaining: 119
-RateLimit-Push-Reset: 3600
-
-{
-  "revision": "01HZQXNEWREVISION01",
-  "writtenAt": "2026-05-28T10:30:00.000Z",
-  "contentSha256": "${SAMPLE.contentSha256}",
-  "writerDeviceId": "${SAMPLE.deviceId}",
-  "rateLimits": {
-    "push": { "limit": 120, "remaining": 119, "reset": 3600 }
-  }
-}`,
+${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV01', null, '2026-05-28T11:00:00.000Z')}`,
+      response: pushCreatedResponse(
+        '01HZQXNOTESREV01',
+        '2026-05-28T11:00:00.000Z',
+        SAMPLE.contentSha256,
+        119,
+        298,
+      ),
     } satisfies HttpExamplePair,
 
     pushDocumentUpdate: {
-      request: `PUT ${v1}/namespaces/${ns}/documents/primary
+      request: `PUT ${v1}/namespaces/${ns}/documents/${API_EXAMPLE_DOCUMENT_ID}
 ${auth}
 Content-Type: application/json
 
-{
-  "expectedRevision": "${SAMPLE.revision}",
-  "envelope": ${sampleEnvelope('01HZQXUPDATEDREV02', true)}
-}`,
-      response: `HTTP/1.1 201 Created
-
-{
-  "revision": "01HZQXUPDATEDREV02",
-  "writtenAt": "2026-05-28T11:00:00.000Z",
-  "contentSha256": "b775b46031522f9d518e5876efdc5fb9b15b2f4fff2fb18f099f97g8g8b38bf4",
-  "writerDeviceId": "${SAMPLE.deviceId}"
-}`,
+${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV02', '01HZQXNOTESREV01', '2026-05-28T11:05:00.000Z')}`,
+      response: pushCreatedResponse(
+        '01HZQXNOTESREV02',
+        '2026-05-28T11:05:00.000Z',
+        'b775b46031522f9d518e5876efdc5fb9b15b2f4fff2fb18f099f97e8f7a27ae3',
+        118,
+        297,
+      ),
     } satisfies HttpExamplePair,
+
+    rateLimitResponseShape: `// Success — rateLimits keys match internal action ids (not header suffixes)
+{
+  ${rateLimitsJson([
+    ['global_ip', 300, 298, 42, 60],
+    ['put_document', 120, 119, 3600, 3600],
+  ])}
+}
+
+// 429 — no top-level rateLimits; single quota in error.details
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Document PUT rate limit exceeded",
+    "details": {
+      "retryAfterSeconds": 3600,
+      "action": "put_document",
+${rateLimitDetailJson('put_document', 120, 0, 3600, 3600)}
+    }
+  }
+}`,
 
     getLimits: {
       request: `GET ${v1}/namespaces/${ns}/limits
@@ -463,11 +674,14 @@ Content-Type: application/json
 Upgrade: websocket
 Sec-WebSocket-Protocol: esr-notifications-v1
 ${auth}`,
-      response: `// Server → client (head_changed)
+      response: `// Client → server (optional filter after auth_ok)
+{ "type": "subscribe", "documentIds": ["primary", "${API_EXAMPLE_DOCUMENT_ID}"] }
+
+// Server → client (head_changed)
 {
   "type": "head_changed",
-  "documentId": "primary",
-  "revision": "01HZQXUPDATEDREV02",
+  "documentId": "${API_EXAMPLE_DOCUMENT_ID}",
+  "revision": "01HZQXNOTESREV02",
   "contentSha256": "${SAMPLE.contentSha256}",
   "writtenAt": "2026-05-28T11:00:00.000Z",
   "writerDeviceId": "${SAMPLE.deviceId}"
@@ -483,14 +697,11 @@ ${auth}`,
     } satisfies HttpExamplePair,
 
     revisionConflict: {
-      request: `PUT ${v1}/namespaces/${ns}/documents/primary
+      request: `PUT ${v1}/namespaces/${ns}/documents/${API_EXAMPLE_DOCUMENT_ID}
 ${auth}
 Content-Type: application/json
 
-{
-  "expectedRevision": "01HZSTALE_REVISION",
-  "envelope": ${sampleEnvelope('01HZSTALE_REVISION', true)}
-}`,
+${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV02', '01HZSTALE_REVISION')}`,
       response: `HTTP/1.1 409 Conflict
 
 {
@@ -499,12 +710,12 @@ Content-Type: application/json
     "message": "Expected revision does not match server head",
     "details": {
       "remoteMeta": {
-        "revision": "${SAMPLE.revision}",
-        "writtenAt": "${SAMPLE.writtenAt}",
+        "revision": "01HZQXNOTESREV01",
+        "writtenAt": "2026-05-28T11:00:00.000Z",
         "deviceId": "${SAMPLE.deviceId}",
         "contentSha256": "${SAMPLE.contentSha256}",
         "contentMagic": "ENV-RAW1",
-        "sizeBytes": 128
+        "sizeBytes": 64
       }
     }
   }

@@ -35,6 +35,22 @@ components:
       scheme: bearer
       bearerFormat: admin_api_token
 
+  parameters:
+    NamespaceId:
+      name: namespaceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z][a-z0-9_-]{0,62}$'
+
   schemas:
     ErrorBody:
       type: object
@@ -96,8 +112,7 @@ components:
           const: ESR-DOC1
         schemaVersion:
           type: integer
-          minimum: 1
-          maximum: 1
+          enum: [1, 2]
         namespaceId:
           type: string
           format: uuid
@@ -105,7 +120,8 @@ components:
           type: string
         documentId:
           type: string
-          const: primary
+          pattern: '^[a-z][a-z0-9_-]{0,62}$'
+          description: schemaVersion 1 requires `primary`; schemaVersion 2 allows any valid id
         revision:
           type: string
         deviceId:
@@ -425,6 +441,112 @@ paths:
           $ref: '#/components/responses/Error401'
         '429':
           description: Rate limited
+
+  /namespaces/{namespaceId}/documents:
+    get:
+      tags: [Documents]
+      summary: List document heads in namespace
+      security:
+        - DeviceToken: []
+      parameters:
+        - name: namespaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [documents]
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/DocumentHeadMeta'
+                        - type: object
+                          required: [documentId]
+                          properties:
+                            documentId:
+                              type: string
+
+  /namespaces/{namespaceId}/documents/{documentId}/head/meta:
+    get:
+      tags: [Documents]
+      summary: Get head metadata for a document
+      security:
+        - DeviceToken: []
+      parameters:
+        - $ref: '#/components/parameters/NamespaceId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentHeadMeta'
+        '400':
+          description: Invalid documentId
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /namespaces/{namespaceId}/documents/{documentId}/head:
+    get:
+      tags: [Documents]
+      summary: Get full head envelope for a document
+      security:
+        - DeviceToken: []
+      parameters:
+        - $ref: '#/components/parameters/NamespaceId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EsrDocEnvelope'
+        '400':
+          description: Invalid documentId
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /namespaces/{namespaceId}/documents/{documentId}:
+    put:
+      tags: [Documents]
+      summary: Push new revision for a document
+      security:
+        - DeviceToken: []
+      parameters:
+        - $ref: '#/components/parameters/NamespaceId'
+        - $ref: '#/components/parameters/DocumentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [envelope]
+              properties:
+                expectedRevision:
+                  type: string
+                  nullable: true
+                envelope:
+                  $ref: '#/components/schemas/EsrDocEnvelope'
+      responses:
+        '201':
+          description: Pushed
+        '403':
+          description: Document limit or id not allowed
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          description: Invalid envelope or documentId mismatch
 
   /namespaces/{namespaceId}/documents/primary/head/meta:
     get:

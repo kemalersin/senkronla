@@ -17,6 +17,7 @@ export class SyncEngine {
     private readonly client: RelayClient,
     private readonly adapter: DocumentAdapter,
     private readonly state: SyncStateStore,
+    readonly documentId: string,
     private readonly options: SyncEngineOptions = {},
   ) {}
 
@@ -36,7 +37,7 @@ export class SyncEngine {
     const namespaceId = this.adapter.namespaceId()
 
     try {
-      const meta = await this.client.getHeadMeta(namespaceId)
+      const meta = await this.client.getHeadMeta(namespaceId, this.documentId)
       const known = await this.state.getKnownRemoteRevision()
 
       if (meta && meta.revision !== known) {
@@ -44,6 +45,7 @@ export class SyncEngine {
         if (decision === 'conflict') {
           const ctx: ConflictContext = {
             namespaceId,
+            documentId: this.documentId,
             knownRevision: known,
             remoteRevision: meta.revision,
             remoteMeta: meta,
@@ -77,14 +79,14 @@ export class SyncEngine {
 
   async pull(meta?: HeadMeta): Promise<void> {
     const namespaceId = this.adapter.namespaceId()
-    const headMeta = meta ?? (await this.client.getHeadMeta(namespaceId))
+    const headMeta = meta ?? (await this.client.getHeadMeta(namespaceId, this.documentId))
 
     if (!headMeta) {
       await this.state.setKnownRemoteRevision(null)
       return
     }
 
-    const envelope = await this.client.getHead(namespaceId)
+    const envelope = await this.client.getHead(namespaceId, this.documentId)
     const documentJson = extractRawDocument(envelope)
     await this.adapter.importDocument(documentJson)
     await this.state.setKnownRemoteRevision(headMeta.revision)
@@ -104,6 +106,7 @@ export class SyncEngine {
       documentJson,
       deviceId: this.client.clientDeviceId,
       contentType: this.adapter.contentType(),
+      documentId: this.documentId,
       encrypt: encryption.enabled,
       password,
     })
@@ -111,6 +114,7 @@ export class SyncEngine {
     try {
       const result = await this.client.pushDocument({
         namespaceId,
+        documentId: this.documentId,
         envelope,
         expectedRevision,
       })
@@ -125,6 +129,7 @@ export class SyncEngine {
         const remoteMeta = details.remoteMeta
         const ctx: ConflictContext = {
           namespaceId,
+          documentId: this.documentId,
           knownRevision: expectedRevision ?? null,
           remoteRevision: details.actualRevision ?? remoteMeta?.revision ?? 'unknown',
           remoteMeta: remoteMeta ?? {
@@ -178,6 +183,7 @@ export class SyncEngine {
     if (decision === 'conflict') {
       const ctx: ConflictContext = {
         namespaceId: this.adapter.namespaceId(),
+        documentId: this.documentId,
         knownRevision: known,
         remoteRevision: meta.revision,
         remoteMeta: meta,

@@ -48,7 +48,9 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
       <body>
         <NextIntlClientProvider messages={messages}>
           <SiteHeader locale={locale as Locale} />
-          <main>{children}</main>
+          <main key={locale} className="site-main">
+            {children}
+          </main>
           <ConditionalFooter />
         </NextIntlClientProvider>
       </body>

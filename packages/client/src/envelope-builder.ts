@@ -1,4 +1,11 @@
-import { buildRecoveryKeyProof, parseEnvelope, type EsrDocEnvelope } from '@senkronla/protocol'
+import {
+  buildRecoveryKeyProof,
+  ENVELOPE_SCHEMA_VERSION,
+  ENVELOPE_SCHEMA_VERSION_V2,
+  isValidDocumentId,
+  parseEnvelope,
+  type EsrDocEnvelope,
+} from '@senkronla/protocol'
 import { ulid } from 'ulid'
 import { EsrError } from './errors.js'
 
@@ -13,6 +20,7 @@ export interface BuildEnvelopeInput {
   documentJson: string
   deviceId: string
   contentType: string
+  documentId?: string
   encrypt?: boolean
   password?: string
   revision?: string
@@ -32,20 +40,39 @@ export async function buildEnvelope(input: BuildEnvelopeInput): Promise<EsrDocEn
   })
 
   const revision = input.revision ?? ulid()
+  const documentId = input.documentId ?? 'primary'
 
-  return {
-    magic: 'ESR-DOC1',
-    schemaVersion: 1,
+  if (!isValidDocumentId(documentId)) {
+    throw new EsrError('ESR_CLIENT_INVALID_DOCUMENT_ID', 'documentId format is invalid')
+  }
+
+  const writtenAt = new Date().toISOString()
+  const contentSha256 = await sha256Hex(innerPayload)
+  const common = {
+    magic: 'ESR-DOC1' as const,
     namespaceId: input.namespaceId,
     namespaceLabel: input.namespaceLabel,
-    documentId: 'primary',
     revision,
     deviceId: input.deviceId,
-    writtenAt: new Date().toISOString(),
+    writtenAt,
     contentType: input.contentType,
-    contentMagic: 'ENV-RAW1',
-    contentSha256: await sha256Hex(innerPayload),
+    contentMagic: 'ENV-RAW1' as const,
+    contentSha256,
     payload: innerPayload,
+  }
+
+  if (documentId === 'primary') {
+    return {
+      ...common,
+      schemaVersion: ENVELOPE_SCHEMA_VERSION,
+      documentId: 'primary',
+    }
+  }
+
+  return {
+    ...common,
+    schemaVersion: ENVELOPE_SCHEMA_VERSION_V2,
+    documentId,
   }
 }
 

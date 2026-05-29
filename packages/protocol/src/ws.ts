@@ -1,10 +1,11 @@
 import { z } from 'zod'
+import { DocumentIdSchema } from './document-id.js'
 
 export const WS_SUBPROTOCOL = 'esr-notifications-v1' as const
 
 export const WsHeadChangedSchema = z.object({
   type: z.literal('head_changed'),
-  documentId: z.literal('primary'),
+  documentId: DocumentIdSchema,
   revision: z.string(),
   contentSha256: z.string(),
   writtenAt: z.string(),
@@ -54,7 +55,8 @@ export const WsClientMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('subscribe'),
-    documentId: z.literal('primary'),
+    documentId: DocumentIdSchema.optional(),
+    documentIds: z.array(DocumentIdSchema).min(1).max(32).optional(),
   }),
 ])
 

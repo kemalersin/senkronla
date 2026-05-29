@@ -1,5 +1,5 @@
 import type { WebSocket } from 'ws'
-import type { WsServerMessage } from '@senkronla/protocol'
+import type { WsHeadChanged, WsServerMessage } from '@senkronla/protocol'
 
 const WS_OPEN = 1
 
@@ -12,13 +12,15 @@ export interface NotificationSocketMeta {
 interface TrackedSocket {
   ws: WebSocket
   meta: NotificationSocketMeta
+  /** `null` = receive all document head_changed events (default). */
+  subscribedDocumentIds: Set<string> | null
 }
 
 export class NotificationHub {
   private readonly rooms = new Map<string, Set<TrackedSocket>>()
 
   subscribe(namespaceId: string, ws: WebSocket, meta: NotificationSocketMeta): void {
-    const tracked: TrackedSocket = { ws, meta }
+    const tracked: TrackedSocket = { ws, meta, subscribedDocumentIds: null }
     const room = this.rooms.get(namespaceId) ?? new Set<TrackedSocket>()
     room.add(tracked)
     this.rooms.set(namespaceId, room)
@@ -26,6 +28,24 @@ export class NotificationHub {
     ws.on('close', () => {
       this.unsubscribe(namespaceId, ws)
     })
+  }
+
+  setDocumentSubscription(
+    namespaceId: string,
+    ws: WebSocket,
+    documentIds: readonly string[] | null,
+  ): void {
+    const tracked = this.findTracked(namespaceId, ws)
+    if (!tracked) {
+      return
+    }
+
+    if (documentIds === null) {
+      tracked.subscribedDocumentIds = null
+      return
+    }
+
+    tracked.subscribedDocumentIds = new Set(documentIds)
   }
 
   unsubscribe(namespaceId: string, ws: WebSocket): void {
@@ -55,9 +75,15 @@ export class NotificationHub {
     const payload = JSON.stringify(message)
 
     for (const tracked of room) {
-      if (tracked.ws.readyState === WS_OPEN) {
-        tracked.ws.send(payload)
+      if (tracked.ws.readyState !== WS_OPEN) {
+        continue
       }
+
+      if (!this.shouldDeliver(tracked, message)) {
+        continue
+      }
+
+      tracked.ws.send(payload)
     }
   }
 
@@ -104,5 +130,33 @@ export class NotificationHub {
     }
 
     this.rooms.clear()
+  }
+
+  private findTracked(namespaceId: string, ws: WebSocket): TrackedSocket | undefined {
+    const room = this.rooms.get(namespaceId)
+    if (!room) {
+      return undefined
+    }
+
+    for (const tracked of room) {
+      if (tracked.ws === ws) {
+        return tracked
+      }
+    }
+
+    return undefined
+  }
+
+  private shouldDeliver(tracked: TrackedSocket, message: WsServerMessage): boolean {
+    if (message.type !== 'head_changed') {
+      return true
+    }
+
+    const filter = tracked.subscribedDocumentIds
+    if (filter === null) {
+      return true
+    }
+
+    return filter.has((message as WsHeadChanged).documentId)
   }
 }

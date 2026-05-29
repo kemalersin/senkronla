@@ -1,7 +1,9 @@
-import { CodeBlockCopyButton } from '@/components/code-block-copy-button'
+import { CodeBlockShell } from '@/components/code-block-shell'
+import type { CodeBlockLanguage } from '@/lib/code-block-types'
 import { highlightCode } from '@/lib/shiki'
+import { getLocale } from 'next-intl/server'
 
-export type CodeBlockLanguage = 'typescript' | 'javascript' | 'bash' | 'http' | 'text'
+export type { CodeBlockLanguage } from '@/lib/code-block-types'
 
 interface CodeBlockProps {
   code: string
@@ -10,12 +12,15 @@ interface CodeBlockProps {
 
 export async function CodeBlock({ code, language = 'typescript' }: CodeBlockProps) {
   const normalized = code.trimEnd()
-  const html = await highlightCode(normalized, language)
+  const locale = await getLocale()
+  const initialHtml = await highlightCode(normalized, language)
 
   return (
-    <div className="code-block">
-      <CodeBlockCopyButton code={normalized} />
-      <div className="code-block-body" dangerouslySetInnerHTML={{ __html: html }} />
-    </div>
+    <CodeBlockShell
+      code={normalized}
+      language={language}
+      locale={locale}
+      initialHtml={initialHtml}
+    />
   )
 }

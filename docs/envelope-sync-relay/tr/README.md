@@ -29,6 +29,7 @@ Servis, herhangi bir offline-first uygulamanın **şifreli snapshot zarfını** 
 | 12 | [12-ERROR-CODES.md](./12-ERROR-CODES.md) | HTTP hata kodları ve istemci retry politikası |
 | 13 | [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS.md) | WebSocket push-to-pull bildirimleri (v1.1) |
 | 14 | [openapi.yaml](../openapi.yaml) | Makine okunur REST API tanımı |
+| 15 | [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) | **Namespace başına çoklu döküman (spec v1.2)** |
 
 ---
 
@@ -72,13 +73,15 @@ This specification is application-agnostic. Each consumer app should maintain it
 
 **v1.1.0:** WebSocket bildirim kanalı — bkz. [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS.md).
 
-**v1.2.0 (planlanan):** `@esr/client` `EsrSync` facade — bkz. [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md).
+**v1.2.0 (yayında):** `@senkronla/client` `EsrSync` facade — bkz. [14-ESR-SYNC-FACADE.md](./14-ESR-SYNC-FACADE.md).
+
+**v1.2.0:** Namespace başına çoklu döküman — sunucu, istemci SDK, WS subscribe, dokümantasyon — bkz. [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md).
 
 ---
 
 | Alan | Değer |
 |------|--------|
-| Spec sürümü | 1.1.0 |
+| Spec sürümü | 1.2.0 (v1.2 çoklu belge) |
 | Protokol magic | `ESR-DOC1` |
 | API prefix | `/v1` |
 | Min. TLS | 1.2 |
