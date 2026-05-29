@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/config'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { DocSearchDialog } from '@/components/doc-search-dialog'
 import { GITHUB_REPO_URL } from '@/lib/site-links'
 
 interface SiteHeaderProps {
@@ -56,6 +57,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
         </nav>
 
         <div className="header-actions">
+          <DocSearchDialog locale={locale} />
           <a
             href={GITHUB_REPO_URL}
             className="header-github-link"

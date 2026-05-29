@@ -17,6 +17,14 @@
     "light": "Light",
     "dark": "Dark"
   },
+  "search": {
+    "triggerLabel": "Search",
+    "placeholder": "Search documentation…",
+    "noResults": "No results found",
+    "hint": "Type to search. Navigate with ↑↓, open with Enter, close with Esc.",
+    "loading": "Loading search index…",
+    "close": "Close"
+  },
   "codeBlock": {
     "copy": "Copy",
     "copied": "Copied"

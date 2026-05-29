@@ -12,6 +12,10 @@ The published version number lives only in the [`package.json`](package.json) `v
 ## [Unreleased]
 
 
+## [0.1.3]
+### Added
+
+- **web:** dokümantasyon araması — build-time indeks (`pnpm generate:search`), header'da ⌘K / Ctrl+K modal; rehberler, SDK, API (TR/EN); agent MD hariç
 ## [0.1.2]
 ### Added
 
@@ -26,6 +30,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 - **web:** HTTP/Postman API örnekleri doğrulanabilir `ENV-ENC1` payload kullanır (dokümantasyon parolası: `demo-sync-passphrase`)
 - **web:** paylaşılan `api-sample-data.ts` — HTTP snippet'leri ve Postman üretici tek kaynak
 - **client:** şifreli zarf için `envelope-builder` birim testleri
+
 ## [0.1.1]
 ### Added
 

@@ -17,6 +17,14 @@
     "light": "Açık",
     "dark": "Koyu"
   },
+  "search": {
+    "triggerLabel": "Ara",
+    "placeholder": "Dokümantasyonda ara…",
+    "noResults": "Sonuç bulunamadı",
+    "hint": "Aramak için yazın. Gezinmek ↑↓, açmak Enter, kapatmak Esc.",
+    "loading": "Arama indeksi yükleniyor…",
+    "close": "Kapat"
+  },
   "codeBlock": {
     "copy": "Kopyala",
     "copied": "Kopyalandı"

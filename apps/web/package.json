@@ -11,10 +11,13 @@
     "start": "next start",
     "test": "echo \"No tests yet\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "generate:postman": "tsx scripts/generate-postman.ts"
+    "generate:postman": "tsx scripts/generate-postman.ts",
+    "generate:search": "node --import tsx scripts/generate-search-index.ts",
+    "prebuild": "pnpm generate:postman && pnpm generate:search"
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "minisearch": "^7.2.0",
     "next": "^15.1.3",
     "next-intl": "^3.26.3",
     "react": "^19.0.0",

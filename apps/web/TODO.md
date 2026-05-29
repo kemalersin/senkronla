@@ -19,6 +19,7 @@
 - [ ] Embed or proxy Swagger in `/api` page
 - [ ] How To content pages (not just spec links)
 - [ ] Client SDK live examples when `@senkronla/client` ships
+- [x] Documentation search (⌘K / Ctrl+K, build-time index)
 
 ## i18n
 

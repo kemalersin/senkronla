@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Documentation search — build-time index (`pnpm generate:search`), ⌘K / Ctrl+K modal in site header; covers guides, SDK, and API pages (EN/TR)
+- MiniSearch client-side fuzzy search over `public/search/{locale}.json`
+
+## [0.1.2]
+
+### Added
+
 - Next.js operator portal with EN/TR i18n (next-intl)
 - Landing, Quick Start, How To, API, SDK, and Operator pages
 - Live API health check on Operator panel
