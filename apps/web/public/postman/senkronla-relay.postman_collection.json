@@ -1,0 +1,888 @@
+{
+  "info": {
+    "_postman_id": "6969b258-ff52-4fd5-85bd-fc1ee6e9ac47",
+    "name": "Senkronla Relay API v1",
+    "description": "Runnable Postman collection for the Senkronla Envelope Sync Relay REST API (`/v1`).\n\n**Setup**\n1. Import `senkronla-relay-local.postman_environment.json` (or the production template).\n2. Set `relayOrigin` to your relay host (default: `http://localhost:8080`).\n3. Run **Quick start** folder in order, or use the pre-filled sample variables for read-only requests.\n\nCollection auth uses `{{deviceToken}}`. Unauthenticated routes override auth per request.\n\nDocs: https://senkronla.dev/api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{deviceToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Quick start (run in order)",
+      "description": "Minimal happy-path flow: health → create namespace → list → push → poll → pull.",
+      "item": [
+        {
+          "name": "1. Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayOrigin}}/health",
+            "description": "Relay health — no authentication required.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Relay is healthy', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().status).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Relay health — no authentication required."
+        },
+        {
+          "name": "2. Create namespace (first device)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces",
+            "description": "Creates a workspace and returns the first device token. Run this before authenticated requests, or use the pre-filled sample token in the environment.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"namespaceId\": \"{{namespaceId}}\",\n  \"namespaceLabel\": \"{{namespaceLabel}}\",\n  \"deviceLabel\": \"{{deviceLabelHost}}\",\n  \"clientDeviceId\": \"{{clientDeviceId}}\",\n  \"recoveryKeyProof\": {\n    \"salt\": \"{{recoverySalt}}\",\n    \"hash\": \"{{recoveryHash}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Namespace created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.deviceToken).to.be.a('string');",
+                  "    pm.environment.set('namespaceId', json.namespaceId);",
+                  "    pm.environment.set('deviceToken', json.deviceToken);",
+                  "    pm.environment.set('deviceId', json.deviceId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Creates a workspace and returns the first device token. Run this before authenticated requests, or use the pre-filled sample token in the environment."
+        },
+        {
+          "name": "3. List documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents",
+            "description": "Lists all document heads in the namespace.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Documents listed', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().documents).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Lists all document heads in the namespace."
+        },
+        {
+          "name": "4. Push document — first (notes)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/notes",
+            "description": "First push for a non-primary document. `expectedRevision` must be null.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": null,\n  \"envelope\": {\n    \"magic\": \"ESR-DOC1\",\n    \"schemaVersion\": 2,\n    \"namespaceId\": \"{{namespaceId}}\",\n    \"namespaceLabel\": \"{{namespaceLabel}}\",\n    \"documentId\": \"notes\",\n    \"revision\": \"{{notesRevision}}\",\n    \"deviceId\": \"{{deviceId}}\",\n    \"writtenAt\": \"{{notesWrittenAt}}\",\n    \"contentType\": \"application/vnd.example.notes+json\",\n    \"contentMagic\": \"ENV-ENC1\",\n    \"contentSha256\": \"e7611f07e8bb3c3e1e3b2c2851dd25c1e1108bd8c6d4128a31c54617c814eb5a\",\n    \"payload\": \"{\\\"magic\\\":\\\"ENV-ENC1\\\",\\\"kdf\\\":\\\"PBKDF2-SHA256\\\",\\\"iterations\\\":600000,\\\"salt\\\":\\\"AQIDBAUGBwgJCgsMDQ4PEA\\\",\\\"nonce\\\":\\\"AQIDBAUGBwgJCgsM\\\",\\\"ciphertext\\\":\\\"lFyT3p92pT56vOt7b-jCKO0-5mGYLfINAuV0L7gx20o\\\"}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Document pushed', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('notesRevision', json.revision);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "First push for a non-primary document. `expectedRevision` must be null."
+        },
+        {
+          "name": "5. Get head meta (notes)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/notes/head/meta",
+            "description": "Lightweight head metadata — poll this before deciding to pull.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Head meta returned', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.environment.set('notesRevision', pm.response.json().revision);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Lightweight head metadata — poll this before deciding to pull."
+        },
+        {
+          "name": "6. Get head (notes)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/notes/head",
+            "description": "Full envelope for import when revision differs from local state.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "Full envelope for import when revision differs from local state."
+        }
+      ]
+    },
+    {
+      "name": "Namespaces",
+      "item": [
+        {
+          "name": "Create namespace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces",
+            "description": "Create workspace + first device. Returns `deviceToken` and `deviceId`.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"namespaceId\": \"{{namespaceId}}\",\n  \"namespaceLabel\": \"{{namespaceLabel}}\",\n  \"deviceLabel\": \"{{deviceLabelHost}}\",\n  \"clientDeviceId\": \"{{clientDeviceId}}\",\n  \"recoveryKeyProof\": {\n    \"salt\": \"{{recoverySalt}}\",\n    \"hash\": \"{{recoveryHash}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Namespace created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('namespaceId', json.namespaceId);",
+                  "    pm.environment.set('deviceToken', json.deviceToken);",
+                  "    pm.environment.set('deviceId', json.deviceId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Create workspace + first device. Returns `deviceToken` and `deviceId`."
+        },
+        {
+          "name": "Get namespace",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}",
+            "description": "Metadata, limits, primary head summary, and document list.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "Metadata, limits, primary head summary, and document list."
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "List documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get head meta (notes)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/notes/head/meta",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Head meta', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.environment.set('notesRevision', pm.response.json().revision);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get head (notes)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/notes/head",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get head meta (primary alias)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/primary/head/meta",
+            "description": "Legacy alias path for the default `primary` document.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "Legacy alias path for the default `primary` document."
+        },
+        {
+          "name": "Get head (primary alias)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/primary/head",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Push document — first (notes)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/notes",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": null,\n  \"envelope\": {\n    \"magic\": \"ESR-DOC1\",\n    \"schemaVersion\": 2,\n    \"namespaceId\": \"{{namespaceId}}\",\n    \"namespaceLabel\": \"{{namespaceLabel}}\",\n    \"documentId\": \"notes\",\n    \"revision\": \"{{notesRevision}}\",\n    \"deviceId\": \"{{deviceId}}\",\n    \"writtenAt\": \"{{notesWrittenAt}}\",\n    \"contentType\": \"application/vnd.example.notes+json\",\n    \"contentMagic\": \"ENV-ENC1\",\n    \"contentSha256\": \"e7611f07e8bb3c3e1e3b2c2851dd25c1e1108bd8c6d4128a31c54617c814eb5a\",\n    \"payload\": \"{\\\"magic\\\":\\\"ENV-ENC1\\\",\\\"kdf\\\":\\\"PBKDF2-SHA256\\\",\\\"iterations\\\":600000,\\\"salt\\\":\\\"AQIDBAUGBwgJCgsMDQ4PEA\\\",\\\"nonce\\\":\\\"AQIDBAUGBwgJCgsM\\\",\\\"ciphertext\\\":\\\"lFyT3p92pT56vOt7b-jCKO0-5mGYLfINAuV0L7gx20o\\\"}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Document pushed', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    pm.environment.set('notesRevision', pm.response.json().revision);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Push document — update (notes)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/notes",
+            "description": "`expectedRevision` must match the current server head.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": \"{{notesRevision}}\",\n  \"envelope\": {\n    \"magic\": \"ESR-DOC1\",\n    \"schemaVersion\": 2,\n    \"namespaceId\": \"{{namespaceId}}\",\n    \"namespaceLabel\": \"{{namespaceLabel}}\",\n    \"documentId\": \"notes\",\n    \"revision\": \"{{notesRevisionUpdate}}\",\n    \"deviceId\": \"{{deviceId}}\",\n    \"writtenAt\": \"{{notesWrittenAtUpdate}}\",\n    \"contentType\": \"application/vnd.example.notes+json\",\n    \"contentMagic\": \"ENV-ENC1\",\n    \"contentSha256\": \"9c56a708950c888e167c1fee949fb46c4169a99de4fc452afce59e8e2e2caf37\",\n    \"payload\": \"{\\\"magic\\\":\\\"ENV-ENC1\\\",\\\"kdf\\\":\\\"PBKDF2-SHA256\\\",\\\"iterations\\\":600000,\\\"salt\\\":\\\"AQIDBAUGBwgJCgsMDQ4PEA\\\",\\\"nonce\\\":\\\"AQIDBAUGBwgJCgsM\\\",\\\"ciphertext\\\":\\\"lFyT3p92pT56of5zYvOFMWQr6v3JyueAqlvGsNk-1KI6vwZRDB-O\\\"}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Document updated', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    pm.environment.set('notesRevision', pm.response.json().revision);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "`expectedRevision` must match the current server head."
+        },
+        {
+          "name": "Push document — revision conflict (notes)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/notes",
+            "description": "Example request with a stale `expectedRevision` — expect `409 REVISION_CONFLICT`.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": \"01HZSTALE_REVISION\",\n  \"envelope\": {\n    \"magic\": \"ESR-DOC1\",\n    \"schemaVersion\": 2,\n    \"namespaceId\": \"{{namespaceId}}\",\n    \"namespaceLabel\": \"{{namespaceLabel}}\",\n    \"documentId\": \"notes\",\n    \"revision\": \"{{notesRevisionUpdate}}\",\n    \"deviceId\": \"{{deviceId}}\",\n    \"writtenAt\": \"{{notesWrittenAtUpdate}}\",\n    \"contentType\": \"application/vnd.example.notes+json\",\n    \"contentMagic\": \"ENV-ENC1\",\n    \"contentSha256\": \"9c56a708950c888e167c1fee949fb46c4169a99de4fc452afce59e8e2e2caf37\",\n    \"payload\": \"{\\\"magic\\\":\\\"ENV-ENC1\\\",\\\"kdf\\\":\\\"PBKDF2-SHA256\\\",\\\"iterations\\\":600000,\\\"salt\\\":\\\"AQIDBAUGBwgJCgsMDQ4PEA\\\",\\\"nonce\\\":\\\"AQIDBAUGBwgJCgsM\\\",\\\"ciphertext\\\":\\\"lFyT3p92pT56of5zYvOFMWQr6v3JyueAqlvGsNk-1KI6vwZRDB-O\\\"}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Revision conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    pm.expect(pm.response.json().error.code).to.eql('REVISION_CONFLICT');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Example request with a stale `expectedRevision` — expect `409 REVISION_CONFLICT`."
+        },
+        {
+          "name": "Push document — primary (first)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/documents/primary",
+            "description": "First push for the default `primary` document (schemaVersion 1).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": null,\n  \"envelope\": {\n    \"magic\": \"ESR-DOC1\",\n    \"schemaVersion\": 1,\n    \"namespaceId\": \"{{namespaceId}}\",\n    \"namespaceLabel\": \"{{namespaceLabel}}\",\n    \"documentId\": \"primary\",\n    \"revision\": \"{{primaryRevision}}\",\n    \"deviceId\": \"{{deviceId}}\",\n    \"writtenAt\": \"{{writtenAt}}\",\n    \"contentType\": \"application/vnd.myapp+json\",\n    \"contentMagic\": \"ENV-ENC1\",\n    \"contentSha256\": \"d0673c157ada6198e2c7ec13a4398c38aae980ec3d996c5a1c53530f874755ec\",\n    \"payload\": \"{\\\"magic\\\":\\\"ENV-ENC1\\\",\\\"kdf\\\":\\\"PBKDF2-SHA256\\\",\\\"iterations\\\":600000,\\\"salt\\\":\\\"AQIDBAUGBwgJCgsMDQ4PEA\\\",\\\"nonce\\\":\\\"AQIDBAUGBwgJCgsM\\\",\\\"ciphertext\\\":\\\"lFyUxY5-9CZir9Nq-oWz5hHBLmMA33VDBh3jlw\\\"}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "First push for the default `primary` document (schemaVersion 1)."
+        }
+      ]
+    },
+    {
+      "name": "Devices & pairing",
+      "item": [
+        {
+          "name": "Create pairing token (host)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/pairing-tokens",
+            "description": "Host device generates a 6-digit pairing code.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ttlSeconds\": 600\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Pairing token created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('pairingCode', json.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Host device generates a 6-digit pairing code."
+        },
+        {
+          "name": "Redeem pairing code (guest)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/devices",
+            "description": "Guest device redeems the pairing code — no device token required.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pairingCode\": \"{{pairingCode}}\",\n  \"deviceLabel\": \"{{deviceLabelGuest}}\",\n  \"clientDeviceId\": \"{{guestClientDeviceId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Device paired', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('guestDeviceToken', json.deviceToken);",
+                  "    pm.environment.set('guestDeviceId', json.deviceId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Guest device redeems the pairing code — no device token required."
+        },
+        {
+          "name": "List devices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/devices",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Revoke device",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/devices/{{guestDeviceId}}",
+            "description": "Removes a paired device. The last remaining device cannot be revoked.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Device revoked', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Removes a paired device. The last remaining device cannot be revoked."
+        }
+      ]
+    },
+    {
+      "name": "Recovery",
+      "item": [
+        {
+          "name": "Recover namespace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/recover",
+            "description": "**Warning:** revokes every existing device token in the workspace. Uses recovery key proof, not the raw phrase.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recoveryKeyProof\": {\n    \"salt\": \"{{recoverySalt}}\",\n    \"hash\": \"{{recoveryHash}}\"\n  },\n  \"deviceLabel\": \"{{deviceLabelRecovery}}\",\n  \"clientDeviceId\": \"{{recoveryClientDeviceId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Namespace recovered', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('deviceToken', json.deviceToken);",
+                  "    pm.environment.set('deviceId', json.deviceId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "**Warning:** revokes every existing device token in the workspace. Uses recovery key proof, not the raw phrase."
+        }
+      ]
+    },
+    {
+      "name": "Limits & unlock",
+      "item": [
+        {
+          "name": "Get limits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/limits",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Redeem unlock code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/unlock",
+            "description": "Operator-generated unlock code adds purchased device slots.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unlockCode\": \"{{unlockCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Operator-generated unlock code adds purchased device slots."
+        }
+      ]
+    },
+    {
+      "name": "WebSocket",
+      "item": [
+        {
+          "name": "Connect to notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Sec-WebSocket-Protocol",
+                "value": "esr-notifications-v1"
+              }
+            ],
+            "url": "{{relayWsBaseUrl}}/namespaces/{{namespaceId}}/notifications",
+            "description": "WebSocket upgrade for `head_changed` and `limits_changed` events.\n\nIn Postman: switch protocol to **WebSocket**, set header `Sec-WebSocket-Protocol: esr-notifications-v1`, and send the same `Authorization: Bearer {{deviceToken}}` header.\n\nAfter `auth_ok`, optionally send:\n```json\n{ \"type\": \"subscribe\", \"documentIds\": [\"primary\", \"notes\"] }\n```\n\nAlways fetch document data over HTTP (`GET .../head`) — notifications carry metadata only.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "WebSocket upgrade for `head_changed` and `limits_changed` events.\n\nIn Postman: switch protocol to **WebSocket**, set header `Sec-WebSocket-Protocol: esr-notifications-v1`, and send the same `Authorization: Bearer {{deviceToken}}` header.\n\nAfter `auth_ok`, optionally send:\n```json\n{ \"type\": \"subscribe\", \"documentIds\": [\"primary\", \"notes\"] }\n```\n\nAlways fetch document data over HTTP (`GET .../head`) — notifications carry metadata only."
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "relayOrigin",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "relayBaseUrl",
+      "value": "{{relayOrigin}}/v1"
+    },
+    {
+      "key": "relayWsBaseUrl",
+      "value": "ws://localhost:8080/v1"
+    }
+  ]
+}
