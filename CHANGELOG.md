@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Package-level changelogs: `packages/*/CHANGELOG.md`, `apps/web/CHANGELOG.md`.
 
+The published version number lives only in the [`package.json`](package.json) `version` field (`0.1.x`). **The latest release section must always match `package.json` `version`** (e.g. `0.1.25` → `## [0.1.25]`). Write new entries under `## [Unreleased]` first; when you run `pnpm version patch --no-git-tag-version`, the `version` script moves `[Unreleased]` content to `## [X.Y.Z]` automatically (`scripts/promote-changelog-unreleased.mjs`). See [README — Version and CHANGELOG](README.md#version-and-changelog).
+
 ## [Unreleased]
 
+
+## [0.1.1]
 ### Added
 
+- **multi-document:** namespace başına çoklu döküman (protocol, server, client, WS subscribe filter, docs, örnek script); spec [15-MULTI-DOCUMENT.md](docs/envelope-sync-relay/tr/15-MULTI-DOCUMENT.md)
+
+### Changed
+
+- **server:** rate limit action `put_primary` renamed to `put_document`; HTTP headers `RateLimit-PutDocument-*` (breaking for API clients)
+- **docs:** referans belgeleri çoklu belge ve `@senkronla/client` API ile hizalandı (09, 12, 14, agents, README)
 - Monorepo scaffold with pnpm workspaces and Turborepo
 - `@senkronla/protocol`, `@senkronla/server`, `@senkronla/client`, `@senkronla/cli` packages
 - `@senkronla/web` operator portal with EN/TR i18n

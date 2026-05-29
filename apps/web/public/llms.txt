@@ -2,18 +2,28 @@
 
 > Open-source, self-hosted Envelope Sync Relay for offline-first applications — integrate via JavaScript SDK or REST API.
 
-Senkronla stores opaque ESR-DOC1 envelopes and coordinates multi-device sync. This index lists agent-ready integration docs (SDK and REST). Relay deployment (ESR setup) is documented separately for operators.
+Senkronla stores opaque ESR-DOC1 envelopes and coordinates multi-device sync. Spec v1.2 supports multiple named documents per namespace (`primary`, `settings`, etc.) via `EsrSync.connect({ documents: [...] })` and `/documents/{documentId}/...` REST paths.
 
-## Agent integration
+## Agent integration (start here)
 
-- [English agent guide](/agents/en.md): Comprehensive single-file SDK + REST reference (~500 lines) for AI coding agents
-- [Turkish agent guide](/agents/tr.md): Kapsamlı Türkçe SDK + REST agent entegrasyon rehberi
+- [English overview](/agents/en.md): Architecture, checklist, concepts — links to SDK and API references
+- [Turkish overview](/agents/tr.md): Mimari, kontrol listesi, kavramlar — SDK ve API referanslarına bağlantılar
+
+## Agent SDK reference
+
+- [English SDK](/agents/sdk-en.md): `@senkronla/client`, `EsrSync`, adapters, sync lifecycle, multi-document
+- [Turkish SDK](/agents/sdk-tr.md): `@senkronla/client`, `EsrSync`, adapter'lar, çoklu belge
+
+## Agent REST API reference
+
+- [English API](/agents/api-en.md): `/v1` endpoints, ESR-DOC1 envelopes, WebSocket, error codes, quotas
+- [Turkish API](/agents/api-tr.md): `/v1` uç noktaları, zarf formatı, WebSocket, hata kodları
 
 ## Human documentation
 
 - [Integration guides](/guides): Step-by-step product integration
-- [SDK reference](/sdk): EsrSync client API
-- [REST API](/api): HTTP endpoints and error codes
+- [SDK reference](/sdk): EsrSync client API (interactive)
+- [REST API](/api): HTTP endpoints and error codes (interactive)
 
 ## Optional
 

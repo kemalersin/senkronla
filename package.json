@@ -1,5 +1,6 @@
 {
   "name": "senkronla",
+  "version": "0.1.1",
   "private": true,
   "description": "Senkronla — self-hosted zero-knowledge envelope sync relay",
   "license": "MIT",
@@ -10,11 +11,14 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml,yml}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yaml,yml}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yaml,yml}\"",
+    "example:multi-document": "pnpm --filter @senkronla/server exec tsx examples/multi-document-sync.ts",
+    "version": "node scripts/promote-changelog-unreleased.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2"
   },

@@ -8,3 +8,13 @@ export const AGENT_DOC_PATHS = {
   en: '/agents/en.md',
   tr: '/agents/tr.md',
 } as const
+
+export const AGENT_SDK_PATHS = {
+  en: '/agents/sdk-en.md',
+  tr: '/agents/sdk-tr.md',
+} as const
+
+export const AGENT_API_PATHS = {
+  en: '/agents/api-en.md',
+  tr: '/agents/api-tr.md',
+} as const

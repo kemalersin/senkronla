@@ -95,6 +95,7 @@
     "nav": {
       "concepts": "Core concepts",
       "checklist": "Checklist",
+      "multi-document": "Multiple documents",
       "first-device": "First device",
       "second-device": "Second device",
       "recovery": "Lost devices",
@@ -109,7 +110,7 @@
     "sections": {
       "concepts": {
         "title": "Core concepts",
-        "p1": "Senkronla syncs one JSON snapshot per customer workspace. These terms appear throughout the SDK and API:",
+        "p1": "Senkronla syncs JSON snapshots per customer workspace — one or more named documents per namespace. These terms appear throughout the SDK and API:",
         "calloutTitle": "Who does what?",
         "calloutBody": "Your app owns the user experience and data model. Senkronla owns transport: storing opaque packages, versioning, device slots, and notifying other clients.",
         "rows": {
@@ -119,7 +120,8 @@
           "recoveryPhrase": "24-word BIP39 phrase shown once at workspace creation. Proves ownership if all devices are lost. Never sent to the server — only a hash proof.",
           "revision": "ULID version tag on each snapshot. Required for optimistic locking on push — mismatch returns <tag>REVISION_CONFLICT</tag>.",
           "envelope": "<tag>ESR-DOC1</tag> wrapper around your JSON snapshot plus metadata. The relay stores it but does not parse your app data.",
-          "primaryDocument": "v1 supports exactly one document per namespace (<tag>documentId: primary</tag>) — typically your full app state as JSON.",
+          "document": "A named snapshot in a namespace (<tag>documentId</tag>, e.g. <tag>primary</tag>, <tag>settings</tag>). Each has its own revision chain.",
+          "primaryDocument": "Default document id. Single-document apps use only <tag>primary</tag> (<tag>schemaVersion: 1</tag>). Additional ids use <tag>schemaVersion: 2</tag>.",
           "pairingCode": "Six-digit code valid for a few minutes. Host device generates it; guest device redeems it to join the workspace."
         }
       },
@@ -149,7 +151,7 @@
           },
           "s6": {
             "title": "Wire the sync loop",
-            "body": "<tag>ensureNamespace()</tag> → <tag>sync()</tag> on startup → <tag>notifyLocalChange()</tag> after edits → <tag>flushPush()</tag> before logout."
+            "body": "<tag>ensureNamespace()</tag> → <tag>sync()</tag> on startup (all documents) → <tag>notifyLocalChange(documentId?)</tag> after edits → <tag>flushPush(documentId?)</tag> before logout."
           }
         }
       },
@@ -177,9 +179,15 @@
           },
           "s5": {
             "title": "Hook local changes",
-            "body": "Call <tag>notifyLocalChange()</tag> whenever your store mutates. The SDK debounces pushes (default 2 seconds)."
+            "body": "Call <tag>notifyLocalChange('primary')</tag> (or your <tag>documentId</tag>) whenever that store mutates. The SDK debounces pushes (default 2 seconds)."
           }
         }
+      },
+      "multiDocument": {
+        "title": "Multiple documents in one workspace",
+        "p1": "Use this when app data and settings (or other independent JSON blobs) should sync separately under the same <tag>namespaceId</tag>.",
+        "p2": "Pass a <tag>documents</tag> array to <tag>EsrSync.connect</tag> (optional <tag>documentId</tag> per slot, e.g. <tag>settings</tag>). Each slot needs its own <tag>adapter</tag>; all must return the same <tag>namespaceId()</tag>.",
+        "sdkLink": "Full SDK reference →"
       },
       "secondDevice": {
         "title": "Add a second device",
@@ -193,7 +201,7 @@
           },
           "s2": {
             "title": "Guest calls joinPairing(code)",
-            "body": "Receives a device token, stores it, and runs <tag>sync()</tag> to download data."
+            "body": "Receives a device token, stores it, and runs <tag>sync()</tag> to download all documents."
           },
           "s3": {
             "title": "Verify slot limits",
@@ -216,8 +224,8 @@
             "body": "Call <tag>sync.recover(phrase)</tag> — stores a fresh device token for this install."
           },
           "s3": {
-            "title": "Run sync()",
-            "body": "Downloads the latest remote snapshot into your adapter via <tag>sync()</tag>."
+            "title": "Run sync(documentId?)",
+            "body": "<tag>sync()</tag> pulls and pushes every connected document; <tag>sync(documentId)</tag> targets one slot (e.g. <tag>settings</tag>)."
           }
         }
       },
@@ -233,11 +241,11 @@
           },
           "s2": {
             "title": "Network returns",
-            "body": "Scheduler or manual <tag>sync()</tag> attempts push/pull automatically."
+            "body": "Scheduler or manual <tag>sync()</tag> (all documents) or <tag>sync(documentId)</tag> attempts push/pull."
           },
           "s3": {
             "title": "Conflict detected",
-            "body": "<tag>onConflict</tag> receives <tag>remoteMeta</tag> (timestamp, device). Return <tag>remote</tag>, <tag>local</tag>, or <tag>cancel</tag>."
+            "body": "<tag>onConflict</tag> receives <tag>documentId</tag> and <tag>remoteMeta</tag>. Return <tag>remote</tag>, <tag>local</tag>, or <tag>cancel</tag> per document."
           }
         }
       },
@@ -352,7 +360,9 @@
           "blobPath": "Filesystem path for encrypted envelope blobs",
           "freeLimit": "Free device slots per namespace (default 2)",
           "limitMode": "<tag>payment</tag> or <tag>block</tag> when the device limit is reached",
-          "cors": "Comma-separated allowed origins — avoid <tag>*</tag> in production"
+          "cors": "Comma-separated allowed origins — avoid <tag>*</tag> in production",
+          "maxDocuments": "Max documents per namespace ( default 32, 0 = unlimited)",
+          "allowedDocIds": "Optional comma-separated document ID allowlist (e.g. primary,settings)"
         }
       },
       "verify": {
@@ -395,7 +405,7 @@
   },
   "agentsGuide": {
     "title": "Agents guide",
-    "intro": "Give AI coding agents a single Markdown file with everything they need to integrate the SDK or REST API — without relay deployment noise.",
+    "intro": "Give AI coding agents focused Markdown files for SDK or REST integration — overview plus split references, without relay deployment noise.",
     "nav": {
       "overview": "Overview",
       "standards": "May 2026 standards",
@@ -407,7 +417,7 @@
     "sections": {
       "overview": {
         "title": "Why agent docs?",
-        "p1": "Human guides on this site are great for learning, but coding agents work best with one dense, link-stable Markdown file they can fetch in a single request.",
+        "p1": "Human guides on this site are great for learning, but coding agents work best with dense, link-stable Markdown files they can fetch per stack (SDK vs REST).",
         "li1": "SDK integration via <tag>@senkronla/client</tag> and <tag>EsrSync</tag>",
         "li2": "REST bootstrap, push/pull, pairing, and error codes under <tag>/v1</tag>",
         "li3": "Pointers to full human docs when the agent needs more detail"
@@ -420,18 +430,30 @@
         "agentsMdTitle": "AGENTS.md (repository onboarding)",
         "agentsMdBody": "Stewarded by the Agentic AI Foundation (Linux Foundation). An <tag>AGENTS.md</tag> in a repo root tells coding agents how to build, test, and follow conventions inside that codebase. Closest file in the tree wins — useful for monorepos, not for public product docs.",
         "calloutTitle": "What Senkronla publishes",
-        "calloutBody": "This portal ships llms.txt plus dedicated agent integration Markdown files (SDK + REST only). ESR deployment stays in the human ESR guide — operators and app integrators have different jobs."
+        "calloutBody": "This portal ships llms.txt plus split agent files: overview (en.md / tr.md), SDK reference (sdk-en.md / sdk-tr.md), and REST API reference (api-en.md / api-tr.md). ESR deployment stays in the human ESR guide."
       },
       "files": {
         "title": "Download or link",
-        "p1": "Fetch these URLs from your deployment origin (prepend your portal hostname if the agent runs off-site). Each file is a self-contained ~500-line integration reference:",
+        "p1": "Fetch these URLs from your deployment origin (prepend your portal hostname if the agent runs off-site). Split by stack so agents load only what they need:",
+        "overviewTitle": "Overview",
         "enLink": "/agents/en.md",
-        "enDesc": "English — SDK + REST integration reference",
+        "enDesc": "English — architecture, checklist, concepts",
         "trLink": "/agents/tr.md",
-        "trDesc": "Turkish — SDK + REST entegrasyon referansı",
+        "trDesc": "Turkish — mimari, kontrol listesi, kavramlar",
+        "sdkTitle": "SDK reference",
+        "sdkEnLink": "/agents/sdk-en.md",
+        "sdkEnDesc": "English — @senkronla/client, EsrSync, multi-document",
+        "sdkTrLink": "/agents/sdk-tr.md",
+        "sdkTrDesc": "Turkish — SDK entegrasyon referansı",
+        "apiTitle": "REST API reference",
+        "apiEnLink": "/agents/api-en.md",
+        "apiEnDesc": "English — /v1 HTTP, envelopes, WebSocket, errors",
+        "apiTrLink": "/agents/api-tr.md",
+        "apiTrDesc": "Turkish — REST API referansı",
+        "llmsTitle": "Site manifest",
         "llmsLink": "/llms.txt",
-        "llmsDesc": "Site manifest listing agent and human doc links",
-        "p2": "Recommended default for English agents: /agents/en.md. For Turkish prompts: /agents/tr.md."
+        "llmsDesc": "Site manifest listing all agent and human doc links",
+        "p2": "Recommended: fetch /llms.txt, then /agents/en.md (or tr.md) plus sdk-en.md or api-en.md for your stack. English agents: sdk-en.md + api-en.md. Turkish: sdk-tr.md + api-tr.md."
       },
       "usage": {
         "title": "Feeding files to agents",
@@ -443,7 +465,7 @@
           },
           "s2": {
             "title": "Custom automation",
-            "body": "Fetch <tag>/llms.txt</tag> first, then pull <tag>/agents/en.md</tag> (or <tag>/agents/tr.md</tag>) into your prompt. Expand linked human pages only when the task needs endpoint-level detail."
+            "body": "Fetch <tag>/llms.txt</tag> first, then <tag>/agents/en.md</tag> (overview) and <tag>/agents/sdk-en.md</tag> or <tag>/agents/api-en.md</tag> for your stack. Turkish: <tag>/agents/tr.md</tag>, <tag>/agents/sdk-tr.md</tag>, <tag>/agents/api-tr.md</tag>."
           },
           "s3": {
             "title": "Relay URL",
@@ -480,6 +502,7 @@
       "quick-start": "Quick start",
       "install": "Install",
       "connect": "Connect options",
+      "multi-document": "Multiple documents",
       "adapter": "Document adapter",
       "storage": "Local storage",
       "methods": "Methods",
@@ -514,20 +537,29 @@
       },
       "connect": {
         "title": "EsrSync.connect options",
-        "p1": "Only <tag>relayUrl</tag>, <tag>document</tag>, <tag>storage</tag>, <tag>onRecoveryPhrase</tag>, and <tag>onConflict</tag> are required. Everything else has sensible defaults:",
-        "p2": "Use <tag>onStatusChange</tag> to drive a sync indicator in your UI, and <tag>onError</tag> for logging.",
+        "p1": "Required: <tag>relayUrl</tag>, <tag>storage</tag>, <tag>onRecoveryPhrase</tag>, <tag>onConflict</tag>, and either <tag>document</tag> or <tag>documents</tag>. Everything else has sensible defaults:",
+        "p2": "Use <tag>onStatusChange</tag> for a global indicator, <tag>onDocumentStatusChange</tag> per document when using <tag>documents[]</tag>, and <tag>onError</tag> for logging.",
         "exampleTitle": "Full connect example",
         "options": {
           "relayUrl": "Base URL ending in <tag>/v1</tag>, e.g. https://sync.example.com/v1",
-          "document": "Your <tag>DocumentAdapter</tag> instance",
+          "document": "Single-document shorthand — first slot is <tag>primary</tag>",
+          "documents": "Multi-document: array of slots with optional <tag>documentId</tag> and <tag>adapter</tag> (first slot defaults to <tag>primary</tag>)",
           "storage": "<tag>EsrStorage</tag> implementation (<tag>createLocalStorageAdapter</tag> for web)",
           "onRecoveryPhrase": "Required. Called once with the 24-word phrase when namespace is created.",
           "onConflict": "Required. Return <tag>remote</tag>, <tag>local</tag>, or <tag>cancel</tag> when versions diverge.",
           "onDeviceLimit": "Optional. Called on <tag>DEVICE_LIMIT_*</tag> errors — open billing UI.",
+          "onDocumentStatusChange": "Optional. <tag>(documentId, status)</tag> — recommended for multi-document UIs.",
           "pushDebounceMs": "Default 2000. Delay before pushing after <tag>notifyLocalChange()</tag>.",
           "notificationsEnabled": "Default true. Set false for CLI tools or tests.",
           "persistRecoveryPhrase": "Default true. Stores phrase in <tag>EsrStorage</tag> (consider security implications)."
         }
+      },
+      "multiDocument": {
+        "title": "Multiple documents",
+        "p1": "One <tag>EsrSync</tag> session can sync several independent snapshots in the same namespace. Each document has its own revision, conflict surface, and debounced push queue.",
+        "p2": "Omit <tag>documentId</tag> on the first slot to use <tag>primary</tag>. Additional slots must set <tag>documentId</tag> explicitly (e.g. <tag>settings</tag>).",
+        "tipTitle": "When to use",
+        "tipBody": "Prefer one <tag>primary</tag> document for a single app state. Split only when two JSON blobs change at different rates or need separate conflict UX."
       },
       "adapter": {
         "title": "Document adapter",
@@ -543,9 +575,9 @@
       },
       "storage": {
         "title": "What the SDK stores locally",
-        "p1": "Implement <tag>EsrStorage</tag> or use <tag>createLocalStorageAdapter(prefix)</tag>. Keys are scoped per namespace:",
-        "li1": "<tag>deviceToken</tag> — required for all authenticated calls",
-        "li2": "<tag>knownRemoteRevision</tag> — last seen server revision for conflict detection",
+        "p1": "Implement <tag>EsrStorage</tag> or use <tag>createLocalStorageAdapter(prefix)</tag>. Keys use <tag>'{namespaceId}:{documentId}:...'</tag> (legacy keys migrate to <tag>primary</tag>):",
+        "li1": "<tag>deviceToken</tag> — shared across documents in one namespace session",
+        "li2": "<tag>knownRemoteRevision</tag> — per <tag>documentId</tag>, for conflict detection",
         "li3": "<tag>recoveryPhrase</tag> — optional, if <tag>persistRecoveryPhrase</tag> is true",
         "li4": "<tag>global:clientDeviceId</tag> — generated once per app install",
         "calloutTitle": "Security",
@@ -557,16 +589,16 @@
         "examplesTitle": "Examples by method",
         "rows": {
           "ensureNamespace": "Create workspace on first launch, or verify existing token. Shows recovery phrase when created=true.",
-          "sync": "Full pull/push cycle. Call on app start, network reconnect, and after WS <tag>head_changed</tag>.",
-          "notifyLocalChange": "Mark local data dirty; debounced push follows.",
-          "flushPush": "Push immediately — use before logout or critical saves.",
+          "sync": "Full pull/push cycle. Omit <tag>documentId</tag> for all slots, or pass one id. Call on startup and reconnect; WS <tag>head_changed</tag> pulls the matching document automatically.",
+          "notifyLocalChange": "Mark local data dirty; optional <tag>documentId</tag> scopes to one slot.",
+          "flushPush": "Push immediately; optional <tag>documentId</tag> — use before logout.",
           "startPairing": "Host: returns <tag>code</tag>, <tag>qrPayload</tag>, <tag>expiresAt</tag>.",
-          "joinPairing": "Guest: redeems code, stores token, runs <tag>sync()</tag>.",
+          "joinPairing": "Guest: redeems code, stores token, runs <tag>sync()</tag> (all documents).",
           "recover": "Recovery phrase flow. Revokes all other devices.",
           "listDevices": "Returns devices array and limits for settings UI.",
           "revokeDevice": "Remove another device by server deviceId (ULID).",
           "redeemUnlockCode": "Apply operator unlock code for more device slots.",
-          "resolveConflict": "Manual resolution if you handle conflicts outside onConflict.",
+          "resolveConflict": "Manual resolution; optional <tag>documentId</tag> when using <tag>documents[]</tag>.",
           "getStatus": "Current <tag>EsrSyncStatus</tag> for UI indicators."
         },
         "examples": {
@@ -575,8 +607,8 @@
             "desc": "Create a workspace on first launch or verify an existing device token."
           },
           "sync": {
-            "title": "sync()",
-            "desc": "Run a full pull/push cycle and handle the result status."
+            "title": "sync(documentId?)",
+            "desc": "Run a full pull/push cycle. Pass documentId to sync one document; omit to sync all connected documents."
           },
           "notifyLocalChange": {
             "title": "notifyLocalChange()",
@@ -623,10 +655,10 @@
       "sync": {
         "title": "Sync lifecycle",
         "p1": "Typical integration points in your app:",
-        "li1": "App launch → <tag>ensureNamespace()</tag> then <tag>sync()</tag>",
-        "li2": "Store mutation → <tag>notifyLocalChange()</tag>",
-        "li3": "Window focus / network online → <tag>sync()</tag>",
-        "li4": "Logout → <tag>flushPush()</tag> then optional <tag>disable()</tag>"
+        "li1": "App launch → <tag>ensureNamespace()</tag> then <tag>sync()</tag> (all documents)",
+        "li2": "Store mutation → <tag>notifyLocalChange(documentId?)</tag>",
+        "li3": "Window focus / network online → <tag>sync()</tag> or <tag>sync(documentId)</tag> for one document",
+        "li4": "Logout → <tag>flushPush(documentId?)</tag> then optional <tag>disable()</tag>"
       },
       "pairing": {
         "title": "Pairing devices",
@@ -638,15 +670,16 @@
       "conflicts": {
         "title": "Handling conflicts",
         "p1": "A conflict means the server revision advanced while you had unpushed local edits. The SDK pauses and waits for your callback.",
-        "p2": "<tag>remoteMeta</tag> includes <tag>writtenAt</tag>, <tag>deviceId</tag>, and <tag>contentSha256</tag> — enough to show a meaningful choice in UI.",
+        "p2": "<tag>ConflictContext</tag> includes <tag>documentId</tag> plus <tag>remoteMeta</tag> (<tag>writtenAt</tag>, <tag>deviceId</tag>, <tag>contentSha256</tag>) for UI copy.",
         "manualExample": "Manual resolution"
       },
       "notifications": {
         "title": "Live notifications",
         "p1": "When enabled, the SDK opens a <tag>WebSocket</tag> to <tag>.../notifications</tag> and listens for <tag>head_changed</tag>.",
         "p2": "If <tag>WebSocket</tag> fails, it falls back to HTTP polling (<tag>ws_with_poll_fallback</tag> mode). WS only notifies — you still pull via HTTP.",
-        "li1": "<tag>head_changed</tag> → triggers <tag>sync()</tag>",
-        "li2": "<tag>limits_changed</tag> → slot count updated (handle in <tag>onDeviceLimit</tag> or poll limits)"
+        "li1": "<tag>head_changed</tag> → automatic pull for that <tag>documentId</tag> (not a full <tag>sync()</tag>)",
+        "li2": "<tag>limits_changed</tag> → slot count updated (handle in <tag>onDeviceLimit</tag> or poll limits)",
+        "li3": "Optional <tag>subscribe</tag> with <tag>documentIds[]</tag> after <tag>auth_ok</tag> — filter <tag>head_changed</tag> by document"
       },
       "status": {
         "title": "Status values",
@@ -667,7 +700,7 @@
         "p2": "Server-side codes (full list) are on the API page — including relay quotas (default 50 MB envelope, rate limits). Branch on <tag>error.code</tag>, not HTTP status alone.",
         "client": {
           "noToken": "No device token yet — call <tag>ensureNamespace</tag>, <tag>joinPairing</tag>, or <tag>recover</tag>",
-          "offline": "Network down — retry <tag>sync()</tag> when online",
+          "offline": "Network down — retry <tag>sync()</tag> or <tag>sync(documentId)</tag> when online",
           "namespaceExists": "Workspace already exists — use pairing or recovery instead of create",
           "conflictCancelled": "User cancelled conflict dialog — local edits still pending",
           "revisionConflict": "Server revision moved — conflict flow required",
@@ -735,11 +768,11 @@
           },
           "s3": {
             "title": "Check remote head",
-            "body": "<tag>GET .../documents/primary/head/meta</tag> before every push."
+            "body": "<tag>GET .../documents/'{documentId}'/head/meta</tag> before every push (<tag>primary</tag> or any non-primary documentId)."
           },
           "s4": {
             "title": "Push snapshot",
-            "body": "<tag>PUT .../primary</tag> with envelope. First push: no <tag>expectedRevision</tag>. Updates: must match meta revision."
+            "body": "<tag>PUT .../documents/'{documentId}'</tag> with envelope. First push: no <tag>expectedRevision</tag>. Updates: must match meta revision."
           },
           "s5": {
             "title": "Poll or subscribe",
@@ -761,16 +794,19 @@
       },
       "documents": {
         "title": "Documents",
-        "p1": "v1 syncs a single primary document — your app state as an <tag>ESR-DOC1</tag> envelope.",
+        "p1": "Each namespace holds one or more documents. Paths use <tag>/documents/'{documentId}'/...</tag>; <tag>primary</tag> is the default for single-document apps. Envelope <tag>schemaVersion: 2</tag> allows any valid <tag>documentId</tag>.",
+        "list": "List all document heads in namespace",
         "meta": "Lightweight head: revision, hash, size",
         "head": "Full envelope for import",
-        "put": "Push new snapshot",
+        "put": "Push new snapshot (any documentId)",
+        "parametricPath": "Parametric: .../documents/'{documentId}'/... (primary alias kept). Samples below use <tag>notes</tag> as the example id; the list response also includes <tag>primary</tag>.",
         "p2": "Always compare revision before push. Mismatch → <tag>REVISION_CONFLICT</tag> with <tag>remoteMeta</tag> in <tag>details</tag>.",
         "p3": "The serialized envelope must fit within the relay's <tag>maxEnvelopeBytes</tag> limit (default <tag>52,428,800 bytes (50 MB)</tag>). Larger payloads return <tag>413 ENVELOPE_TOO_LARGE</tag>.",
-        "metaExample": "GET .../head/meta",
-        "headExample": "GET .../head",
-        "pushFirstExample": "PUT .../primary (first push)",
-        "pushUpdateExample": "PUT .../primary (update)",
+        "listExample": "GET .../documents",
+        "metaExample": "GET .../documents/'{documentId}'/head/meta",
+        "headExample": "GET .../documents/'{documentId}'/head",
+        "pushCreateExample": "PUT .../documents/'{documentId}' (first push)",
+        "pushUpdateExample": "PUT .../documents/'{documentId}' (update)",
         "conflictExample": "409 REVISION_CONFLICT"
       },
       "devices": {
@@ -800,8 +836,8 @@
       "websocket": {
         "title": "WebSocket notifications",
         "p1": "Connect to the notifications URL with the device token. Subprotocol: <tag>esr-notifications-v1</tag>.",
-        "p2": "Messages are notifications only — always fetch document data via HTTP <tag>GET</tag>.",
-        "li1": "<tag>head_changed</tag> — new revision available, pull when convenient",
+        "p2": "Messages are notifications only — always fetch document data via HTTP <tag>GET</tag>. After <tag>auth_ok</tag>, send <tag>'{\"type\":\"subscribe\",\"documentIds\":[\"primary\",\"settings\"]}'</tag> to filter events (optional).",
+        "li1": "<tag>head_changed</tag> — includes <tag>documentId</tag>; pull that document when convenient",
         "li2": "<tag>limits_changed</tag> — device slot count changed",
         "exampleTitle": "WebSocket messages"
       },
@@ -814,7 +850,7 @@
         "rateP1": "Sliding-window counters in PostgreSQL. Exempt from the general IP quota: <tag>/health</tag>, <tag>/metrics</tag>, and WebSocket <tag>.../notifications</tag>.",
         "rows": {
           "general": "All API requests",
-          "push": "Document push (<tag>PUT .../primary</tag>)",
+          "push": "Document push (<tag>PUT .../documents/'{documentId}'</tag>)",
           "pair": "Guest pairing redeem",
           "pairingToken": "Pairing code generation",
           "recover": "Recovery"
@@ -841,8 +877,29 @@
           "recover": "1 hour"
         },
         "responseTitle": "Quota in responses",
-        "responseP1": "Successful responses include <tag>RateLimit-Limit</tag>, <tag>RateLimit-Remaining</tag>, and <tag>RateLimit-Reset</tag> headers (seconds until the window resets). Push also sends <tag>RateLimit-Push-*</tag>. Pull and push JSON bodies may include a <tag>rateLimits</tag> object keyed by action.",
-        "responseP2": "On <tag>429 RATE_LIMIT_EXCEEDED</tag>, use <tag>Retry-After</tag> and <tag>error.details.rateLimit</tag> for backoff."
+        "responseIntro": "When <tag>limits.rateLimit.enabled</tag> is true, most <tag>/v1</tag> responses return quota info via HTTP headers and, on some routes, a JSON <tag>rateLimits</tag> object.",
+        "responseHeadersTitle": "HTTP headers",
+        "responseHeaderGeneral": "General IP — <tag>RateLimit-Limit</tag>, <tag>RateLimit-Remaining</tag>, <tag>RateLimit-Reset</tag>",
+        "responseHeaderPut": "Document PUT — <tag>RateLimit-PutDocument-*</tag>",
+        "responseHeaderPairRecover": "Recovery and pairing — <tag>RateLimit-Recover-*</tag>, <tag>RateLimit-Pair-*</tag>, <tag>RateLimit-PairingToken-*</tag>",
+        "responseJsonTitle": "JSON body (<tag>rateLimits</tag>)",
+        "responseJsonIntro": "Some success responses also include a top-level <tag>rateLimits</tag> object.",
+        "responseJsonKeys": "Keys (internal action ids): <tag>global_ip</tag>, <tag>put_document</tag>, <tag>recover</tag>, <tag>pair_device</tag>, <tag>pairing_token</tag>",
+        "responseJsonFields": "Each value includes: <tag>action</tag>, <tag>limit</tag>, <tag>remaining</tag>, <tag>resetAfterSeconds</tag>, <tag>windowSeconds</tag>",
+        "responseJsonPut": "Every successful <tag>PUT .../documents/'{documentId}'</tag> decrements <tag>put_document</tag> (not only the first push).",
+        "responseRoutesTitle": "Routes with <tag>rateLimits</tag> in the body",
+        "responseRoutePut": "Document <tag>PUT</tag>",
+        "responseRouteHead": "<tag>GET .../head/meta</tag> and <tag>GET .../head</tag>",
+        "responseRouteList": "<tag>GET .../documents</tag>",
+        "responseRouteRecover": "<tag>POST .../recover</tag>",
+        "responseRoutePairingToken": "<tag>POST .../pairing-tokens</tag>",
+        "responseRoutePair": "<tag>POST .../devices</tag> (pair redeem)",
+        "responseRoutesWithoutTitle": "No body object (headers may still apply)",
+        "responseRoutesWithout": "<tag>POST /namespaces</tag>, <tag>GET .../devices</tag>, limits/unlock, <tag>DELETE</tag>",
+        "responseErrorsTitle": "<tag>429 RATE_LIMIT_EXCEEDED</tag>",
+        "responseErrorRetry": "<tag>Retry-After</tag> header and <tag>error.details.rateLimit</tag> (single quota object, same fields as above)",
+        "responseErrorNoTopLevel": "No top-level <tag>rateLimits</tag> on errors",
+        "responseExampleTitle": "Example shapes"
       },
       "errors": {
         "title": "Error codes",
@@ -859,9 +916,13 @@
           "conflict": "Re-read <tag>head/meta</tag>, run conflict UX",
           "tooLarge": "Envelope exceeds <tag>maxEnvelopeBytes</tag> (default 50 MB) — shrink snapshot or ask operator to raise limit",
           "envelope": "Fix envelope schema or hash",
-          "rateLimit": "Quota exceeded — backoff using <tag>Retry-After</tag> and <tag>RateLimit-*</tag> headers",
+          "rateLimit": "Quota exceeded — <tag>Retry-After</tag>, <tag>RateLimit-*</tag> headers, and <tag>error.details.rateLimit</tag> (<tag>remaining</tag> is 0)",
           "pairing": "Code expired or wrong — generate a new one",
-          "unlock": "Invalid or expired unlock code"
+          "unlock": "Invalid or expired unlock code",
+          "invalidDocumentId": "Path <tag>documentId</tag> format invalid",
+          "documentLimit": "Too many documents in namespace — raise <tag>maxDocumentsPerNamespace</tag> or delete unused ids",
+          "documentNotAllowed": "<tag>documentId</tag> not in server allowlist",
+          "envelopeDocumentMismatch": "Envelope <tag>documentId</tag> must match URL path"
         }
       }
     },
@@ -929,6 +990,8 @@
       "devices": "Devices",
       "slots": "Slots",
       "document": "Document",
+      "documentCount": "Documents",
+      "primaryHead": "Primary head",
       "created": "Created",
       "code": "Code",
       "status": "Status",
@@ -945,7 +1008,7 @@
       "recover": "Recovery",
       "pair_device": "Pair device",
       "pairing_token": "Pairing token",
-      "put_primary": "Document push"
+      "put_document": "Document PUT"
     }
   },
   "locale": {

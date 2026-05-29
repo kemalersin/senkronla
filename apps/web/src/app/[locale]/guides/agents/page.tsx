@@ -4,7 +4,7 @@ import { DocSection } from '@/components/doc-section'
 import { DocStepList } from '@/components/doc-step-list'
 import { DocsLayout } from '@/components/docs-layout'
 import { Link } from '@/i18n/navigation'
-import { AGENT_DOC_PATHS, LLMS_TXT_PATH } from '@/lib/site-links'
+import { AGENT_API_PATHS, AGENT_DOC_PATHS, AGENT_SDK_PATHS, LLMS_TXT_PATH } from '@/lib/site-links'
 import { withDocRich } from '@/lib/doc-rich-text'
 
 interface PageProps {
@@ -54,6 +54,7 @@ export default async function AgentsGuidePage({ params }: PageProps) {
 
       <DocSection id="files" title={t('sections.files.title')}>
         <p>{t('sections.files.p1')}</p>
+        <p className="doc-subheading">{t('sections.files.overviewTitle')}</p>
         <ul className="doc-list">
           <li>
             <a href={AGENT_DOC_PATHS.en}>{t('sections.files.enLink')}</a>
@@ -65,6 +66,35 @@ export default async function AgentsGuidePage({ params }: PageProps) {
             {' — '}
             {t('sections.files.trDesc')}
           </li>
+        </ul>
+        <p className="doc-subheading">{t('sections.files.sdkTitle')}</p>
+        <ul className="doc-list">
+          <li>
+            <a href={AGENT_SDK_PATHS.en}>{t('sections.files.sdkEnLink')}</a>
+            {' — '}
+            {t('sections.files.sdkEnDesc')}
+          </li>
+          <li>
+            <a href={AGENT_SDK_PATHS.tr}>{t('sections.files.sdkTrLink')}</a>
+            {' — '}
+            {t('sections.files.sdkTrDesc')}
+          </li>
+        </ul>
+        <p className="doc-subheading">{t('sections.files.apiTitle')}</p>
+        <ul className="doc-list">
+          <li>
+            <a href={AGENT_API_PATHS.en}>{t('sections.files.apiEnLink')}</a>
+            {' — '}
+            {t('sections.files.apiEnDesc')}
+          </li>
+          <li>
+            <a href={AGENT_API_PATHS.tr}>{t('sections.files.apiTrLink')}</a>
+            {' — '}
+            {t('sections.files.apiTrDesc')}
+          </li>
+        </ul>
+        <p className="doc-subheading">{t('sections.files.llmsTitle')}</p>
+        <ul className="doc-list">
           <li>
             <a href={LLMS_TXT_PATH}>{t('sections.files.llmsLink')}</a>
             {' — '}

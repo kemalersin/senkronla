@@ -90,6 +90,10 @@ pnpm lint        # Typecheck all packages
 pnpm typecheck   # Alias for lint in packages
 ```
 
+## Version and CHANGELOG
+
+The sole semver source is the [`package.json`](package.json) `version` field. Release notes follow [Keep a Changelog](https://keepachangelog.com/) format in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Release target
 
 Full v1 delivery includes REST API, WebSocket notifications, and `EsrSync` client facade per the specification.
