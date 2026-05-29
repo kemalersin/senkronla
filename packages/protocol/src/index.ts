@@ -42,6 +42,22 @@ export {
   type VerifyEnvelopeResult,
 } from './envelope.js'
 export {
+  ENV_ENC1_DEFAULT_ITERATIONS,
+  ENV_ENC1_NONCE_BYTES,
+  ENV_ENC1_SALT_BYTES,
+  buildEnvEnc1Payload,
+  buildEnvRaw1Payload,
+  buildInnerPayload,
+  extractDocumentFromInnerPayload,
+  innerPayloadContentMagic,
+  parseInnerPayload,
+  verifyInnerPayloadSha256,
+  type BuildEnvEnc1Options,
+  type EnvEnc1Inner,
+  type EnvInnerPayload,
+  type EnvRaw1Inner,
+} from './inner-payload.js'
+export {
   WS_SUBPROTOCOL,
   WsClientMessageSchema,
   WsHeadChangedSchema,

@@ -20,6 +20,7 @@ const sectionKeys = [
   'connect',
   'multi-document',
   'adapter',
+  'encryption',
   'storage',
   'methods',
   'sync',
@@ -73,6 +74,11 @@ export default async function SdkPage({ params }: PageProps) {
   const relayUrl = getRelayApiBaseUrl()
   const snippets = createGuideSnippets(relayUrl)
   const rich = withDocRich({ relayUrl })
+  const encryptionRich = withDocRich({
+    relayUrl,
+    apiLink: (chunks) => <Link href="/api#encryption">{chunks}</Link>,
+    encryptionLink: (chunks) => <a href="#encryption">{chunks}</a>,
+  })
 
   const nav = sectionKeys.map((key) => ({
     id: key,
@@ -170,7 +176,7 @@ export default async function SdkPage({ params }: PageProps) {
             ['contentType()', t('sections.adapter.fields.contentType')],
           ]}
         />
-        <p>{t.rich('sections.adapter.p2', withDocRich())}</p>
+        <p>{t.rich('sections.adapter.p2', encryptionRich)}</p>
         <CodeBlock
           code={`const document = createDocumentAdapter({
   namespaceId: workspace.id,
@@ -181,6 +187,26 @@ export default async function SdkPage({ params }: PageProps) {
 })`}
           language="typescript"
         />
+      </DocSection>
+
+      <DocSection id="encryption" title={t('sections.encryption.title')}>
+        <p>{t.rich('sections.encryption.p1', encryptionRich)}</p>
+        <p className="doc-subheading">{t('sections.encryption.passwordTitle')}</p>
+        <p>{t.rich('sections.encryption.passwordP1', withDocRich())}</p>
+        <p>{t('sections.encryption.passwordP2')}</p>
+        <p className="doc-subheading">{t('sections.encryption.flowTitle')}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.encryption.flowLi1', withDocRich())}</li>
+          <li>{t.rich('sections.encryption.flowLi2', withDocRich())}</li>
+          <li>{t.rich('sections.encryption.flowLi3', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t('sections.encryption.exampleTitle')}</p>
+        <CodeBlock code={snippets.encryptedDocumentAdapter} language="typescript" />
+        <p className="doc-subheading">{t('sections.encryption.envelopeExampleTitle')}</p>
+        <CodeBlock code={snippets.buildEncryptedEnvelope} language="typescript" />
+        <DocCallout variant="warn" title={t('sections.encryption.warnTitle')}>
+          <p>{t.rich('sections.encryption.warnBody', withDocRich())}</p>
+        </DocCallout>
       </DocSection>
 
       <DocSection id="storage" title={t('sections.storage.title')}>

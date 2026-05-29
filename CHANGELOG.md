@@ -12,6 +12,20 @@ The published version number lives only in the [`package.json`](package.json) `v
 ## [Unreleased]
 
 
+## [0.1.2]
+### Added
+
+- **protocol:** `ENV-ENC1` iç payload — `buildEnvEnc1Payload`, `extractDocumentFromInnerPayload`, `buildInnerPayload`; PBKDF2-SHA256 + AES-256-GCM; birim testleri
+- **client:** `buildEnvelope({ encrypt, password })`, async `extractDocument`; pull sırasında `resolvePassword()` ile `ENV-ENC1` çözme
+- **web:** Postman koleksiyonu + local/production ortam dosyaları (`pnpm generate:postman`); API referans sayfasından indirilebilir
+- **web:** API ve SDK referans sayfalarında **Zarf şifrelemesi** bölümü (`#encryption`) — senkron parolası, salt/nonce, `ENV-ENC1` yapısı, REST/SDK örnekleri (TR/EN)
+- **docs:** agent MD dosyaları (`api-tr/en`, `sdk-tr/en`, `tr/en`, `llms.txt`) şifreleme ve senkron parolası ile hizalandı
+
+### Changed
+
+- **web:** HTTP/Postman API örnekleri doğrulanabilir `ENV-ENC1` payload kullanır (dokümantasyon parolası: `demo-sync-passphrase`)
+- **web:** paylaşılan `api-sample-data.ts` — HTTP snippet'leri ve Postman üretici tek kaynak
+- **client:** şifreli zarf için `envelope-builder` birim testleri
 ## [0.1.1]
 ### Added
 

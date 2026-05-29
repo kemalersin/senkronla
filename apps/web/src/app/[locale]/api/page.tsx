@@ -10,6 +10,7 @@ import { DocsTable } from '@/components/docs-table'
 import { Link } from '@/i18n/navigation'
 import { createApiSnippets } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
+import { POSTMAN_ARTIFACT_PATHS } from '@/lib/postman-artifacts'
 import {
   getPublicApiOrigin,
   getRelayApiBaseUrl,
@@ -26,6 +27,7 @@ const sectionKeys = [
   'workflows',
   'namespaces',
   'documents',
+  'encryption',
   'devices',
   'limits',
   'websocket',
@@ -81,6 +83,10 @@ export default async function ApiPage({ params }: PageProps) {
     t(`sections.relayQuotas.windows.${key}`),
   ])
 
+  const encryptionRich = withDocRich({
+    sdkLink: (chunks) => <Link href="/sdk#encryption">{chunks}</Link>,
+  })
+
   const exampleProps = {
     requestLabel: t('table.request'),
     responseLabel: t('table.response'),
@@ -102,6 +108,36 @@ export default async function ApiPage({ params }: PageProps) {
           code={`Base URL: ${relayApiBaseUrl}\nHealth: ${apiOrigin}/health\nContent-Type: application/json`}
           language="http"
         />
+        <DocCallout variant="tip" title={t('sections.overview.postmanTitle')}>
+          <div className="doc-callout-sections">
+            <p>{t.rich('sections.overview.postmanBody', withDocRich())}</p>
+            <ul className="doc-list doc-callout-links">
+              <li>
+                <a href={POSTMAN_ARTIFACT_PATHS.collection} download>
+                  {t('sections.overview.postmanCollectionLink')}
+                </a>
+              </li>
+              <li>
+                <a href={POSTMAN_ARTIFACT_PATHS.localEnvironment} download>
+                  {t('sections.overview.postmanLocalEnvLink')}
+                </a>
+              </li>
+              <li>
+                <a href={POSTMAN_ARTIFACT_PATHS.productionEnvironment} download>
+                  {t('sections.overview.postmanProdEnvLink')}
+                </a>
+              </li>
+            </ul>
+            <div className="doc-callout-block">
+              <p className="doc-callout-subtitle">{t('sections.overview.postmanStepsTitle')}</p>
+              <ol className="doc-list ordered doc-callout-steps">
+                <li>{t('sections.overview.postmanStep1')}</li>
+                <li>{t.rich('sections.overview.postmanStep2', withDocRich())}</li>
+                <li>{t.rich('sections.overview.postmanStep3', withDocRich())}</li>
+              </ol>
+            </div>
+          </div>
+        </DocCallout>
         <DocEndpointHeading label={t('sections.overview.healthTitle')} />
         <DocHttpExample {...exampleProps} {...apiSnippets.health} />
         <DocCallout variant="info" title={t('sections.overview.calloutTitle')}>
@@ -156,8 +192,14 @@ export default async function ApiPage({ params }: PageProps) {
           tagFirstColumn={false}
         />
         <p>{t.rich('sections.documents.parametricPath', withDocRich())}</p>
-        <p>{t.rich('sections.documents.p2', withDocRich())}</p>
+        <p>
+          {t('sections.documents.p2Intro')}{' '}
+          <Link href="#encryption">{t('sections.documents.p2Link')}</Link>{' '}
+          {t.rich('sections.documents.p2Outro', withDocRich())}
+        </p>
         <p>{t.rich('sections.documents.p3', withDocRich())}</p>
+        <p>{t.rich('sections.documents.p4', withDocRich())}</p>
+        <p>{t.rich('sections.documents.rawDevNote', withDocRich())}</p>
         <DocEndpointHeading label={t('sections.documents.listExample')} />
         <DocHttpExample {...exampleProps} {...apiSnippets.listDocuments} />
         <DocEndpointHeading label={t('sections.documents.metaExample')} />
@@ -170,6 +212,35 @@ export default async function ApiPage({ params }: PageProps) {
         <DocHttpExample {...exampleProps} {...apiSnippets.pushDocumentUpdate} />
         <DocEndpointHeading label={t('sections.documents.conflictExample')} />
         <DocHttpExample {...exampleProps} {...apiSnippets.revisionConflict} />
+      </DocSection>
+
+      <DocSection id="encryption" title={t('sections.encryption.title')}>
+        <p>{t.rich('sections.encryption.p1', encryptionRich)}</p>
+        <p className="doc-subheading">{t('sections.encryption.passwordTitle')}</p>
+        <p>{t('sections.encryption.passwordP1')}</p>
+        <p>{t.rich('sections.encryption.passwordP2', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.encryption.secretsTitle')}</p>
+        <ul className="doc-list">
+          <li>{t('sections.encryption.secretsRows.syncPassword')}</li>
+          <li>{t('sections.encryption.secretsRows.recoveryPhrase')}</li>
+          <li>{t('sections.encryption.secretsRows.deviceToken')}</li>
+          <li>{t('sections.encryption.secretsRows.demoPassword')}</li>
+        </ul>
+        <p className="doc-subheading">{t('sections.encryption.payloadTitle')}</p>
+        <p>{t.rich('sections.encryption.payloadP1', withDocRich())}</p>
+        <CodeBlock code={apiSnippets.envEnc1InnerExample} language="jsonc" />
+        <ul className="doc-list">
+          <li>{t.rich('sections.encryption.payloadLi1', withDocRich())}</li>
+          <li>{t.rich('sections.encryption.payloadLi2', withDocRich())}</li>
+          <li>{t.rich('sections.encryption.payloadLi3', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t('sections.encryption.buildTitle')}</p>
+        <p>{t.rich('sections.encryption.buildP1', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.encryption.buildExampleTitle')}</p>
+        <CodeBlock code={apiSnippets.restEnvEnc1Build} language="typescript" />
+        <DocCallout variant="warn" title={t('sections.encryption.warnTitle')}>
+          <p>{t.rich('sections.encryption.warnBody', withDocRich())}</p>
+        </DocCallout>
       </DocSection>
 
       <DocSection id="devices" title={t('sections.devices.title')}>

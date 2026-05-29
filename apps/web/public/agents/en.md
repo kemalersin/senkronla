@@ -70,7 +70,8 @@ Before shipping production integration:
 
 - [ ] Running relay with base URL ending in `/v1` (e.g. `https://sync.example.com/v1`)
 - [ ] Stable **`namespaceId`** (UUID v4) per customer workspace — same across reinstalls
-- [ ] **`DocumentAdapter`** ([SDK](sdk-en.md)) or REST envelope builder ([API](api-en.md)) that round-trips app state as JSON
+- [ ] **`DocumentAdapter`** ([SDK](sdk-en.md)) or REST envelope builder ([API](api-en.md)) — production **`ENV-ENC1`** encryption
+- [ ] **Sync password UX** — app-provided; pairing/recovery do not transfer it; all devices must share the same password
 - [ ] **`onRecoveryPhrase`** UI — phrase shown **once** at workspace creation; cannot be retrieved later
 - [ ] **`onConflict`** UI — user picks local vs remote per `documentId`; **no server-side merge**
 - [ ] Sync loop: `ensureNamespace()` → `sync()` on startup; `notifyLocalChange(documentId?)` on edits; `flushPush(documentId?)` before logout
@@ -89,8 +90,9 @@ Before shipping production integration:
 | **clientDeviceId** | Client-generated UUID, stable per app install. |
 | **deviceId** | Server-assigned ULID for this paired device (settings UI, revoke). |
 | **revision** | ULID on each snapshot. Required for optimistic locking on push. |
-| **envelope** | `ESR-DOC1` wrapper around your JSON + metadata. Relay stores opaque bytes. |
+| **envelope** | `ESR-DOC1` wrapper around your JSON + metadata. Relay stores opaque bytes. Encrypted as `ENV-ENC1` in production. |
 | **pairing code** | 6-digit code; host generates, guest redeems within TTL (~10 min). |
+| **sync password** | Envelope encryption secret — app-provided; never sent to relay; distinct from recovery phrase. |
 | **recovery phrase** | 24-word BIP39 phrase. Shown once. **Never sent to server** — only Argon2id hash proof. |
 
 **Who does what:** Your app owns UX and data model. Senkronla owns transport: storing packages, versioning, device slots, notifying peers.
@@ -104,7 +106,8 @@ Before shipping production integration:
 - Recovery **revokes all devices** — warn users before recover flow
 - Do not log envelopes or tokens in production
 - CORS is operator-configured — your web app origin must be allowed on the relay
-- v1 payload is **not encrypted at rest in envelope** (`ENV-RAW1`) — encrypt sensitive fields in your app JSON if needed until `ENV-ENC1` ships
+- Enable `encrypt: true` + `resolvePassword()` in production — SDK builds `ENV-ENC1` envelopes ([SDK — Envelope encryption](sdk-en.md#envelope-encryption-env-enc1), [API — Envelope encryption](api-en.md#envelope-encryption-env-enc1))
+- **Sync password** is separate from recovery phrase — if lost, encrypted remote data cannot be recovered
 
 ---
 
@@ -127,8 +130,8 @@ Before shipping production integration:
 5. **Same `namespaceId`** on host and guest adapters for pairing.
 6. **Conflict UX is mandatory** — no automatic merge exists.
 7. **Fetch the right reference file first:**
-   - [sdk-en.md](sdk-en.md) — `EsrSync.connect`, adapters, sync lifecycle
-   - [api-en.md](api-en.md) — HTTP endpoints, envelopes, WebSocket, error codes
+   - [sdk-en.md](sdk-en.md) — `EsrSync.connect`, adapters, **sync password / ENV-ENC1**
+   - [api-en.md](api-en.md) — HTTP endpoints, envelopes, **ENV-ENC1 encryption**, WebSocket, error codes
 8. Open human docs only for edge cases:
    - [Integration guides](/guides) — concepts, flows, offline behavior
    - [SDK reference](/sdk) — interactive method browser

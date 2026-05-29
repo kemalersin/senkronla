@@ -7,6 +7,8 @@ Base URL: `https://your-relay.example.com/v1`
 Format: JSON  
 Health (no auth): `GET https://your-relay.example.com/health`
 
+**Postman:** Download the runnable collection and environment from the interactive API page — [`/postman/senkronla-relay.postman_collection.json`](/postman/senkronla-relay.postman_collection.json), [`senkronla-relay-local.postman_environment.json`](/postman/senkronla-relay-local.postman_environment.json). Run the `Quick start` folder in order to auto-save `deviceToken` and related fields.
+
 Spec v1.2 supports **multiple named documents** per namespace (`primary`, `settings`, …) via `/documents/{documentId}/...`. Legacy alias `/documents/primary/...` remains valid.
 
 ---
@@ -26,10 +28,11 @@ Spec v1.2 supports **multiple named documents** per namespace (`primary`, `setti
 11. [Limits & unlock](#limits--unlock)
 12. [Error response shape](#error-response-shape)
 13. [Envelope format (ESR-DOC1)](#envelope-format-esr-doc1)
-14. [Recovery key proof](#recovery-key-proof)
-15. [WebSocket notifications](#websocket-notifications)
-16. [Error codes](#error-codes)
-17. [Relay quotas & size limits](#relay-quotas--size-limits)
+14. [Envelope encryption (ENV-ENC1)](#envelope-encryption-env-enc1)
+15. [Recovery key proof](#recovery-key-proof)
+16. [WebSocket notifications](#websocket-notifications)
+17. [Error codes](#error-codes)
+18. [Relay quotas & size limits](#relay-quotas--size-limits)
 
 ---
 
@@ -143,7 +146,7 @@ Authorization: Bearer dvt_...
       "writtenAt": "2026-05-28T10:15:00.000Z",
       "deviceId": "01HZPXDEVICEHOST01",
       "contentSha256": "...",
-      "contentMagic": "ENV-RAW1",
+      "contentMagic": "ENV-ENC1",
       "sizeBytes": 128
     },
     {
@@ -152,7 +155,7 @@ Authorization: Bearer dvt_...
       "writtenAt": "2026-05-28T10:20:00.000Z",
       "deviceId": "01HZPXDEVICEHOST01",
       "contentSha256": "...",
-      "contentMagic": "ENV-RAW1",
+      "contentMagic": "ENV-ENC1",
       "sizeBytes": 64
     }
   ]
@@ -225,7 +228,7 @@ GET /v1/namespaces/{id}/documents/primary/head
 Authorization: Bearer dvt_...
 ```
 
-Returns full `ESR-DOC1` envelope. Decode `payload` (base64) to get your JSON.
+Returns full `ESR-DOC1` envelope. The `payload` field is an `ENV-ENC1` JSON string — decrypt with your sync password (`extractDocument` or `extractDocumentFromInnerPayload`).
 
 `DOCUMENT_NOT_FOUND` on first pull before any push is expected.
 
@@ -354,7 +357,7 @@ Content-Type: application/json
         "writtenAt": "2026-05-28T10:15:00.000Z",
         "deviceId": "01HZPXDEVICEHOST01",
         "contentSha256": "...",
-        "contentMagic": "ENV-RAW1",
+        "contentMagic": "ENV-ENC1",
         "sizeBytes": 128
       }
     }
@@ -373,7 +376,7 @@ Each `documentId` has its own revision chain.
 - **`schemaVersion: 1`** — only `documentId: "primary"`
 - **`schemaVersion: 2`** — any valid `documentId` (non-primary documents)
 
-Your app JSON goes in `payload` (base64). Inner content uses `ENV-RAW1` (`ENV-ENC1` not yet available).
+Application JSON is carried in the `payload` field. In production it must be **encrypted** as `ENV-ENC1` — see [Envelope encryption](#envelope-encryption-env-enc1).
 
 **Primary (`schemaVersion: 1`):**
 
@@ -388,9 +391,9 @@ Your app JSON goes in `payload` (base64). Inner content uses `ENV-RAW1` (`ENV-EN
   "deviceId": "01HZPXDEVICEHOST01",
   "writtenAt": "2026-05-28T10:15:00.000Z",
   "contentType": "application/vnd.myapp+json",
-  "contentMagic": "ENV-RAW1",
-  "contentSha256": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
-  "payload": "eyJub3RlIjoiSGVsbG8ifQ=="
+  "contentMagic": "ENV-ENC1",
+  "contentSha256": "d0673c157ada6198e2c7ec13a4398c38aae980ec3d996c5a1c53530f874755ec",
+  "payload": "{\"magic\":\"ENV-ENC1\",\"kdf\":\"PBKDF2-SHA256\",\"iterations\":600000,\"salt\":\"AQIDBAUGBwgJCgsMDQ4PEA\",\"nonce\":\"AQIDBAUGBwgJCgsM\",\"ciphertext\":\"lFyUxY5-9CZir9Nq-oWz5hHBLmMA33VDBh3jlw\"}"
 }
 ```
 
@@ -398,12 +401,86 @@ Your app JSON goes in `payload` (base64). Inner content uses `ENV-RAW1` (`ENV-EN
 
 **Validation rules:**
 
-- `contentSha256` = SHA-256 hex of raw `payload` bytes
+- `contentSha256` = SHA-256 hex of the `payload` field as a UTF-8 string
 - `revision` must be a new ULID on each push
 - `namespaceId` must match route and adapter
 - Full serialized JSON must fit within `maxEnvelopeBytes` (default 50 MB)
 
-**Building envelopes in JS:** `import { buildEnvelope } from '@senkronla/client'` or `@senkronla/protocol`. Do not hand-roll envelope hashing.
+Unencrypted `ENV-RAW1` is for local development only.
+
+---
+
+## Envelope encryption (ENV-ENC1)
+
+In production, application data must travel inside an encrypted `ESR-DOC1` envelope (`ENV-ENC1` inner payload). The relay stores an opaque string only. If you use the JavaScript SDK, see also [SDK — Envelope encryption](sdk-en.md#envelope-encryption-env-enc1).
+
+### What is the sync password?
+
+The encryption password is an **application secret** that locks the envelope. Senkronla does not generate it and never sends it to the relay. You provide it — master password, workspace sync password, vault PIN derivative, etc.
+
+The client uses this password before every push and pull (via `resolvePassword()` in the SDK). All paired devices must share the same password; pairing and recovery do not transfer it automatically.
+
+### Do not confuse secrets
+
+| Secret | Role |
+|--------|------|
+| **Sync password** | `ENV-ENC1` encryption; app-provided; never sent to server |
+| **24-word recovery phrase** | Namespace access proof; does not auto-decrypt envelopes |
+| **deviceToken** | Relay API session; unrelated to envelope encryption |
+| **demo-sync-passphrase** | Documentation/Postman examples on this site only |
+
+### What is inside `payload`?
+
+The outer envelope sets `contentMagic: ENV-ENC1`. The `payload` string is JSON the relay does not parse:
+
+```json
+{
+  "magic": "ENV-ENC1",
+  "kdf": "PBKDF2-SHA256",
+  "iterations": 600000,
+  "salt": "...",
+  "nonce": "...",
+  "ciphertext": "..."
+}
+```
+
+- **`salt` + `nonce`** — random per push; not secret; carried with ciphertext so the pull device can decrypt
+- **`ciphertext`** — application JSON encrypted with AES-256-GCM
+- **`kdf` / `iterations`** — PBKDF2-SHA256, default 600000
+
+### Building envelopes without the SDK
+
+Use `buildEnvEnc1Payload` from `@senkronla/protocol`, then set `contentSha256 = sha256Hex(payload)` on the outer envelope. **Never put the password in an HTTP request.**
+
+```typescript
+import { buildEnvEnc1Payload, sha256Hex } from '@senkronla/protocol'
+
+const documentJson = '{"note":"Hello"}'
+const password = await yourApp.getSyncPassword() // never sent to the relay
+const payload = await buildEnvEnc1Payload(documentJson, password)
+
+const envelope = {
+  magic: 'ESR-DOC1',
+  schemaVersion: 2,
+  namespaceId,
+  namespaceLabel,
+  documentId: 'notes',
+  revision: newRevisionUlid,
+  deviceId,
+  writtenAt: new Date().toISOString(),
+  contentType: 'application/vnd.myapp+json',
+  contentMagic: 'ENV-ENC1',
+  contentSha256: sha256Hex(payload),
+  payload,
+}
+
+// PUT /v1/namespaces/{id}/documents/{documentId}
+// Body: { "expectedRevision": null | "...", "envelope": envelope }
+```
+
+On pull: `extractDocumentFromInnerPayload(envelope.payload, password)` or `@senkronla/client` → `extractDocument(envelope, password)`.
+
+**Warning — Recovery ≠ sync password:** `POST .../recover` only issues a new `deviceToken`. Envelopes encrypted with a lost sync password cannot be recovered — plan separate password backup UX.
 
 ---
 

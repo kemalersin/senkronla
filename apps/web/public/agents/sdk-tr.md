@@ -14,12 +14,13 @@ JS/TS yığınları için varsayılan yol: **`EsrSync`** facade. SDK çalıştı
 3. [Çoklu belge](#çoklu-belge)
 4. [EsrSync.connect seçenekleri](#esrsyncconnect-seçenekleri)
 5. [Belge adapter'ı](#belge-adapterı)
-6. [Yerel depolama (EsrStorage)](#yerel-depolama-esrstorage)
-7. [EsrSync metotları](#esrsync-metotları)
-8. [Sync yaşam döngüsü](#sync-yaşam-döngüsü)
-9. [Durum değerleri](#durum-değerleri-esrsyncstatus)
-10. [SDK hata kodları](#sdk-istemci-hata-kodları)
-11. [Düşük seviye RelayClient](#düşük-seviye-relayclient)
+6. [Zarf şifrelemesi (ENV-ENC1)](#zarf-şifrelemesi-env-enc1)
+7. [Yerel depolama (EsrStorage)](#yerel-depolama-esrstorage)
+8. [EsrSync metotları](#esrsync-metotları)
+9. [Sync yaşam döngüsü](#sync-yaşam-döngüsü)
+10. [Durum değerleri](#durum-değerleri-esrsyncstatus)
+11. [SDK hata kodları](#sdk-istemci-hata-kodları)
+12. [Düşük seviye RelayClient](#düşük-seviye-relayclient)
 
 ---
 
@@ -54,6 +55,8 @@ const document = createDocumentAdapter({
   namespaceId,
   namespaceLabel: 'Müşteri çalışma alanı',
   contentType: 'application/vnd.myapp+json',
+  encrypt: true,
+  resolvePassword: async () => session.getSyncPassword(), // uygulama sağlar — SDK üretmez
   exportDocument: () => appStore.exportJson(),
   importDocument: (data) => appStore.importJson(data),
 })
@@ -101,6 +104,8 @@ const sync = await EsrSync.connect({
         namespaceId,
         namespaceLabel: 'Müşteri çalışma alanı',
         contentType: 'application/vnd.myapp+json',
+        encrypt: true,
+        resolvePassword: async () => session.getSyncPassword(),
         exportDocument: async () => appState,
         importDocument: async (json) => {
           appState = json as typeof appState
@@ -113,6 +118,8 @@ const sync = await EsrSync.connect({
         namespaceId,
         namespaceLabel: 'Müşteri çalışma alanı',
         contentType: 'application/vnd.example.settings+json',
+        encrypt: true,
+        resolvePassword: async () => session.getSyncPassword(),
         exportDocument: async () => settings,
         importDocument: async (json) => {
           settings = json as typeof settings
@@ -191,8 +198,66 @@ interface DocumentAdapter {
 
 - `namespaceId` geçerli **UUID v4** olmalı, cihazlar arası sabit.
 - `contentType` vendor MIME olmalı.
-- `encryption.enabled` **`false`** kalmalı (`ENV-ENC1` gelene kadar).
+- `encryption.enabled` **`true`** önerilir — `resolvePassword()` ile parola sağlayın; SDK `ENV-ENC1` üretir. Ayrıntılar: [Zarf şifrelemesi](#zarf-şifrelemesi-env-enc1).
 - `exportDocument()` hızlı olmalı.
+
+---
+
+## Zarf şifrelemesi (ENV-ENC1)
+
+Üretimde `createDocumentAdapter({ encrypt: true, resolvePassword })` veya `buildEnvelope({ encrypt: true, password })` kullanın. REST ayrıntıları: [API — Zarf şifrelemesi](api-tr.md#zarf-şifrelemesi-env-enc1).
+
+### Senkron parolası — SDK nasıl alır?
+
+Parola **uygulamanıza aittir**; SDK üretmez. `DocumentAdapter.encryption()` içinde `enabled: true` ve `resolvePassword()` tanımlarsınız. `SyncEngine` her push/pull öncesi `resolvePassword()` çağırır ve sonucu `buildEnvelope` / `extractDocument`'a verir.
+
+Tipik kaynaklar: oturum açılışında sorulan master password, OS keychain / secure enclave, kurulum sırasında belirlenen workspace parolası. Eşleştirilmiş cihazlar aynı parolayı paylaşmalıdır — SDK bunu cihazlar arası senkronize etmez.
+
+### Push / pull akışı
+
+1. **Push:** `buildDocument()` → `resolvePassword()` → `buildEnvelope({ encrypt: true, password })` → `PUT .../documents/{documentId}`
+2. **Pull:** `GET .../head` → `resolvePassword()` → `extractDocument(envelope, password)` → `importDocument(json)`
+3. `salt` ve `nonce` her push'ta rastgele üretilir ve `payload` içinde saklanır — relay kullanmaz, pull cihazı için gereklidir
+
+### Şifreli adapter örneği
+
+```typescript
+const document = createDocumentAdapter({
+  namespaceId: workspace.id,
+  namespaceLabel: workspace.name,
+  contentType: 'application/vnd.myapp+json',
+  encrypt: true,
+  resolvePassword: async () => {
+    // Uygulama sağlar — SDK senkron parolası üretmez.
+    return session.getSyncPassword()
+  },
+  exportDocument: () => store.exportSnapshot(),
+  importDocument: (data) => store.importSnapshot(data),
+})
+```
+
+### Doğrudan buildEnvelope
+
+```typescript
+import { buildEnvelope, extractDocument } from '@senkronla/client'
+
+const password = await session.getSyncPassword()
+
+const envelope = await buildEnvelope({
+  namespaceId: workspace.id,
+  namespaceLabel: workspace.name,
+  documentJson: JSON.stringify(await store.exportSnapshot()),
+  deviceId: clientDeviceId,
+  contentType: 'application/vnd.myapp+json',
+  encrypt: true,
+  password,
+})
+
+// Pull — aynı parola ENV-ENC1'i çözer
+const json = await extractDocument(remoteEnvelope, password)
+```
+
+**Uyarı — Kurtarma ifadesi ≠ senkron parolası:** `onRecoveryPhrase` namespace oluşturulduğunda bir kez gösterilir ve relay erişim kanıtı içindir. Zarf şifreleme parolası ayrıdır; kaybolursa şifreli uzak veri geri getirilemez.
 
 ---
 
@@ -248,7 +313,7 @@ onConflict: async (ctx) => {
 await sync.resolveConflict('remote', 'settings')
 ```
 
-Zarf yardımcıları: `buildEnvelope`, `buildRecoveryKeyProof` — bkz. [API referansı — zarf formatı](api-tr.md#zarf-formatı-esr-doc1).
+Zarf yardımcıları: `buildEnvelope`, `buildEnvEnc1Payload`, `extractDocument`, `buildRecoveryKeyProof` — bkz. [Zarf şifrelemesi](#zarf-şifrelemesi-env-enc1) ve [API referansı](api-tr.md#zarf-şifrelemesi-env-enc1).
 
 ---
 

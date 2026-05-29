@@ -7,6 +7,8 @@ Temel URL: `https://relay.ornek.com/v1`
 Format: JSON  
 Sağlık (auth yok): `GET https://relay.ornek.com/health`
 
+**Postman:** İnteraktif API sayfasından koleksiyon + ortam dosyalarını indirin — [`/postman/senkronla-relay.postman_collection.json`](/postman/senkronla-relay.postman_collection.json), [`senkronla-relay-local.postman_environment.json`](/postman/senkronla-relay-local.postman_environment.json). `Quick start` klasörü sırayla çalıştırıldığında `deviceToken` ve diğer alanlar otomatik kaydedilir.
+
 Spec v1.2, namespace başına **çoklu adlandırılmış belge** (`primary`, `settings`, …) destekler: `/documents/{documentId}/...`. `/documents/primary/...` alias'ı geçerlidir.
 
 ---
@@ -26,10 +28,11 @@ Spec v1.2, namespace başına **çoklu adlandırılmış belge** (`primary`, `se
 11. [Limitler & açılış](#limitler--açılış)
 12. [Hata yanıt şekli](#hata-yanıt-şekli)
 13. [Zarf formatı (ESR-DOC1)](#zarf-formatı-esr-doc1)
-14. [Kurtarma anahtarı kanıtı](#kurtarma-anahtarı-kanıtı)
-15. [WebSocket bildirimleri](#websocket-bildirimleri)
-16. [Hata kodları](#hata-kodları)
-17. [Relay kotaları](#relay-kotaları)
+14. [Zarf şifrelemesi (ENV-ENC1)](#zarf-şifrelemesi-env-enc1)
+15. [Kurtarma anahtarı kanıtı](#kurtarma-anahtarı-kanıtı)
+16. [WebSocket bildirimleri](#websocket-bildirimleri)
+17. [Hata kodları](#hata-kodları)
+18. [Relay kotaları](#relay-kotaları)
 
 ---
 
@@ -108,8 +111,8 @@ Authorization: Bearer dvt_...
 ```json
 {
   "documents": [
-    { "documentId": "primary", "revision": "...", "writtenAt": "...", "contentSha256": "...", "contentMagic": "ENV-RAW1", "sizeBytes": 128 },
-    { "documentId": "settings", "revision": "...", "writtenAt": "...", "contentSha256": "...", "contentMagic": "ENV-RAW1", "sizeBytes": 64 }
+    { "documentId": "primary", "revision": "...", "writtenAt": "...", "contentSha256": "...", "contentMagic": "ENV-ENC1", "sizeBytes": 128 },
+    { "documentId": "settings", "revision": "...", "writtenAt": "...", "contentSha256": "...", "contentMagic": "ENV-ENC1", "sizeBytes": 64 }
   ]
 }
 ```
@@ -136,7 +139,7 @@ Başarı `201` — `RateLimit-PutDocument-*` başlıkları ve `rateLimits.put_do
 
 ## Belge pull
 
-Önce `head/meta`, revision farklıysa `GET .../head`. `payload` base64 decode → JSON. İlk pull öncesi `DOCUMENT_NOT_FOUND` beklenir.
+Önce `head/meta`, revision farklıysa `GET .../head`. `payload` alanı `ENV-ENC1` JSON string'idir — parola ile çözülür (`extractDocument` veya `extractDocumentFromInnerPayload`). İlk pull öncesi `DOCUMENT_NOT_FOUND` beklenir.
 
 ---
 
@@ -183,7 +186,7 @@ POST /v1/namespaces/{id}/recover
   "error": {
     "code": "REVISION_CONFLICT",
     "message": "...",
-    "details": { "remoteMeta": { "revision": "...", "writtenAt": "...", "deviceId": "...", "contentSha256": "...", "contentMagic": "ENV-RAW1", "sizeBytes": 128 } }
+    "details": { "remoteMeta": { "revision": "...", "writtenAt": "...", "deviceId": "...", "contentSha256": "...", "contentMagic": "ENV-ENC1", "sizeBytes": 128 } }
   }
 }
 ```
@@ -197,7 +200,7 @@ Her zaman **`error.code`** ile dallanın.
 - **`schemaVersion: 1`** — yalnızca `documentId: "primary"`
 - **`schemaVersion: 2`** — geçerli herhangi bir `documentId`
 
-Uygulama JSON'u `payload` (base64) içinde. İçerik `ENV-RAW1`.
+Uygulama JSON'u `payload` içinde taşınır. Üretimde **`ENV-ENC1`** ile şifrelenmiş olmalıdır — ayrıntılar için [Zarf şifrelemesi](#zarf-şifrelemesi-env-enc1).
 
 ```json
 {
@@ -210,13 +213,94 @@ Uygulama JSON'u `payload` (base64) içinde. İçerik `ENV-RAW1`.
   "deviceId": "01HZPXDEVICEHOST01",
   "writtenAt": "2026-05-28T10:15:00.000Z",
   "contentType": "application/vnd.myapp+json",
-  "contentMagic": "ENV-RAW1",
-  "contentSha256": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
-  "payload": "eyJub3RlIjoiSGVsbG8ifQ=="
+  "contentMagic": "ENV-ENC1",
+  "contentSha256": "d0673c157ada6198e2c7ec13a4398c38aae980ec3d996c5a1c53530f874755ec",
+  "payload": "{\"magic\":\"ENV-ENC1\",\"kdf\":\"PBKDF2-SHA256\",\"iterations\":600000,\"salt\":\"AQIDBAUGBwgJCgsMDQ4PEA\",\"nonce\":\"AQIDBAUGBwgJCgsM\",\"ciphertext\":\"lFyUxY5-9CZir9Nq-oWz5hHBLmMA33VDBh3jlw\"}"
 }
 ```
 
-`contentSha256` = `payload` baytlarının SHA-256 hex'i. Zarf hash'ini elle yazmayın.
+**Doğrulama kuralları:**
+
+- `contentSha256` = `payload` alanının UTF-8 metninin SHA-256 hex'i
+- `revision` her push'ta yeni ULID olmalı
+- `namespaceId` route ve adapter ile eşleşmeli
+- Serialize edilmiş zarf `maxEnvelopeBytes` limitine sığmalı (varsayılan 50 MB)
+
+Şifresiz `ENV-RAW1` yalnızca yerel geliştirme içindir.
+
+---
+
+## Zarf şifrelemesi (ENV-ENC1)
+
+Üretimde uygulama verisi `ENV-ENC1` ile şifrelenmiş `ESR-DOC1` zarfının `payload` alanında taşınmalıdır. Relay yalnızca opak string saklar; içeriği çözemez. JavaScript SDK kullanıyorsanız [SDK — Zarf şifrelemesi](sdk-tr.md#zarf-şifrelemesi-env-enc1) bölümüne de bakın.
+
+### Senkron parolası nedir?
+
+Şifreleme parolası, zarfı kilitleyen **uygulama gizlisidir**. Senkronla bunu üretmez ve relay'e göndermez. Siz sağlarsınız — master password, workspace sync password, vault PIN türevi vb.
+
+Her push ve pull öncesi istemci bu parolayı kullanır (SDK'da `resolvePassword()`). Tüm eşleşmiş cihazlar aynı parolayı bilmelidir; eşleştirme veya kurtarma parolayı otomatik taşımaz.
+
+### Gizlileri karıştırmayın
+
+| Gizli | Rol |
+|-------|-----|
+| **Senkron parolası** | `ENV-ENC1` şifreleme; uygulama sağlar; sunucuya gitmez |
+| **24 kelimelik kurtarma ifadesi** | Namespace erişim kanıtı; zarf içeriğini otomatik açmaz |
+| **deviceToken** | Relay API oturumu; zarf şifrelemesiyle ilgisi yok |
+| **demo-sync-passphrase** | Yalnızca bu dokümantasyondaki HTTP/Postman örnekleri için |
+
+### Payload içinde neler var?
+
+Dış zarfın `contentMagic` alanı `ENV-ENC1` olur. `payload` string'i şu JSON'dur (relay parse etmez):
+
+```json
+{
+  "magic": "ENV-ENC1",
+  "kdf": "PBKDF2-SHA256",
+  "iterations": 600000,
+  "salt": "...",
+  "nonce": "...",
+  "ciphertext": "..."
+}
+```
+
+- **`salt` + `nonce`** — her push'ta rastgele; gizli değildir; pull tarafının çözebilmesi için ciphertext ile birlikte taşınır
+- **`ciphertext`** — AES-256-GCM ile şifrelenmiş uygulama JSON'u
+- **`kdf` / `iterations`** — PBKDF2-SHA256, varsayılan 600000
+
+### REST ile zarf oluşturma (SDK yok)
+
+`@senkronla/protocol` paketinden `buildEnvEnc1Payload` kullanın; ardından `contentSha256 = sha256Hex(payload)` ile dış zarfı tamamlayın. **Parolayı asla HTTP isteğine koymayın.**
+
+```typescript
+import { buildEnvEnc1Payload, sha256Hex } from '@senkronla/protocol'
+
+const documentJson = '{"note":"Hello"}'
+const password = await yourApp.getSyncPassword() // relay'e gitmez
+const payload = await buildEnvEnc1Payload(documentJson, password)
+
+const envelope = {
+  magic: 'ESR-DOC1',
+  schemaVersion: 2,
+  namespaceId,
+  namespaceLabel,
+  documentId: 'notes',
+  revision: newRevisionUlid,
+  deviceId,
+  writtenAt: new Date().toISOString(),
+  contentType: 'application/vnd.myapp+json',
+  contentMagic: 'ENV-ENC1',
+  contentSha256: sha256Hex(payload),
+  payload,
+}
+
+// PUT /v1/namespaces/{id}/documents/{documentId}
+// Body: { "expectedRevision": null | "...", "envelope": envelope }
+```
+
+Pull tarafında: `extractDocumentFromInnerPayload(envelope.payload, password)` veya `@senkronla/client` → `extractDocument(envelope, password)`.
+
+**Uyarı — Kurtarma ≠ senkron parolası:** `POST .../recover` yalnızca yeni `deviceToken` verir. Kaybolmuş senkron parolasıyla şifrelenmiş eski zarflar açılamaz — parola yedekleme UX'inizi ayrıca planlayın.
 
 ---
 

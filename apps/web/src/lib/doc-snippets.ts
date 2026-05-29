@@ -1,18 +1,6 @@
-const SAMPLE = {
-  namespaceId: '550e8400-e29b-41d4-a716-446655440000',
-  namespaceLabel: 'Acme Corp workspace',
-  clientDeviceId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
-  deviceId: '01HZPXDEVICEHOST01',
-  guestDeviceId: '01HZPXDEVICEGUEST01',
-  deviceToken: 'dvt_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',
-  revision: '01HZQXK8Y3V5G2N4M6P7R9S1T',
-  recoverySalt: 'c2FsdC1leGFtcGxlLWJ5dGVz',
-  recoveryHash: 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
-  contentSha256: 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
-  writtenAt: '2026-05-28T10:15:00.000Z',
-  pairingCode: '482913',
-  unlockCode: 'UNLK-7X9K-2M4P',
-} as const
+import { API_EXAMPLE_DOCUMENT_ID, API_SAMPLE, escapeJsonString } from '@/lib/api-sample-data'
+
+const SAMPLE = API_SAMPLE
 
 const JSON_INDENT = '  '
 
@@ -36,9 +24,6 @@ ${d1}}
 ${jsonIndent(depth)}}`
 }
 
-/** Non-primary id used in API reference HTTP samples (same id across related examples). */
-const API_EXAMPLE_DOCUMENT_ID = 'notes'
-
 function envelopeContentType(documentId: string): string {
   return documentId === 'primary'
     ? 'application/vnd.myapp+json'
@@ -54,6 +39,9 @@ function envelopeFieldLines(
   documentId: string,
   revision: string,
   writtenAt: string,
+  payload: string,
+  contentSha256: string,
+  contentMagic: 'ENV-RAW1' | 'ENV-ENC1' = SAMPLE.contentMagic,
 ): string {
   return `${indent}"magic": "ESR-DOC1",
 ${indent}"schemaVersion": ${envelopeSchemaVersion(documentId)},
@@ -64,20 +52,33 @@ ${indent}"revision": "${revision}",
 ${indent}"deviceId": "${SAMPLE.deviceId}",
 ${indent}"writtenAt": "${writtenAt}",
 ${indent}"contentType": "${envelopeContentType(documentId)}",
-${indent}"contentMagic": "ENV-RAW1",
-${indent}"contentSha256": "${SAMPLE.contentSha256}",
-${indent}"payload": "eyJub3RlIjoiSGVsbG8ifQ=="`
+${indent}"contentMagic": "${contentMagic}",
+${indent}"contentSha256": "${contentSha256}",
+${indent}"payload": "${escapeJsonString(payload)}"`
 }
 
 function formatEnvelope(
   documentId: string,
   revision: string,
-  options?: { writtenAt?: string; depth?: number },
+  options?: {
+    writtenAt?: string
+    depth?: number
+    payload?: string
+    contentSha256?: string
+    contentMagic?: 'ENV-RAW1' | 'ENV-ENC1'
+  },
 ): string {
   const depth = options?.depth ?? 1
   const writtenAt = options?.writtenAt ?? SAMPLE.writtenAt
+  const payload =
+    options?.payload ??
+    (documentId === 'primary' ? SAMPLE.payloadPrimary : SAMPLE.payload)
+  const contentSha256 =
+    options?.contentSha256 ??
+    (documentId === 'primary' ? SAMPLE.contentSha256Primary : SAMPLE.contentSha256)
+  const contentMagic = options?.contentMagic ?? SAMPLE.contentMagic
   return `{
-${envelopeFieldLines(jsonIndent(depth + 1), documentId, revision, writtenAt)}
+${envelopeFieldLines(jsonIndent(depth + 1), documentId, revision, writtenAt, payload, contentSha256, contentMagic)}
 ${jsonIndent(depth)}}`
 }
 
@@ -86,6 +87,7 @@ function buildPushRequest(
   revision: string,
   expectedRevision: string | null,
   writtenAt?: string,
+  options?: { payload?: string; contentSha256?: string },
 ): string {
   const expectedLine =
     expectedRevision === null
@@ -93,7 +95,7 @@ function buildPushRequest(
       : `  "expectedRevision": "${expectedRevision}",`
   return `{
 ${expectedLine}
-  "envelope": ${formatEnvelope(documentId, revision, { writtenAt, depth: 1 })}
+  "envelope": ${formatEnvelope(documentId, revision, { writtenAt, depth: 1, ...options })}
 }`
 }
 
@@ -353,6 +355,37 @@ ui.showPairingScreen({ code, qrPayload, expiresAt })`,
     pairingGuest: `await sync.joinPairing(codeFromUser)`,
 
     recovery: `await sync.recover(phraseFromUser)`,
+
+    encryptedDocumentAdapter: `const document = createDocumentAdapter({
+  namespaceId: workspace.id,
+  namespaceLabel: workspace.name,
+  contentType: 'application/vnd.myapp+json',
+  encrypt: true,
+  resolvePassword: async () => {
+    // Your app supplies this — the SDK never generates a sync password.
+    // Session unlock, OS keychain, or a user prompt are typical sources.
+    return session.getSyncPassword()
+  },
+  exportDocument: () => store.exportSnapshot(),
+  importDocument: (data) => store.importSnapshot(data),
+})`,
+
+    buildEncryptedEnvelope: `import { buildEnvelope, extractDocument } from '@senkronla/client'
+
+const password = await session.getSyncPassword()
+
+const envelope = await buildEnvelope({
+  namespaceId: workspace.id,
+  namespaceLabel: workspace.name,
+  documentJson: JSON.stringify(await store.exportSnapshot()),
+  deviceId: clientDeviceId,
+  contentType: 'application/vnd.myapp+json',
+  encrypt: true,
+  password,
+})
+
+// Pull path — same password required to decrypt ENV-ENC1
+const json = await extractDocument(remoteEnvelope, password)`,
   }
 }
 
@@ -413,9 +446,9 @@ ${auth}`,
     "revision": "${SAMPLE.revision}",
     "writtenAt": "${SAMPLE.writtenAt}",
     "deviceId": "${SAMPLE.deviceId}",
-    "contentSha256": "${SAMPLE.contentSha256}",
-    "contentMagic": "ENV-RAW1",
-    "sizeBytes": 128
+    "contentSha256": "${SAMPLE.contentSha256Primary}",
+    "contentMagic": "${SAMPLE.contentMagic}",
+    "sizeBytes": ${SAMPLE.sizeBytesPrimary}
   },
   "lastSyncAt": "${SAMPLE.writtenAt}",
   "documents": [
@@ -424,9 +457,9 @@ ${auth}`,
       "revision": "${SAMPLE.revision}",
       "writtenAt": "${SAMPLE.writtenAt}",
       "deviceId": "${SAMPLE.deviceId}",
-      "contentSha256": "${SAMPLE.contentSha256}",
-      "contentMagic": "ENV-RAW1",
-      "sizeBytes": 128
+      "contentSha256": "${SAMPLE.contentSha256Primary}",
+      "contentMagic": "${SAMPLE.contentMagic}",
+      "sizeBytes": ${SAMPLE.sizeBytesPrimary}
     }
   ]
 }`,
@@ -442,9 +475,9 @@ ${auth}`,
       "revision": "${SAMPLE.revision}",
       "writtenAt": "${SAMPLE.writtenAt}",
       "deviceId": "${SAMPLE.deviceId}",
-      "contentSha256": "${SAMPLE.contentSha256}",
-      "contentMagic": "ENV-RAW1",
-      "sizeBytes": 128
+      "contentSha256": "${SAMPLE.contentSha256Primary}",
+      "contentMagic": "${SAMPLE.contentMagic}",
+      "sizeBytes": ${SAMPLE.sizeBytesPrimary}
     },
     {
       "documentId": "${API_EXAMPLE_DOCUMENT_ID}",
@@ -452,8 +485,8 @@ ${auth}`,
       "writtenAt": "2026-05-28T11:00:00.000Z",
       "deviceId": "${SAMPLE.deviceId}",
       "contentSha256": "${SAMPLE.contentSha256}",
-      "contentMagic": "ENV-RAW1",
-      "sizeBytes": 64
+      "contentMagic": "${SAMPLE.contentMagic}",
+      "sizeBytes": ${SAMPLE.sizeBytesNotes}
     }
   ],
   ${rateLimitsJson([['global_ip', 300, 299, 42, 60]])}
@@ -578,8 +611,8 @@ ${auth}`,
   "writtenAt": "2026-05-28T11:00:00.000Z",
   "deviceId": "${SAMPLE.deviceId}",
   "contentSha256": "${SAMPLE.contentSha256}",
-  "contentMagic": "ENV-RAW1",
-  "sizeBytes": 64,
+  "contentMagic": "${SAMPLE.contentMagic}",
+  "sizeBytes": ${SAMPLE.sizeBytesNotes},
   ${rateLimitsJson([['global_ip', 300, 299, 42, 60]])}
 }`,
     } satisfies HttpExamplePair,
@@ -616,11 +649,14 @@ ${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV01', null, '2026-05-2
 ${auth}
 Content-Type: application/json
 
-${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV02', '01HZQXNOTESREV01', '2026-05-28T11:05:00.000Z')}`,
+${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV02', '01HZQXNOTESREV01', '2026-05-28T11:05:00.000Z', {
+        payload: SAMPLE.payloadUpdate,
+        contentSha256: SAMPLE.contentSha256Update,
+      })}`,
       response: pushCreatedResponse(
         '01HZQXNOTESREV02',
         '2026-05-28T11:05:00.000Z',
-        'b775b46031522f9d518e5876efdc5fb9b15b2f4fff2fb18f099f97e8f7a27ae3',
+        SAMPLE.contentSha256Update,
         118,
         297,
       ),
@@ -701,7 +737,10 @@ ${auth}`,
 ${auth}
 Content-Type: application/json
 
-${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV02', '01HZSTALE_REVISION')}`,
+${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV02', '01HZSTALE_REVISION', '2026-05-28T11:05:00.000Z', {
+        payload: SAMPLE.payloadUpdate,
+        contentSha256: SAMPLE.contentSha256Update,
+      })}`,
       response: `HTTP/1.1 409 Conflict
 
 {
@@ -714,13 +753,46 @@ ${buildPushRequest(API_EXAMPLE_DOCUMENT_ID, '01HZQXNOTESREV02', '01HZSTALE_REVIS
         "writtenAt": "2026-05-28T11:00:00.000Z",
         "deviceId": "${SAMPLE.deviceId}",
         "contentSha256": "${SAMPLE.contentSha256}",
-        "contentMagic": "ENV-RAW1",
-        "sizeBytes": 64
+        "contentMagic": "${SAMPLE.contentMagic}",
+        "sizeBytes": ${SAMPLE.sizeBytesNotes}
       }
     }
   }
 }`,
     } satisfies HttpExamplePair,
+
+    envEnc1InnerExample: `{
+  "magic": "ENV-ENC1",
+  "kdf": "PBKDF2-SHA256",
+  "iterations": 600000,
+  "salt": "...",
+  "nonce": "...",
+  "ciphertext": "..."
+}`,
+
+    restEnvEnc1Build: `import { buildEnvEnc1Payload, sha256Hex } from '@senkronla/protocol'
+
+const documentJson = '{"note":"Hello"}'
+const password = await yourApp.getSyncPassword() // never sent to the relay
+const payload = await buildEnvEnc1Payload(documentJson, password)
+
+const envelope = {
+  magic: 'ESR-DOC1',
+  schemaVersion: 2,
+  namespaceId,
+  namespaceLabel,
+  documentId: 'notes',
+  revision: newRevisionUlid,
+  deviceId,
+  writtenAt: new Date().toISOString(),
+  contentType: 'application/vnd.myapp+json',
+  contentMagic: 'ENV-ENC1',
+  contentSha256: sha256Hex(payload),
+  payload,
+}
+
+// PUT /v1/namespaces/{id}/documents/{documentId}
+// Body: { "expectedRevision": null | "...", "envelope": envelope }`,
   }
 }
 

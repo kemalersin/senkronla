@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial package scaffold with `ESR-DOC1` constants and `isValidNamespaceId`
-- Vitest test setup
+- `ENV-ENC1` inner payload encoding/decoding — `buildEnvEnc1Payload`, `extractDocumentFromInnerPayload`, `buildInnerPayload`, `innerPayloadContentMagic`
+- PBKDF2-SHA256 (600000 iterations) + AES-256-GCM encryption helpers
+- Vitest tests for `ENV-RAW1` / `ENV-ENC1` roundtrip and deterministic doc fixtures
 
 ## [0.3.0] — Faz 4
 

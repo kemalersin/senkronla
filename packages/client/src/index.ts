@@ -5,7 +5,13 @@ export { NotificationClient } from './notification-client.js'
 export { createDocumentAdapter } from './document-adapter.js'
 export { createLocalStorageAdapter, createMemoryStorageAdapter } from './esr-storage.js'
 export { EsrError, isEsrError, isOfflineError, parseApiError } from './errors.js'
-export { buildEnvelope, extractRawDocument, buildRecoveryKeyProof } from './envelope-builder.js'
+export {
+  buildEnvEnc1Payload,
+  buildEnvRaw1Payload,
+  buildInnerPayload,
+  extractDocumentFromInnerPayload,
+} from '@senkronla/protocol'
+export { buildEnvelope, extractDocument, extractRawDocument, buildRecoveryKeyProof } from './envelope-builder.js'
 export { getOrCreateClientDeviceId, SyncStateStore } from './sync-state.js'
 export { buildNotificationWsUrl } from './ws-url.js'
 

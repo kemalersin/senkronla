@@ -4,6 +4,8 @@
 
 Senkronla stores opaque ESR-DOC1 envelopes and coordinates multi-device sync. Spec v1.2 supports multiple named documents per namespace (`primary`, `settings`, etc.) via `EsrSync.connect({ documents: [...] })` and `/documents/{documentId}/...` REST paths.
 
+Production payloads use **ENV-ENC1** envelope encryption (PBKDF2-SHA256 + AES-256-GCM). The **sync password** is app-provided — never sent to the relay — and is separate from the 24-word recovery phrase.
+
 ## Agent integration (start here)
 
 - [English overview](/agents/en.md): Architecture, checklist, concepts — links to SDK and API references
@@ -11,19 +13,20 @@ Senkronla stores opaque ESR-DOC1 envelopes and coordinates multi-device sync. Sp
 
 ## Agent SDK reference
 
-- [English SDK](/agents/sdk-en.md): `@senkronla/client`, `EsrSync`, adapters, sync lifecycle, multi-document
-- [Turkish SDK](/agents/sdk-tr.md): `@senkronla/client`, `EsrSync`, adapter'lar, çoklu belge
+- [English SDK](/agents/sdk-en.md): `@senkronla/client`, `EsrSync`, adapters, **ENV-ENC1 encryption**, sync lifecycle, multi-document
+- [Turkish SDK](/agents/sdk-tr.md): `@senkronla/client`, `EsrSync`, adapter'lar, **ENV-ENC1 şifreleme**, çoklu belge
 
 ## Agent REST API reference
 
-- [English API](/agents/api-en.md): `/v1` endpoints, ESR-DOC1 envelopes, WebSocket, error codes, quotas
-- [Turkish API](/agents/api-tr.md): `/v1` uç noktaları, zarf formatı, WebSocket, hata kodları
+- [English API](/agents/api-en.md): `/v1` endpoints, ESR-DOC1 envelopes, **ENV-ENC1 encryption & sync password**, WebSocket, error codes, quotas
+- [Turkish API](/agents/api-tr.md): `/v1` uç noktaları, zarf formatı, **ENV-ENC1 şifreleme ve senkron parolası**, WebSocket, hata kodları
 
 ## Human documentation
 
 - [Integration guides](/guides): Step-by-step product integration
-- [SDK reference](/sdk): EsrSync client API (interactive)
-- [REST API](/api): HTTP endpoints and error codes (interactive)
+- [SDK reference](/sdk): EsrSync client API (interactive) — includes `#encryption`
+- [REST API](/api): HTTP endpoints and error codes (interactive) — includes `#encryption`
+- [Postman collection](/postman/senkronla-relay.postman_collection.json): importable `/v1` requests + local environment
 
 ## Optional
 

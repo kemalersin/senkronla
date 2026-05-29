@@ -18,10 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `buildNotificationWsUrl` helper
 - Re-export of `@senkronla/protocol` identity and envelope tools
 - Vitest unit tests with mock relay
-
-### Not yet
-
-- `ENV-ENC1` client-side encryption in `buildEnvelope`
+- **`ENV-ENC1`:** `buildEnvelope({ encrypt, password })`, async `extractDocument`; `SyncEngine` decrypts on pull via adapter `resolvePassword()`
+- `createDocumentAdapter({ encrypt: true, resolvePassword })` shorthand
+- Envelope builder unit tests for encrypted payloads
 
 ## [0.1.0] — 2025-05-28
 

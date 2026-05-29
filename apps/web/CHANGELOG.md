@@ -13,3 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Landing, Quick Start, How To, API, SDK, and Operator pages
 - Live API health check on Operator panel
 - Docker external/bundled Postgres documentation in Quick Start
+- Postman collection + local/production environment JSON (`pnpm generate:postman`); download card on API reference page
+- API and SDK reference **Envelope encryption** sections (`#encryption`) with sync password, `ENV-ENC1` inner payload, and code examples (TR/EN)
+- Shared `api-sample-data.ts` and `postman-artifacts.ts` for consistent HTTP examples
+
+### Changed
+
+- API/Postman examples use verifiable `ENV-ENC1` payloads (doc-only password `demo-sync-passphrase`)
+- Agent markdown (`public/agents/`) and `llms.txt` updated for encryption and sync password

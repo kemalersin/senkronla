@@ -14,12 +14,13 @@ Default path for JS/TS stacks: **`EsrSync`** facade. Use [REST](api-en.md) only 
 3. [Multi-document](#multi-document)
 4. [EsrSync.connect options](#esrsyncconnect-options)
 5. [Document adapter](#document-adapter)
-6. [Local storage (EsrStorage)](#local-storage-esrstorage)
-7. [EsrSync methods](#esrsync-methods)
-8. [Sync lifecycle](#sync-lifecycle)
-9. [Status values](#status-values-esrsyncstatus)
-10. [SDK error codes](#sdk-client-error-codes)
-11. [Low-level RelayClient](#low-level-relayclient)
+6. [Envelope encryption (ENV-ENC1)](#envelope-encryption-env-enc1)
+7. [Local storage (EsrStorage)](#local-storage-esrstorage)
+8. [EsrSync methods](#esrsync-methods)
+9. [Sync lifecycle](#sync-lifecycle)
+10. [Status values](#status-values-esrsyncstatus)
+11. [SDK error codes](#sdk-client-error-codes)
+12. [Low-level RelayClient](#low-level-relayclient)
 
 ---
 
@@ -54,6 +55,8 @@ const document = createDocumentAdapter({
   namespaceId,
   namespaceLabel: 'Acme Corp workspace',
   contentType: 'application/vnd.myapp+json',
+  encrypt: true,
+  resolvePassword: async () => session.getSyncPassword(), // your app provides — SDK never generates
   exportDocument: () => appStore.exportJson(),
   importDocument: (data) => appStore.importJson(data),
 })
@@ -101,6 +104,8 @@ const sync = await EsrSync.connect({
         namespaceId,
         namespaceLabel: 'Acme Corp workspace',
         contentType: 'application/vnd.myapp+json',
+        encrypt: true,
+        resolvePassword: async () => session.getSyncPassword(),
         exportDocument: async () => appState,
         importDocument: async (json) => {
           appState = json as typeof appState
@@ -113,6 +118,8 @@ const sync = await EsrSync.connect({
         namespaceId,
         namespaceLabel: 'Acme Corp workspace',
         contentType: 'application/vnd.example.settings+json',
+        encrypt: true,
+        resolvePassword: async () => session.getSyncPassword(),
         exportDocument: async () => settings,
         importDocument: async (json) => {
           settings = json as typeof settings
@@ -192,8 +199,66 @@ interface DocumentAdapter {
 
 - `namespaceId` must be a **valid UUID v4**, stable across devices and reinstalls.
 - `contentType` should be a vendor MIME type.
-- `encryption.enabled` must stay **`false`** until `ENV-ENC1` ships (v1 uses `ENV-RAW1` only).
+- Set `encryption.enabled` to **`true`** in production — provide `resolvePassword()`; the SDK builds `ENV-ENC1` envelopes. Details: [Envelope encryption](#envelope-encryption-env-enc1).
 - Keep `exportDocument()` fast — runs before every push.
+
+---
+
+## Envelope encryption (ENV-ENC1)
+
+In production use `createDocumentAdapter({ encrypt: true, resolvePassword })` or `buildEnvelope({ encrypt: true, password })`. REST details: [API — Envelope encryption](api-en.md#envelope-encryption-env-enc1).
+
+### Sync password — how the SDK obtains it
+
+The password belongs to **your app**; the SDK never generates it. Set `enabled: true` and `resolvePassword()` on `DocumentAdapter.encryption()`. `SyncEngine` calls `resolvePassword()` before every push/pull and passes the result to `buildEnvelope` / `extractDocument`.
+
+Typical sources: master password at login, OS keychain / secure enclave, workspace password set during onboarding. Paired devices must share the same password — the SDK does not sync it across devices.
+
+### Push / pull flow
+
+1. **Push:** `buildDocument()` → `resolvePassword()` → `buildEnvelope({ encrypt: true, password })` → `PUT .../documents/{documentId}`
+2. **Pull:** `GET .../head` → `resolvePassword()` → `extractDocument(envelope, password)` → `importDocument(json)`
+3. `salt` and `nonce` are random per push and stored inside `payload` — the relay does not use them; the pull device needs them to decrypt
+
+### Encrypted adapter example
+
+```typescript
+const document = createDocumentAdapter({
+  namespaceId: workspace.id,
+  namespaceLabel: workspace.name,
+  contentType: 'application/vnd.myapp+json',
+  encrypt: true,
+  resolvePassword: async () => {
+    // Your app supplies this — the SDK never generates a sync password.
+    return session.getSyncPassword()
+  },
+  exportDocument: () => store.exportSnapshot(),
+  importDocument: (data) => store.importSnapshot(data),
+})
+```
+
+### Direct buildEnvelope
+
+```typescript
+import { buildEnvelope, extractDocument } from '@senkronla/client'
+
+const password = await session.getSyncPassword()
+
+const envelope = await buildEnvelope({
+  namespaceId: workspace.id,
+  namespaceLabel: workspace.name,
+  documentJson: JSON.stringify(await store.exportSnapshot()),
+  deviceId: clientDeviceId,
+  contentType: 'application/vnd.myapp+json',
+  encrypt: true,
+  password,
+})
+
+// Pull path — same password required to decrypt ENV-ENC1
+const json = await extractDocument(remoteEnvelope, password)
+```
+
+**Warning — Recovery phrase ≠ sync password:** `onRecoveryPhrase` runs once when the namespace is created and proves relay access. Envelope encryption password is separate; if lost, encrypted remote data cannot be recovered.
 
 ---
 
@@ -352,7 +417,7 @@ All errors are `EsrError` with stable `code`:
 
 Use `isEsrError(err)` and `isOfflineError(err)` helpers.
 
-Envelope helpers: `buildEnvelope`, `buildRecoveryKeyProof` from `@senkronla/client` (re-exported from protocol). See [API reference — envelope format](api-en.md#envelope-format-esr-doc1).
+Envelope helpers: `buildEnvelope`, `buildEnvEnc1Payload`, `extractDocument`, `buildRecoveryKeyProof` from `@senkronla/client` (protocol re-exports). See [Envelope encryption](#envelope-encryption-env-enc1) and [API reference](api-en.md#envelope-encryption-env-enc1).
 
 ---
 

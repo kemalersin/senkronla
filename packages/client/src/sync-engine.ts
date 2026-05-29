@@ -1,5 +1,5 @@
 import type { RelayClient } from './relay-client.js'
-import { buildEnvelope, extractRawDocument } from './envelope-builder.js'
+import { buildEnvelope, extractDocument, extractRawDocument, buildRecoveryKeyProof } from './envelope-builder.js'
 import { EsrError, isEsrError, isOfflineError } from './errors.js'
 import type { SyncStateStore } from './sync-state.js'
 import type { ConflictContext, DocumentAdapter, HeadMeta, SyncResult } from './types.js'
@@ -87,7 +87,9 @@ export class SyncEngine {
     }
 
     const envelope = await this.client.getHead(namespaceId, this.documentId)
-    const documentJson = extractRawDocument(envelope)
+    const encryption = this.adapter.encryption()
+    const password = encryption.enabled ? await encryption.resolvePassword() : undefined
+    const documentJson = await extractDocument(envelope, password)
     await this.adapter.importDocument(documentJson)
     await this.state.setKnownRemoteRevision(headMeta.revision)
     this.state.clearLocalMutation()
@@ -137,7 +139,7 @@ export class SyncEngine {
             writtenAt: new Date().toISOString(),
             deviceId: 'unknown',
             contentSha256: '',
-            contentMagic: 'ENV-RAW1',
+            contentMagic: 'ENV-ENC1',
             sizeBytes: 0,
           },
         }

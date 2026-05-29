@@ -1,9 +1,12 @@
 import {
+  buildInnerPayload,
   buildRecoveryKeyProof,
   ENVELOPE_SCHEMA_VERSION,
   ENVELOPE_SCHEMA_VERSION_V2,
+  extractDocumentFromInnerPayload,
   isValidDocumentId,
   parseEnvelope,
+  type BuildEnvEnc1Options,
   type EsrDocEnvelope,
 } from '@senkronla/protocol'
 import { ulid } from 'ulid'
@@ -23,20 +26,22 @@ export interface BuildEnvelopeInput {
   documentId?: string
   encrypt?: boolean
   password?: string
+  encOptions?: BuildEnvEnc1Options
   revision?: string
 }
 
 export async function buildEnvelope(input: BuildEnvelopeInput): Promise<EsrDocEnvelope> {
-  if (input.encrypt) {
+  if (input.encrypt && !input.password) {
     throw new EsrError(
-      'ESR_CLIENT_ENC_NOT_IMPLEMENTED',
-      'ENV-ENC1 encryption is not implemented yet; set encryption.enabled to false',
+      'ESR_CLIENT_ENCRYPTION_PASSWORD_REQUIRED',
+      'Password is required when envelope encryption is enabled',
     )
   }
 
-  const innerPayload = JSON.stringify({
-    magic: 'ENV-RAW1',
-    data: input.documentJson,
+  const { payload, contentMagic } = await buildInnerPayload(input.documentJson, {
+    encrypt: input.encrypt,
+    password: input.password,
+    encOptions: input.encOptions,
   })
 
   const revision = input.revision ?? ulid()
@@ -47,7 +52,7 @@ export async function buildEnvelope(input: BuildEnvelopeInput): Promise<EsrDocEn
   }
 
   const writtenAt = new Date().toISOString()
-  const contentSha256 = await sha256Hex(innerPayload)
+  const contentSha256 = await sha256Hex(payload)
   const common = {
     magic: 'ESR-DOC1' as const,
     namespaceId: input.namespaceId,
@@ -56,9 +61,9 @@ export async function buildEnvelope(input: BuildEnvelopeInput): Promise<EsrDocEn
     deviceId: input.deviceId,
     writtenAt,
     contentType: input.contentType,
-    contentMagic: 'ENV-RAW1' as const,
+    contentMagic,
     contentSha256,
-    payload: innerPayload,
+    payload,
   }
 
   if (documentId === 'primary') {
@@ -76,21 +81,34 @@ export async function buildEnvelope(input: BuildEnvelopeInput): Promise<EsrDocEn
   }
 }
 
-export function extractRawDocument(envelope: EsrDocEnvelope): string {
+export async function extractDocument(
+  envelope: EsrDocEnvelope,
+  password?: string,
+): Promise<string> {
   const parsed = parseEnvelope(envelope)
 
-  let inner: { magic?: string; data?: string }
   try {
-    inner = JSON.parse(parsed.payload) as { magic?: string; data?: string }
-  } catch {
-    throw new EsrError('ESR_CLIENT_INVALID_ENVELOPE', 'Envelope inner payload is invalid')
+    return await extractDocumentFromInnerPayload(parsed.payload, password)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to decode envelope payload'
+    if (message.includes('Password is required')) {
+      throw new EsrError('ESR_CLIENT_ENCRYPTION_PASSWORD_REQUIRED', message)
+    }
+    if (message.includes('Unsupported inner payload magic')) {
+      throw new EsrError('ESR_CLIENT_UNSUPPORTED_CONTENT', message)
+    }
+    throw new EsrError('ESR_CLIENT_INVALID_ENVELOPE', message)
   }
+}
 
-  if (inner.magic !== 'ENV-RAW1' || typeof inner.data !== 'string') {
-    throw new EsrError('ESR_CLIENT_UNSUPPORTED_CONTENT', 'Unsupported envelope content magic')
-  }
-
-  return inner.data
+/** @deprecated Use {@link extractDocument} — decryption may be async for ENV-ENC1. */
+export async function extractRawDocument(
+  envelope: EsrDocEnvelope,
+  password?: string,
+): Promise<string> {
+  return extractDocument(envelope, password)
 }
 
 export { buildRecoveryKeyProof }
+
+export type { BuildEnvEnc1Options }

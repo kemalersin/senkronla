@@ -68,7 +68,8 @@ Spec v1.2 namespace başına çoklu belge destekler (`primary`, `settings`, …)
 
 - [ ] `/v1` ile biten çalışan relay
 - [ ] Sabit **`namespaceId`** (UUID v4) müşteri çalışma alanı başına
-- [ ] **`DocumentAdapter`** ([SDK](sdk-tr.md)) veya REST zarf oluşturucu ([API](api-tr.md))
+- [ ] **`DocumentAdapter`** ([SDK](sdk-tr.md)) veya REST zarf oluşturucu ([API](api-tr.md)) — üretimde **`ENV-ENC1`** şifreleme
+- [ ] **Senkron parolası UX** — uygulama sağlar; eşleştirme/kurtarma taşımaz; tüm cihazlar aynı parolayı bilmeli
 - [ ] **`onRecoveryPhrase`** UI — ifade **bir kez** gösterilir
 - [ ] **`onConflict`** UI — belge başına yerel/uzak seçimi; **sunucu birleştirmesi yok**
 - [ ] Sync döngüsü: `ensureNamespace()` → `sync()`; `notifyLocalChange(documentId?)`; `flushPush(documentId?)`
@@ -85,7 +86,8 @@ Spec v1.2 namespace başına çoklu belge destekler (`primary`, `settings`, …)
 | **document** | Adlandırılmış anlık görüntü (`documentId`, varsayılan `primary`). |
 | **deviceToken** | Oluşturma/eşleştirme/kurtarma sonrası Bearer gizlisi. |
 | **revision** | Her anlık görüntüde ULID. Push'ta iyimser kilitleme. |
-| **envelope** | JSON'unuzu saran `ESR-DOC1`. Relay opak bayt saklar. |
+| **envelope** | JSON'unuzu saran `ESR-DOC1`. Relay opak bayt saklar. Üretimde `ENV-ENC1` ile şifrelenir. |
+| **sync password** | Zarf şifreleme parolası — uygulama sağlar; relay'e gitmez; kurtarma ifadesinden farklıdır. |
 | **recovery phrase** | 24 kelime BIP39. Bir kez. **Sunucuya gitmez** — yalnızca hash kanıtı. |
 
 ---
@@ -96,7 +98,8 @@ Spec v1.2 namespace başına çoklu belge destekler (`primary`, `settings`, …)
 - **Kurtarma ifadesi** bir kez — sunucudan alınamaz
 - Kurtarma **tüm cihazları iptal eder**
 - Üretimde zarf/token loglama
-- v1 `ENV-RAW1` — hassas alanları uygulama JSON'unda şifreleyin
+- Üretimde `encrypt: true` + `resolvePassword()` — SDK `ENV-ENC1` zarfları üretir ([SDK — Zarf şifrelemesi](sdk-tr.md#zarf-şifrelemesi-env-enc1), [API — Zarf şifrelemesi](api-tr.md#zarf-şifrelemesi-env-enc1))
+- **Senkron parolası** kurtarma ifadesinden ayrıdır — kaybolursa şifreli uzak veri açılamaz
 
 ---
 
@@ -119,8 +122,8 @@ Spec v1.2 namespace başına çoklu belge destekler (`primary`, `settings`, …)
 5. Eşleştirmede **aynı `namespaceId`**.
 6. **Otomatik birleştirme yok**.
 7. **Doğru referans dosyasını önce çek:**
-   - [sdk-tr.md](sdk-tr.md) — `EsrSync.connect`, adapter'lar
-   - [api-tr.md](api-tr.md) — HTTP, zarflar, WebSocket, hata kodları
+   - [sdk-tr.md](sdk-tr.md) — `EsrSync.connect`, adapter'lar, **senkron parolası / ENV-ENC1**
+   - [api-tr.md](api-tr.md) — HTTP, zarflar, **ENV-ENC1 şifreleme**, WebSocket, hata kodları
 8. Kenar durumlar için insan dokümantasyonu:
    - [Entegrasyon rehberleri](/tr/guides)
    - [SDK referansı](/tr/sdk)
