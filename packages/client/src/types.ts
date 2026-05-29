@@ -59,6 +59,7 @@ export interface PairingTokenResult {
   code: string
   expiresAt: string
   qrPayload: string
+  allowedAppIds?: string[]
 }
 
 export interface RedeemPairingInput {
@@ -164,6 +165,12 @@ export type EsrSyncStatus =
 
 export interface EsrSyncConnectOptions {
   relayUrl: string
+  /** Required when relay has `apps.enabled` (v1.3 app registry). */
+  appId?: string
+  appPlatform?: 'web' | 'ios' | 'android'
+  bundleId?: string
+  clientSecret?: string
+  clientVersion?: string
   /** Shorthand for a single `primary` document. */
   document?: DocumentAdapter
   /** Multiple documents in the same namespace. */
@@ -196,10 +203,16 @@ export interface EnsureNamespaceResult {
   recoveryPhrase?: string
 }
 
+export interface PairingTokenOptions {
+  ttlSeconds?: number
+  allowedAppIds?: string[]
+}
+
 export interface PairingHostResult {
   code: string
   qrPayload: string
   expiresAt: string
+  allowedAppIds?: string[]
 }
 
 export type SyncRunResult =

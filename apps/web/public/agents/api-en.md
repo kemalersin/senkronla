@@ -9,7 +9,7 @@ Health (no auth): `GET https://your-relay.example.com/health`
 
 **Postman:** Download the runnable collection and environment from the interactive API page — [`/postman/senkronla-relay.postman_collection.json`](/postman/senkronla-relay.postman_collection.json), [`senkronla-relay-local.postman_environment.json`](/postman/senkronla-relay-local.postman_environment.json). Run the `Quick start` folder in order to auto-save `deviceToken` and related fields.
 
-Spec v1.2 supports **multiple named documents** per namespace (`primary`, `settings`, …) via `/documents/{documentId}/...`. Legacy alias `/documents/primary/...` remains valid.
+Spec v1.3 adds optional **application registry** (`X-ESR-App-Id`, namespace–app binding). Spec v1.2 supports **multiple named documents** per namespace.
 
 ---
 
@@ -33,10 +33,13 @@ Spec v1.2 supports **multiple named documents** per namespace (`primary`, `setti
 16. [WebSocket notifications](#websocket-notifications)
 17. [Error codes](#error-codes)
 18. [Relay quotas & size limits](#relay-quotas--size-limits)
+19. [App registry admin & developer APIs](#app-registry-admin--developer-apis)
 
 ---
 
 ## Authentication
+
+### Device token
 
 After create, pair, or recover you receive `deviceToken`. Send on all authenticated routes:
 
@@ -44,9 +47,25 @@ After create, pair, or recover you receive `deviceToken`. Send on all authentica
 Authorization: Bearer dvt_a1b2c3d4e5f6...
 ```
 
-WebSocket: same token in `Authorization` header. Subprotocol: `esr-notifications-v1`.
+### Application context (v1.3 — when `apps.enabled`)
 
-**Unauthenticated routes:** `POST /v1/namespaces`, `POST .../devices` (pairing redeem), `POST .../recover`.
+Required on **all** `/v1` routes except `/health`, `/v1/admin/*`, and `/v1/developer/*`:
+
+| Client type | Headers |
+|-------------|---------|
+| Web SPA | `X-ESR-App-Id` + browser `Origin` (must match registered origin) |
+| iOS / Android | `X-ESR-App-Id` + `X-ESR-Platform` + `X-ESR-Bundle-Id` (+ optional `X-ESR-Client-Secret`) |
+
+```http
+X-ESR-App-Id: esr_app_mynotes
+Origin: https://app.example.com
+```
+
+Create namespace response includes `appId` when app registry is enabled. Cross-app access → `403 APP_NAMESPACE_MISMATCH`.
+
+WebSocket: browser identifies app via handshake `Origin`; send `Authorization: Bearer {deviceToken}`. Subprotocol: `esr-notifications-v1`.
+
+**Unauthenticated routes (still require app context when enabled):** `POST /v1/namespaces`, `POST .../devices` (pairing redeem), `POST .../recover`.
 
 ---
 
@@ -246,6 +265,14 @@ Content-Type: application/json
 { "ttlSeconds": 600 }
 ```
 
+Optional **pairing scope** (when `apps.enabled`):
+
+```json
+{ "ttlSeconds": 600, "allowedAppIds": ["esr_app_mynotes", "esr_app_mynotes_mobile"] }
+```
+
+Guest redeem with a non-listed `X-ESR-App-Id` → `403 APP_PAIRING_NOT_ALLOWED`. Omit `allowedAppIds` to allow any active app.
+
 ```json
 {
   "code": "482913",
@@ -253,6 +280,8 @@ Content-Type: application/json
   "qrPayload": "esr://pair/v1/{namespaceId}?code=482913&exp=1748427900&host=Alice%20laptop"
 }
 ```
+
+When scoped, `qrPayload` may include `&apps=esr_app_a,esr_app_b` and the response echoes `allowedAppIds`.
 
 **Guest:**
 
@@ -565,6 +594,33 @@ On `head_changed` → compare revision → `GET .../head` if changed.
 | `ENVELOPE_TOO_LARGE` | 413 | Shrink snapshot (default max ~50 MB) |
 | `ENVELOPE_INVALID` | 422 | Fix envelope schema/hash |
 | `RATE_LIMIT_EXCEEDED` | 429 | `Retry-After`, `error.details.rateLimit`, matching `RateLimit-*` headers |
+| `APP_ID_REQUIRED` | 400 | Send `X-ESR-App-Id` (relay has app registry) |
+| `APP_ORIGIN_REQUIRED` | 400 | Web client missing `Origin` |
+| `APP_ORIGIN_NOT_ALLOWED` | 403 | Origin not registered for app |
+| `APP_NAMESPACE_MISMATCH` | 403 | Namespace belongs to another app |
+| `APP_NOT_FOUND` | 403 | Unknown `appId` |
+| `APP_SUSPENDED` | 403 | Operator suspended app |
+| `APP_PAIRING_NOT_ALLOWED` | 403 | App not in pairing token `allowedAppIds` |
+| `APP_CLIENT_SECRET_INVALID` | 401 | Wrong native client secret |
+| `APP_NOT_VERIFIED` | 403 | App pending verification |
+| `APP_NATIVE_ID_REQUIRED` | 400 | Missing platform/bundle headers |
+
+See [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md) for full app error list.
+
+---
+
+## App registry admin & developer APIs
+
+When `apps.enabled: true`, operators and (in `self_service` mode) developers manage apps out-of-band from sync routes.
+
+| Audience | Base | Auth | Web UI |
+|----------|------|------|--------|
+| Operator | `/v1/admin/apps` | `ESR_ADMIN_TOKEN` | `/operator` (Apps tab) |
+| Developer | `/v1/developer/*` | JWT from `/developer/login` | `/developer` |
+
+OpenAPI: repo root `openapi.yaml` (tags **Applications**, **Developer**, **Admin**). Operator guide: [docs/OPERATOR.md](https://github.com/kemalersin/senkronla/blob/main/docs/OPERATOR.md).
+
+**v1.2 → v1.3 migration:** keep `apps.enabled: false` until clients send app headers; then enable registry, seed or register apps, set `legacyDefaultAppId` for existing namespaces. Details: [16-APP-REGISTRY §19](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md#19-migration-from-v12).
 
 ---
 

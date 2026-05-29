@@ -21,9 +21,10 @@ Start with **one** file matching your stack. Fetch [llms.txt](/llms.txt) for the
 1. [Architecture](#architecture)
 2. [Integration checklist](#integration-checklist)
 3. [Core concepts](#core-concepts)
-4. [Security](#security)
-5. [Packages](#packages)
-6. [Agent implementation rules](#agent-implementation-rules)
+4. [Application registry (v1.3)](#application-registry-v13)
+5. [Security](#security)
+6. [Packages](#packages)
+7. [Agent implementation rules](#agent-implementation-rules)
 
 ---
 
@@ -77,6 +78,7 @@ Before shipping production integration:
 - [ ] Sync loop: `ensureNamespace()` → `sync()` on startup; `notifyLocalChange(documentId?)` on edits; `flushPush(documentId?)` before logout
 - [ ] Device limit UX for `DEVICE_LIMIT_*` errors
 - [ ] Secure storage for `deviceToken` (Keychain / Keystore on mobile)
+- [ ] When relay has **app registry** enabled: register `appId` with operator or developer portal; pass `appId` in SDK / `X-ESR-App-Id` on REST (see [Application registry](#application-registry-v13))
 
 ---
 
@@ -99,13 +101,54 @@ Before shipping production integration:
 
 ---
 
+## Application registry (v1.3)
+
+When the relay operator enables `apps.enabled`, every integration must identify itself. **Namespaces are bound to the app that created them.**
+
+| Layer | Answers |
+|-------|---------|
+| **App** (`appId` + origin or bundle) | Which integration may call this relay |
+| **Device token** | Which paired device in which namespace |
+
+| Relay config | Your action |
+|--------------|-------------|
+| `apps.enabled: false` (default) | No change — v1.2 behaviour |
+| `apps.enabled: true` | Obtain `appId` from operator (`operator_managed`) or developer portal (`self_service`) |
+
+**Web (hosted SPA):**
+
+```http
+X-ESR-App-Id: esr_app_mynotes
+Origin: https://app.example.com
+```
+
+Browser sends `Origin` automatically. No client secret in web builds.
+
+**Native (iOS / Android):**
+
+```http
+X-ESR-App-Id: esr_app_mynotes_mobile
+X-ESR-Platform: ios
+X-ESR-Bundle-Id: com.example.mynotes
+```
+
+**SDK:** pass `appId` (and native fields) to `EsrSync.connect()` — see [sdk-en.md](sdk-en.md).
+
+**Local dev:** operator sets `allowLocalhostOrigins: true`; use `http://localhost:{port}` as registered origin.
+
+Full spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md).
+
+**Operator / developer portals (human UI):** `/operator` (app registry admin) · `/developer` (self-service registration when enabled). Not required for SDK integration — agents use `/v1` and the references above.
+
+---
+
 ## Security
 
 - Treat **`deviceToken`** like a session secret — secure storage on client
 - **Recovery phrase** shown once — build copy/save UX; cannot retrieve from server
 - Recovery **revokes all devices** — warn users before recover flow
 - Do not log envelopes or tokens in production
-- CORS is operator-configured — your web app origin must be allowed on the relay
+- CORS is operator-configured — your web app origin must be allowed on the relay (or registered via app registry when `apps.enabled`)
 - Enable `encrypt: true` + `resolvePassword()` in production — SDK builds `ENV-ENC1` envelopes ([SDK — Envelope encryption](sdk-en.md#envelope-encryption-env-enc1), [API — Envelope encryption](api-en.md#envelope-encryption-env-enc1))
 - **Sync password** is separate from recovery phrase — if lost, encrypted remote data cannot be recovered
 

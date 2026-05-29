@@ -4,9 +4,15 @@ import type { ServerConfig } from '../config/schema.js'
 export function logStartupWarnings(config: ServerConfig): void {
   const isProduction = process.env.NODE_ENV === 'production'
 
-  if (isProduction && config.cors.allowedOrigins.includes('*')) {
+  if (isProduction && config.cors.allowedOrigins.includes('*') && !config.apps.enabled) {
     console.warn(
       '[senkronla] CORS allows all origins (*). Set cors.allowedOrigins to explicit domains in production.',
+    )
+  }
+
+  if (isProduction && config.apps.allowLocalhostOrigins) {
+    console.warn(
+      '[senkronla] apps.allowLocalhostOrigins is enabled. Disable in production deployments.',
     )
   }
 

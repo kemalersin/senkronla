@@ -20,6 +20,11 @@ import type { EsrDocEnvelope } from '@senkronla/protocol'
 export interface RelayClientOptions {
   baseUrl: string
   clientDeviceId: string
+  appId?: string
+  appPlatform?: 'web' | 'ios' | 'android'
+  bundleId?: string
+  clientSecret?: string
+  clientVersion?: string
   getDeviceToken?: () => string | null | Promise<string | null>
   onDeviceToken?: (token: string) => void | Promise<void>
   fetch?: typeof fetch
@@ -32,6 +37,7 @@ export class RelayClient {
   private readonly onDeviceTokenFn?: RelayClientOptions['onDeviceToken']
   private readonly fetchImpl?: typeof fetch
   private inMemoryToken: string | null = null
+  private readonly appHeaders: Record<string, string>
 
   constructor(options: RelayClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '')
@@ -39,6 +45,27 @@ export class RelayClient {
     this.getDeviceTokenFn = options.getDeviceToken
     this.onDeviceTokenFn = options.onDeviceToken
     this.fetchImpl = options.fetch
+
+    this.appHeaders = {}
+    if (options.appId) {
+      this.appHeaders['x-esr-app-id'] = options.appId
+    }
+    if (options.appPlatform) {
+      this.appHeaders['x-esr-platform'] = options.appPlatform
+    }
+    if (options.bundleId) {
+      this.appHeaders['x-esr-bundle-id'] = options.bundleId
+    }
+    if (options.clientSecret) {
+      this.appHeaders['x-esr-client-secret'] = options.clientSecret
+    }
+    if (options.clientVersion) {
+      this.appHeaders['x-esr-client-version'] = options.clientVersion
+    }
+  }
+
+  getAppHeaders(): Record<string, string> {
+    return { ...this.appHeaders }
   }
 
   async getDeviceToken(): Promise<string | null> {
@@ -65,6 +92,7 @@ export class RelayClient {
       body,
       token,
       fetchImpl: this.fetchImpl,
+      headers: this.appHeaders,
     })
   }
 
@@ -117,7 +145,7 @@ export class RelayClient {
 
   async createPairingToken(
     namespaceId: string,
-    options?: { ttlSeconds?: number },
+    options?: { ttlSeconds?: number; allowedAppIds?: string[] },
   ): Promise<PairingTokenResult> {
     const token = await this.authToken()
     const { data } = await this.request<PairingTokenResult>(

@@ -167,7 +167,24 @@ Redaction middleware zorunlu test ile doğrulanmalı.
 
 Ayrıntı: [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS.md)
 
-## 15. Incident response (operatör)
+## 15. Uygulama kaydı (v1.3 — planlandı)
+
+`apps.enabled: true` iken cihaz token auth'tan önce kayıtlı uygulama kapısı doğrulanır:
+
+| Katman | Korur |
+|--------|-------|
+| App bağlamı (`X-ESR-App-Id` + Origin/bundle) | Relay kötüye kullanımı, bilinmeyen entegrasyonlar |
+| Cihaz token + namespace `app_uuid` eşleşmesi | Cross-app namespace erişimi |
+| Pairing / recovery (değişmedi) | Son kullanıcı veri erişimi |
+
+- Web SPA: client secret yok; tam `Origin` eşleşmesi + DNS/HTTPS doğrulama
+- Native: bundle/package header'ları; opsiyonel confidential secret; attestation v1.4'e ertelendi
+- App registry açıkken `file://` origin desteklenmez
+- Geliştirici hesapları (self_service) son kullanıcı senkron hesabı **değildir**
+
+Tam spec: [16-APP-REGISTRY.md](./16-APP-REGISTRY.md).
+
+## 16. Incident response (operatör)
 
 1. admin token rotate
 2. Şüpheli namespace recovery zorunlu kıl (manual)

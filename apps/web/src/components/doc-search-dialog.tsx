@@ -5,11 +5,14 @@ import { createPortal } from 'react-dom'
 import MiniSearch from 'minisearch'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
+import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
 import type { SearchDocument, SearchIndexFile } from '@/lib/search-index'
 
 interface DocSearchDialogProps {
   locale: string
 }
+
+export const DOC_SEARCH_OPEN_EVENT = 'senkronla:open-doc-search'
 
 interface SearchHit extends SearchDocument {
   score: number
@@ -33,57 +36,24 @@ function formatShortcut(isMac: boolean): string {
   return isMac ? '⌘K' : 'Ctrl+K'
 }
 
-function lockPageScroll() {
-  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
-  const previousBodyPaddingRight = document.body.style.paddingRight
-  const header = document.querySelector('.site-header')
-  const previousHeaderPaddingRight =
-    header instanceof HTMLElement ? header.style.paddingRight : ''
+export function DocSearchTrigger() {
+  const t = useTranslations('search')
+  const [isMac, setIsMac] = useState(true)
 
-  let spacer: HTMLDivElement | null = null
-  if (header instanceof HTMLElement) {
-    spacer = document.createElement('div')
-    spacer.setAttribute('aria-hidden', 'true')
-    spacer.className = 'doc-search-header-spacer'
-    spacer.style.height = `${header.getBoundingClientRect().height}px`
-    header.insertAdjacentElement('afterend', spacer)
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform))
+  }, [])
+
+  function openDialog() {
+    window.dispatchEvent(new Event(DOC_SEARCH_OPEN_EVENT))
   }
 
-  document.documentElement.classList.add('doc-search-locked')
-  if (scrollbarWidth > 0) {
-    document.body.style.paddingRight = `${scrollbarWidth}px`
-    if (header instanceof HTMLElement) {
-      header.style.paddingRight = `${scrollbarWidth}px`
-    }
-  }
-
-  function preventBackgroundScroll(event: Event) {
-    const target = event.target
-    if (!(target instanceof Node)) {
-      return
-    }
-
-    const dialog = document.querySelector('.doc-search-dialog')
-    if (dialog?.contains(target)) {
-      return
-    }
-
-    event.preventDefault()
-  }
-
-  document.addEventListener('wheel', preventBackgroundScroll, { passive: false, capture: true })
-  document.addEventListener('touchmove', preventBackgroundScroll, { passive: false, capture: true })
-
-  return () => {
-    spacer?.remove()
-    document.documentElement.classList.remove('doc-search-locked')
-    document.body.style.paddingRight = previousBodyPaddingRight
-    if (header instanceof HTMLElement) {
-      header.style.paddingRight = previousHeaderPaddingRight
-    }
-    document.removeEventListener('wheel', preventBackgroundScroll, { capture: true })
-    document.removeEventListener('touchmove', preventBackgroundScroll, { capture: true })
-  }
+  return (
+    <button type="button" className="doc-search-trigger" onClick={openDialog} aria-label={t('triggerLabel')}>
+      <span className="doc-search-trigger-label">{t('triggerLabel')}</span>
+      <kbd className="doc-search-kbd">{formatShortcut(isMac)}</kbd>
+    </button>
+  )
 }
 
 export function DocSearchDialog({ locale }: DocSearchDialogProps) {
@@ -98,7 +68,6 @@ export function DocSearchDialog({ locale }: DocSearchDialogProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const [index, setIndex] = useState<MiniSearch<SearchDocument> | null>(null)
-  const [isMac, setIsMac] = useState(true)
 
   const openDialog = useCallback(() => {
     setOpen(true)
@@ -112,16 +81,15 @@ export function DocSearchDialog({ locale }: DocSearchDialogProps) {
   useSearchShortcut(openDialog)
 
   useEffect(() => {
-    if (!open) {
-      return
+    function onOpenRequest() {
+      openDialog()
     }
 
-    return lockPageScroll()
-  }, [open])
+    window.addEventListener(DOC_SEARCH_OPEN_EVENT, onOpenRequest)
+    return () => window.removeEventListener(DOC_SEARCH_OPEN_EVENT, onOpenRequest)
+  }, [openDialog])
 
-  useEffect(() => {
-    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform))
-  }, [])
+  usePageScrollLock(open, 'doc-search')
 
   useEffect(() => {
     setIndex(null)
@@ -321,16 +289,7 @@ export function DocSearchDialog({ locale }: DocSearchDialogProps) {
     </div>
   ) : null
 
-  return (
-    <>
-      <button type="button" className="doc-search-trigger" onClick={openDialog} aria-label={t('triggerLabel')}>
-        <span className="doc-search-trigger-label">{t('triggerLabel')}</span>
-        <kbd className="doc-search-kbd">{formatShortcut(isMac)}</kbd>
-      </button>
-
-      {typeof document !== 'undefined' && dialog ? createPortal(dialog, document.body) : null}
-    </>
-  )
+  return typeof document !== 'undefined' && dialog ? createPortal(dialog, document.body) : null
 }
 
 function snippet(body: string, query: string): string {

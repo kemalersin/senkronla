@@ -30,6 +30,7 @@ Servis, herhangi bir offline-first uygulamanın **şifreli snapshot zarfını** 
 | 13 | [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS.md) | WebSocket push-to-pull bildirimleri (v1.1) |
 | 14 | [openapi.yaml](../openapi.yaml) | Makine okunur REST API tanımı |
 | 15 | [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) | **Namespace başına çoklu döküman (spec v1.2)** |
+| 16 | [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) | **Uygulama kaydı, namespace–app bağlama (spec v1.3 — planlandı)** |
 
 ---
 
@@ -77,11 +78,13 @@ This specification is application-agnostic. Each consumer app should maintain it
 
 **v1.2.0:** Namespace başına çoklu döküman — sunucu, istemci SDK, WS subscribe, dokümantasyon — bkz. [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md).
 
+**v1.3.0 (planlandı):** Uygulama kaydı — operatör veya self-service app kaydı; namespace'ler app'lere bağlı — bkz. [16-APP-REGISTRY.md](./16-APP-REGISTRY.md).
+
 ---
 
 | Alan | Değer |
 |------|--------|
-| Spec sürümü | 1.2.0 (v1.2 çoklu belge) |
+| Spec sürümü | 1.2.0 yayında; 1.3.0 planlandı (app registry) |
 | Protokol magic | `ESR-DOC1` |
 | API prefix | `/v1` |
 | Min. TLS | 1.2 |

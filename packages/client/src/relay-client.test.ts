@@ -45,6 +45,43 @@ describe('RelayClient', () => {
     expect(await client.getDeviceToken()).toBe('token-abc')
   })
 
+  it('sends app registry headers and allowedAppIds on pairing token create', async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const headers = init?.headers as Record<string, string>
+      expect(headers['x-esr-app-id']).toBe('esr_app_demo')
+      expect(headers['x-esr-platform']).toBe('ios')
+      expect(headers['x-esr-bundle-id']).toBe('com.example.demo')
+      expect(headers['x-esr-client-secret']).toBe('secret-value')
+
+      const body = JSON.parse(String(init?.body)) as { allowedAppIds?: string[] }
+      expect(body.allowedAppIds).toEqual(['esr_app_guest'])
+
+      return jsonResponse(201, {
+        code: '123456',
+        expiresAt: new Date().toISOString(),
+        qrPayload: 'esr://pair',
+        allowedAppIds: ['esr_app_guest'],
+      })
+    })
+
+    const client = new RelayClient({
+      baseUrl: 'https://relay.test/v1',
+      clientDeviceId: 'client-1',
+      appId: 'esr_app_demo',
+      appPlatform: 'ios',
+      bundleId: 'com.example.demo',
+      clientSecret: 'secret-value',
+      fetch: fetchMock as typeof fetch,
+      getDeviceToken: async () => 'token',
+    })
+
+    const result = await client.createPairingToken('11111111-1111-4111-8111-111111111111', {
+      allowedAppIds: ['esr_app_guest'],
+    })
+
+    expect(result.allowedAppIds).toEqual(['esr_app_guest'])
+  })
+
   it('returns null when head meta is missing', async () => {
     const fetchMock = vi.fn(async () =>
       jsonResponse(404, {

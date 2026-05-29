@@ -110,6 +110,11 @@ export class EsrSync {
     const relay = new RelayClient({
       baseUrl: options.relayUrl,
       clientDeviceId,
+      appId: options.appId,
+      appPlatform: options.appPlatform,
+      bundleId: options.bundleId,
+      clientSecret: options.clientSecret,
+      clientVersion: options.clientVersion,
       getDeviceToken: () => sharedState.getDeviceToken(),
       onDeviceToken: (token) => sharedState.setDeviceToken(token),
       fetch: options.fetch,
@@ -299,9 +304,9 @@ export class EsrSync {
     return { namespaceId, created: true, recoveryPhrase: phrase }
   }
 
-  async startPairing(): Promise<PairingHostResult> {
+  async startPairing(options?: { ttlSeconds?: number; allowedAppIds?: string[] }): Promise<PairingHostResult> {
     try {
-      return await this.relay.createPairingToken(this.namespaceId)
+      return await this.relay.createPairingToken(this.namespaceId, options)
     } catch (error) {
       await this.handleDeviceLimit(error)
       throw error

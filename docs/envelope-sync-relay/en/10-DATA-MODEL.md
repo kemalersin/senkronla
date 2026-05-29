@@ -77,6 +77,8 @@ erDiagram
 
 > **Runtime:** Multiple `document_id` values per namespace are supported (default cap via `sync.maxDocumentsPerNamespace`). Older clients that only use only `primary`. See [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md).
 
+> **v1.3 (planned):** Application registry adds `developers`, `apps`, `app_origins`, `app_bundles` and `namespaces.app_uuid` FK. See [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) §14. When `apps.enabled: false`, `app_uuid` is nullable and v1.2 schema behaviour is unchanged.
+
 ## 2. DDL (reference)
 
 ```sql

@@ -38,6 +38,9 @@ async function main() {
     if (applied.length > 0) {
       console.info(`Applied migrations: ${applied.join(', ')}`)
     }
+
+    const { seedAppsFromConfig } = await import('./services/app-registry-service.js')
+    await seedAppsFromConfig(db, config)
   } catch (error) {
     console.error('Database migration failed — startup aborted')
     console.error(error)

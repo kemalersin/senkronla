@@ -3,6 +3,7 @@ import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server
 import { notFound } from 'next/navigation'
 import { ConditionalFooter } from '@/components/conditional-footer'
 import { SiteHeader } from '@/components/site-header'
+import { hasDeveloperSessionCookie } from '@/lib/developer-auth'
 import { routing } from '@/i18n/routing'
 import type { Locale } from '@/i18n/config'
 import '../globals.css'
@@ -35,6 +36,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
 
   setRequestLocale(locale)
   const messages = await getMessages()
+  const initialDeveloperAuthenticated = await hasDeveloperSessionCookie()
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -47,11 +49,14 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
       </head>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <SiteHeader locale={locale as Locale} />
+          <SiteHeader
+            locale={locale as Locale}
+            initialDeveloperAuthenticated={initialDeveloperAuthenticated}
+          />
           <main key={locale} className="site-main">
             {children}
           </main>
-          <ConditionalFooter />
+          <ConditionalFooter initialDeveloperAuthenticated={initialDeveloperAuthenticated} />
         </NextIntlClientProvider>
       </body>
     </html>

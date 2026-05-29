@@ -15,7 +15,10 @@ import {
   sendRateLimitHeaders,
   trackRateLimitQuota,
 } from './lib/rate-limit-headers.js'
+import { enforceAppContext } from './middleware/auth-app.js'
+import { isLocalhostOrigin } from './lib/app-origin.js'
 import { registerApiRoutes } from './routes/index.js'
+import { isOriginAllowedByRegistry } from './services/app-registry-service.js'
 import { NotificationHub } from './services/notification-hub.js'
 import { type AppError, isAppError } from './errors/app-error.js'
 import {
@@ -55,11 +58,65 @@ export async function buildApp({ config, db }: AppDependencies) {
     trustProxy: config.server.trustProxy,
   })
 
+  const staticCorsOrigins = config.cors.allowedOrigins
+
   await app.register(cors, {
-    origin: config.cors.allowedOrigins.includes('*') ? true : config.cors.allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true)
+        return
+      }
+
+      if (!config.apps.enabled) {
+        if (staticCorsOrigins.includes('*')) {
+          callback(null, true)
+          return
+        }
+
+        callback(null, staticCorsOrigins.includes(origin))
+        return
+      }
+
+      if (config.apps.allowLocalhostOrigins && isLocalhostOrigin(origin)) {
+        callback(null, origin)
+        return
+      }
+
+      void isOriginAllowedByRegistry(db, config, origin)
+        .then((allowed) => {
+          if (allowed) {
+            callback(null, origin)
+            return
+          }
+
+          if (!staticCorsOrigins.includes('*') && staticCorsOrigins.includes(origin)) {
+            callback(null, origin)
+            return
+          }
+
+          callback(null, false)
+        })
+        .catch((error) => {
+          callback(error as Error, false)
+        })
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Authorization', 'Content-Type'],
+    allowedHeaders: [
+      'Authorization',
+      'Content-Type',
+      'X-ESR-App-Id',
+      'X-ESR-Platform',
+      'X-ESR-Bundle-Id',
+      'X-ESR-Client-Secret',
+      'X-ESR-Client-Version',
+    ],
     exposedHeaders: [...RATE_LIMIT_EXPOSED_HEADERS],
+  })
+
+  app.addHook('onRequest', async (request) => {
+    await enforceAppContext({ config, db }, request, {
+      allowOriginOnly: request.url.split('?')[0]?.endsWith('/notifications') ?? false,
+    })
   })
 
   app.addHook('onRequest', async (request, reply) => {

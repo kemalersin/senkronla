@@ -45,6 +45,16 @@ function parseSlotPackages(value: string | undefined): number[] | undefined {
     .filter((item) => Number.isFinite(item) && item > 0)
 }
 
+function parseEnvBoolean(value: string | undefined): boolean | undefined {
+  if (value === undefined) return undefined
+
+  const normalized = value.trim().toLowerCase()
+  if (['true', '1', 'yes', 'on'].includes(normalized)) return true
+  if (['false', '0', 'no', 'off'].includes(normalized)) return false
+
+  return undefined
+}
+
 function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
   const overrides: RawConfig = {}
 
@@ -54,7 +64,7 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
       ...(env.ESR_HOST ? { host: env.ESR_HOST } : {}),
       ...(env.ESR_PORT ? { port: env.ESR_PORT } : {}),
       ...(env.ESR_PUBLIC_URL ? { publicUrl: env.ESR_PUBLIC_URL } : {}),
-      ...(env.ESR_TRUST_PROXY ? { trustProxy: env.ESR_TRUST_PROXY } : {}),
+      ...(env.ESR_TRUST_PROXY !== undefined ? { trustProxy: parseEnvBoolean(env.ESR_TRUST_PROXY) } : {}),
     }
   }
 
@@ -63,7 +73,7 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
       ...(overrides.database as RawConfig),
       ...(env.ESR_DATABASE_URL ? { url: env.ESR_DATABASE_URL } : {}),
       ...(env.ESR_DATABASE_POOL_SIZE ? { poolSize: env.ESR_DATABASE_POOL_SIZE } : {}),
-      ...(env.ESR_DATABASE_SSL ? { ssl: env.ESR_DATABASE_SSL } : {}),
+      ...(env.ESR_DATABASE_SSL !== undefined ? { ssl: parseEnvBoolean(env.ESR_DATABASE_SSL) } : {}),
     }
   }
 
@@ -127,7 +137,9 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
       ...(env.ESR_RATE_LIMIT_ENABLED || env.ESR_RECOVER_PER_HOUR || env.ESR_PAIRING_PER_HOUR || env.ESR_PAIRING_TOKENS_PER_HOUR || env.ESR_PUSH_PER_HOUR_PER_DEVICE || env.ESR_GENERAL_PER_MINUTE_PER_IP
         ? {
             rateLimit: {
-              ...(env.ESR_RATE_LIMIT_ENABLED ? { enabled: env.ESR_RATE_LIMIT_ENABLED } : {}),
+              ...(env.ESR_RATE_LIMIT_ENABLED !== undefined
+                ? { enabled: parseEnvBoolean(env.ESR_RATE_LIMIT_ENABLED) }
+                : {}),
               ...(env.ESR_RECOVER_PER_HOUR ? { recoverPerHour: env.ESR_RECOVER_PER_HOUR } : {}),
               ...(env.ESR_PAIRING_PER_HOUR ? { pairingPerHour: env.ESR_PAIRING_PER_HOUR } : {}),
               ...(env.ESR_PAIRING_TOKENS_PER_HOUR ? { pairingTokensPerHour: env.ESR_PAIRING_TOKENS_PER_HOUR } : {}),
@@ -156,6 +168,74 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
     }
   }
 
+  if (
+    env.ESR_APPS__ENABLED ||
+    env.ESR_APPS__REGISTRATION_MODE ||
+    env.ESR_APPS__REQUIRE_REGISTRATION ||
+    env.ESR_APPS__ALLOW_LOCALHOST_ORIGINS ||
+    env.ESR_APPS__LEGACY_DEFAULT_APP_ID ||
+    env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET ||
+    env.ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET ||
+    env.ESR_DEVELOPER_JWT_SECRET ||
+    env.ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY ||
+    env.ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR ||
+    env.ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR
+  ) {
+    const developerJwtSecret = env.ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET ?? env.ESR_DEVELOPER_JWT_SECRET
+    const perAppLimits =
+      env.ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY ||
+      env.ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR ||
+      env.ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR
+        ? {
+            ...(env.ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY
+              ? { namespacesPerDay: env.ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY }
+              : {}),
+            ...(env.ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR
+              ? { pairingTokensPerHour: env.ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR }
+              : {}),
+            ...(env.ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR
+              ? { recoverPerHour: env.ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR }
+              : {}),
+          }
+        : undefined
+
+    overrides.apps = {
+      ...(overrides.apps as RawConfig),
+      ...(env.ESR_APPS__ENABLED !== undefined ? { enabled: parseEnvBoolean(env.ESR_APPS__ENABLED) } : {}),
+      ...(env.ESR_APPS__REGISTRATION_MODE ? { registrationMode: env.ESR_APPS__REGISTRATION_MODE } : {}),
+      ...(env.ESR_APPS__REQUIRE_REGISTRATION !== undefined
+        ? { requireRegistration: parseEnvBoolean(env.ESR_APPS__REQUIRE_REGISTRATION) }
+        : {}),
+      ...(env.ESR_APPS__ALLOW_LOCALHOST_ORIGINS !== undefined
+        ? { allowLocalhostOrigins: parseEnvBoolean(env.ESR_APPS__ALLOW_LOCALHOST_ORIGINS) }
+        : {}),
+      ...(env.ESR_APPS__LEGACY_DEFAULT_APP_ID
+        ? { legacyDefaultAppId: env.ESR_APPS__LEGACY_DEFAULT_APP_ID }
+        : {}),
+      ...(env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET !== undefined
+        ? {
+            native: {
+              requireClientSecret: parseEnvBoolean(env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET),
+            },
+          }
+        : {}),
+      ...(developerJwtSecret
+        ? {
+            developerPortal: {
+              jwtSecret: developerJwtSecret,
+            },
+          }
+        : {}),
+      ...(perAppLimits
+        ? {
+            limits: {
+              perApp: perAppLimits,
+            },
+          }
+        : {}),
+    }
+  }
+
   if (env.LOG_LEVEL || env.ESR_LOG_FORMAT) {
     overrides.logging = {
       ...(overrides.logging as RawConfig),
@@ -167,7 +247,9 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
   if (env.ESR_WEBSOCKET_ENABLED || env.ESR_WS_PING_INTERVAL) {
     overrides.websocket = {
       ...(overrides.websocket as RawConfig),
-      ...(env.ESR_WEBSOCKET_ENABLED ? { enabled: env.ESR_WEBSOCKET_ENABLED } : {}),
+      ...(env.ESR_WEBSOCKET_ENABLED !== undefined
+        ? { enabled: parseEnvBoolean(env.ESR_WEBSOCKET_ENABLED) }
+        : {}),
       ...(env.ESR_WS_PING_INTERVAL ? { pingIntervalSeconds: env.ESR_WS_PING_INTERVAL } : {}),
     }
   }

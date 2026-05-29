@@ -77,6 +77,8 @@ erDiagram
 
 > **Çalışma zamanı:** Namespace başına birden fazla `document_id` desteklenir (üst sınır `sync.maxDocumentsPerNamespace`). Eski istemciler yalnızca `primary` kullanır. Bkz. [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md).
 
+> **v1.3 (planlandı):** Uygulama kaydı `developers`, `apps`, `app_origins`, `app_bundles` tablolarını ve `namespaces.app_uuid` FK'sını ekler. Bkz. [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) §14. `apps.enabled: false` iken `app_uuid` nullable; v1.2 şema davranışı değişmez.
+
 ## 2. DDL (referans)
 
 ```sql

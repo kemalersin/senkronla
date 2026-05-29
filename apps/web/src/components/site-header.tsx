@@ -1,14 +1,20 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/config'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { DocSearchDialog } from '@/components/doc-search-dialog'
+import { DocSearchDialog, DocSearchTrigger } from '@/components/doc-search-dialog'
+import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
+import { useDeveloperSession } from '@/hooks/use-developer-session'
+import { OVERLAY_OPEN_EVENT } from '@/lib/page-scroll-lock'
 import { GITHUB_REPO_URL } from '@/lib/site-links'
 
 interface SiteHeaderProps {
   locale: Locale
+  initialDeveloperAuthenticated?: boolean
 }
 
 function GitHubIcon() {
@@ -19,10 +25,39 @@ function GitHubIcon() {
   )
 }
 
-export function SiteHeader({ locale }: SiteHeaderProps) {
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  )
+}
+
+export function SiteHeader({ locale, initialDeveloperAuthenticated = false }: SiteHeaderProps) {
   const t = useTranslations('nav')
   const tLocale = useTranslations('locale')
   const pathname = usePathname()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const developerAuthenticated = useDeveloperSession(initialDeveloperAuthenticated)
+
+  usePageScrollLock(menuOpen, 'site-menu')
+
+  useEffect(() => {
+    function closeMenu() {
+      setMenuOpen(false)
+    }
+
+    window.addEventListener(OVERLAY_OPEN_EVENT, closeMenu)
+    return () => window.removeEventListener(OVERLAY_OPEN_EVENT, closeMenu)
+  }, [])
 
   const links = [
     { href: '/', label: t('home') },
@@ -33,56 +68,150 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
     { href: '/api', label: t('api') },
   ]
 
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [menuOpen])
+
+  function isLinkActive(href: string) {
+    return pathname === href || (href !== '/' && pathname.startsWith(href))
+  }
+
+  function renderNav(className: string, onNavigate?: () => void) {
+    return (
+      <nav className={className} aria-label="Main">
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            data-active={isLinkActive(link.href) ? 'true' : 'false'}
+            onClick={onNavigate}
+          >
+            {link.label}
+          </Link>
+        ))}
+        {!developerAuthenticated ? (
+          <Link
+            href="/developer"
+            className="header-login-link"
+            data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
+            onClick={onNavigate}
+          >
+            {t('login')}
+          </Link>
+        ) : (
+          <Link
+            href="/developer"
+            className="header-login-link"
+            data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
+            onClick={onNavigate}
+          >
+            {t('panel')}
+          </Link>
+        )}
+      </nav>
+    )
+  }
+
+  function renderUtilities() {
+    return (
+      <>
+        <DocSearchTrigger />
+        <a
+          href={GITHUB_REPO_URL}
+          className="header-github-link"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t('github')}
+        >
+          <GitHubIcon />
+        </a>
+        <ThemeToggle />
+        <div className="locale-switch" aria-label="Language">
+          {(['en', 'tr'] as const).map((code) => (
+            <Link
+              key={code}
+              href={pathname}
+              locale={code}
+              prefetch={false}
+              data-active={locale === code ? 'true' : 'false'}
+            >
+              {tLocale(code)}
+            </Link>
+          ))}
+        </div>
+      </>
+    )
+  }
+
   return (
     <header className="site-header">
+      <DocSearchDialog locale={locale} />
+
       <div className="container site-header-inner">
         <Link href="/" className="logo">
           senkron<span>la</span>
         </Link>
 
-        <nav className="nav" aria-label="Main">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              data-active={
-                pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
-                  ? 'true'
-                  : 'false'
-              }
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        {renderNav('nav site-header-nav')}
 
-        <div className="header-actions">
-          <DocSearchDialog locale={locale} />
-          <a
-            href={GITHUB_REPO_URL}
-            className="header-github-link"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={t('github')}
+        <div className="header-actions site-header-utilities">{renderUtilities()}</div>
+
+        <div className="header-mobile-controls">
+          <button
+            type="button"
+            className="header-menu-toggle"
+            aria-expanded={menuOpen}
+            aria-controls="site-header-menu"
+            onClick={() => setMenuOpen((open) => !open)}
           >
-            <GitHubIcon />
-          </a>
-          <ThemeToggle />
-          <div className="locale-switch" aria-label="Language">
-            {(['en', 'tr'] as const).map((code) => (
-              <Link
-                key={code}
-                href={pathname}
-                locale={code}
-                prefetch={false}
-                data-active={locale === code ? 'true' : 'false'}
-              >
-                {tLocale(code)}
-              </Link>
-            ))}
-          </div>
+            {menuOpen ? <CloseIcon /> : <MenuIcon />}
+            <span className="visually-hidden">{menuOpen ? t('menuClose') : t('menuOpen')}</span>
+          </button>
         </div>
       </div>
+
+      {menuOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <>
+              <button
+                type="button"
+                className="site-header-menu-backdrop"
+                aria-label={t('menuClose')}
+                onClick={() => setMenuOpen(false)}
+              />
+              <div
+                id="site-header-menu"
+                className="site-header-mobile-menu"
+                role="dialog"
+                aria-modal="true"
+                aria-label={t('menuOpen')}
+              >
+                <div className="container site-header-mobile-menu-inner">
+                  {renderNav('nav site-header-mobile-nav', () => setMenuOpen(false))}
+                  <div className="header-actions site-header-mobile-utilities">
+                    {renderUtilities()}
+                  </div>
+                </div>
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
     </header>
   )
 }

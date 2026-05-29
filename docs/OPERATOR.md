@@ -37,6 +37,102 @@ Each namespace can hold multiple opaque envelopes (`primary`, `settings`, etc.).
 
 See [15-MULTI-DOCUMENT.md](envelope-sync-relay/en/15-MULTI-DOCUMENT.md) for protocol and client integration.
 
+### Application registry (v1.3 — Faz 8a/8b shipped)
+
+Optional layer: registered apps (`appId`) with verified web origins or native bundle IDs; **namespaces are bound to the app that created them**.
+
+| Config | Use case |
+|--------|----------|
+| `apps.enabled: false` | Default — v1.2 open relay, no app checks |
+| `apps.registrationMode: operator_managed` | Operator registers apps via YAML seed or admin API |
+| `apps.registrationMode: self_service` | Application owners register via developer portal + DNS verification |
+
+Key variables: `ESR_APPS__ENABLED`, `ESR_APPS__REGISTRATION_MODE`, `ESR_APPS__ALLOW_LOCALHOST_ORIGINS`, `ESR_DEVELOPER_JWT_SECRET`.
+
+When `apps.enabled: true`, static CORS lists are superseded by per-app verified origins (localhost allowed only if `allowLocalhostOrigins: true`).
+
+Full spec: [16-APP-REGISTRY.md](envelope-sync-relay/en/16-APP-REGISTRY.md) · [TR](envelope-sync-relay/tr/16-APP-REGISTRY.md).
+
+### Migrating from v1.2 to v1.3
+
+1. **Keep `apps.enabled: false`** until all client builds send `X-ESR-App-Id` (and web `Origin` or native bundle headers).
+2. **Register apps** via YAML seed (`apps.seed`) or admin API; in `self_service` mode, developers use `/developer`.
+3. **Set `legacyDefaultAppId`** so existing namespaces without `app_uuid` resolve to your primary app.
+4. **Verify origins** (DNS TXT or HTTPS well-known) before flipping `apps.enabled: true` in production.
+5. **Roll out clients** with `appId` in SDK / headers; test pairing scope with `allowedAppIds` if you restrict guest apps.
+
+Step-by-step checklist and SQL notes: [16-APP-REGISTRY §19 (EN)](envelope-sync-relay/en/16-APP-REGISTRY.md#19-migration-from-v12) · [§19 (TR)](envelope-sync-relay/tr/16-APP-REGISTRY.md#19-v12den-geçiş).
+
+### Admin app API (v1.3 — Faz 8b)
+
+Requires `ESR_ADMIN_TOKEN`. Base path: `/v1/admin/apps`.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/admin/apps` | List apps (`?q=`, `?status=`, pagination) |
+| `POST` | `/admin/apps` | Create app with optional origins/bundles |
+| `GET` | `/admin/apps/:appId` | Detail with origins and bundles |
+| `PATCH` | `/admin/apps/:appId` | Update `name` and/or `status` (suspend/restore) |
+| `DELETE` | `/admin/apps/:appId` | Archive (`status: archived`) |
+| `POST` | `/admin/apps/:appId/origins` | Add origin (`verified: false` for challenge flow) |
+| `POST` | `/admin/apps/:appId/origins/:originId/verify` | Run DNS TXT or HTTPS well-known verification |
+| `DELETE` | `/admin/apps/:appId/origins/:originId` | Remove origin |
+| `POST` | `/admin/apps/:appId/bundles` | Add native bundle |
+| `POST` | `/admin/apps/:appId/bundles/:bundleId/approve` | Approve pending bundle |
+
+Pairing scope (when `apps.enabled`):
+
+```json
+POST /v1/namespaces/{namespaceId}/pairing-tokens
+{
+  "ttlSeconds": 600,
+  "allowedAppIds": ["esr_app_mynotes", "esr_app_mynotes_mobile"]
+}
+```
+
+Guest redeem with a non-listed `X-ESR-App-Id` → `403 APP_PAIRING_NOT_ALLOWED`. Omit `allowedAppIds` to allow any active app.
+
+YAML `apps.seed` still merges at startup (Faz 8a). Admin API manages runtime registry without DB access.
+
+**Operator portal (web):** `/operator` → **Apps** tab lists registered applications, supports create/suspend/archive, origin verification instructions, and native bundle approval (proxied via BFF to the admin API above). **Developers** tab lists self-service accounts — verify email, disable, or re-enable (BFF → admin developer API below).
+
+### Admin developer API (v1.3)
+
+Requires `ESR_ADMIN_TOKEN`. Base path: `/v1/admin/developers`. Useful when `apps.registrationMode: self_service` and `requireEmailVerification: true` (manual email approval) or to suspend abusive accounts.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/admin/developers` | List developers (`?q=`, `?filter=all\|verified\|unverified\|disabled`, pagination) |
+| `GET` | `/admin/developers/:developerId` | Detail (email, verification, disabled state, app count) |
+| `PATCH` | `/admin/developers/:developerId` | `{ "emailVerified": true/false }` and/or `{ "disabled": true/false }` |
+
+Disabling an account increments `session_version` (forces logout) and blocks login with `403 DEVELOPER_ACCOUNT_DISABLED`.
+
+### Developer portal API (v1.3 — Faz 8d)
+
+Requires `apps.registrationMode: self_service` and `ESR_DEVELOPER_JWT_SECRET` (min 32 chars). Base path: `/v1/developer`.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/developer/register` | — | Create developer account |
+| `POST` | `/developer/login` | — | Issue JWT session token |
+| `POST` | `/developer/logout` | JWT | Invalidate session |
+| `GET` | `/developer/me` | JWT | Profile |
+| `GET` | `/developer/apps` | JWT | List own apps (`?q=`, pagination) |
+| `POST` | `/developer/apps` | JWT | Create app (`pending`) |
+| `GET` | `/developer/apps/:appId` | JWT | Detail |
+| `PATCH` | `/developer/apps/:appId` | JWT | Update name |
+| `DELETE` | `/developer/apps/:appId` | JWT | Archive |
+| `POST` | `/developer/apps/:appId/origins` | JWT | Add origin (verification challenge) |
+| `POST` | `/developer/apps/:appId/origins/:originId/verify` | JWT | DNS/HTTPS verification |
+| `DELETE` | `/developer/apps/:appId/origins/:originId` | JWT | Remove origin |
+| `POST` | `/developer/apps/:appId/bundles` | JWT | Add native bundle |
+| `POST` | `/developer/apps/:appId/rotate-secret` | JWT | Rotate native client secret |
+
+**Developer portal (web):** `/developer` — register/login, app CRUD, origin verification (BFF → relay developer API).
+
+Suspend and manual native bundle approval remain operator-only via admin API.
+
 ### Production CORS
 
 In production, set explicit origins instead of `*`:

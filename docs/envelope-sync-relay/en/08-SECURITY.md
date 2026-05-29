@@ -167,7 +167,24 @@ Redaction middleware must be validated with mandatory tests.
 
 Details: [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS.md)
 
-## 15. Incident response (operator)
+## 15. Application registry (v1.3 — planned)
+
+When `apps.enabled: true`, an additional gate validates registered applications before device-token auth:
+
+| Layer | Protects |
+|-------|----------|
+| App context (`X-ESR-App-Id` + Origin/bundle) | Relay abuse, unknown integrations |
+| Device token + namespace `app_uuid` match | Cross-app namespace access |
+| Pairing / recovery (unchanged) | End-user data access |
+
+- Web SPAs: no client secret; trust exact `Origin` match + DNS/HTTPS verification
+- Native: bundle/package headers; optional confidential secret; attestation deferred to v1.4
+- `file://` origins not supported when app registry is enabled
+- Developer accounts (self_service) are **not** end-user sync accounts
+
+Full spec: [16-APP-REGISTRY.md](./16-APP-REGISTRY.md).
+
+## 16. Incident response (operator)
 
 1. admin token rotate
 2. Force recovery on suspicious namespace (manual)

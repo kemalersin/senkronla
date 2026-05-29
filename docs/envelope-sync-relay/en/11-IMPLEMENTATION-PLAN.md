@@ -287,6 +287,21 @@ Agent must deliver this script in working form.
 
 **Definition of done:** Two documents in one namespace sync independently; primary-only clients against a current server unchanged; integration tests in doc 15 §13.
 
+### Phase 8 — Application registry (v1.3 — done)
+
+See [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) §20.
+
+| Sub-phase | Scope | Status |
+|-----------|--------|--------|
+| 8a | Migration 006, config `apps`, app context middleware, namespace `app_uuid`, dynamic CORS | done |
+| 8b | Admin API `/v1/admin/apps`, YAML seed, suspend | done |
+| 8c | DNS TXT + HTTPS well-known verification, localhost dev | done |
+| 8d | Developer portal `/v1/developer/*`, self_service mode | done |
+| 8e | Native bundle registration, client secret, pairing `allowedAppIds`, SDK `appId` | done |
+| 8f | OpenAPI, agent docs, OPERATOR.md, v1.2 migration guide | done |
+
+**Definition of done:** `apps.enabled: false` passes all existing tests; operator_managed web app creates namespace bound to app; self_service developer verifies domain without operator; wrong origin / cross-app namespace rejected.
+
 ## 11. Known limitations (current release)
 
 - Multi-document uses `documents[]` in `@senkronla/client` (see doc 14 §5.2)

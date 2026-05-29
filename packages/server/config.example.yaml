@@ -56,6 +56,14 @@ unlock:
   defaultExpiryDays: 365
   hmacSecret: "${ESR_UNLOCK_HMAC_SECRET}"
 
+apps:
+  enabled: false
+  registrationMode: operator_managed
+  requireRegistration: true
+  allowLocalhostOrigins: false
+  legacyDefaultAppId: null
+  seed: []
+
 cors:
   allowedOrigins:
     - "*"

@@ -11,6 +11,7 @@ import { hashDeviceToken } from '../lib/crypto.js'
 import { findDeviceByTokenHash } from '../services/device-service.js'
 import { requireNamespaceExists } from '../middleware/auth-device.js'
 import type { AppContext } from '../types/context.js'
+import type { FastifyRequest } from 'fastify'
 
 const AUTH_MESSAGE_TIMEOUT_MS = 5_000
 const WS_OPEN = 1
@@ -34,8 +35,9 @@ async function authenticateDevice(
   ctx: AppContext,
   namespaceId: string,
   token: string,
+  request: FastifyRequest,
 ) {
-  await requireNamespaceExists(ctx, namespaceId)
+  await requireNamespaceExists(ctx, namespaceId, request)
   const tokenHash = hashDeviceToken(token)
   const device = await findDeviceByTokenHash(ctx.db, namespaceId, tokenHash)
 
@@ -118,7 +120,7 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
         }
 
         try {
-          const device = await authenticateDevice(ctx, namespaceId, token)
+          const device = await authenticateDevice(ctx, namespaceId, token, request)
           if (!device) {
             failAuth('WS_AUTH_INVALID', 'Device token is invalid or revoked')
             return

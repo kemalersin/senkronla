@@ -152,6 +152,11 @@ const listed = await sync.relay.listDocuments(namespaceId)
 | Seçenek | Zorunlu | Varsayılan | Açıklama |
 |---------|---------|------------|----------|
 | `relayUrl` | evet | — | `/v1` ile biten temel URL |
+| `appId` | relay gerektiriyorsa | — | Public app id (`esr_app_…`) — `apps.enabled` iken |
+| `appPlatform` | native | — | `ios` veya `android` |
+| `bundleId` | native | — | Bundle ID veya package name |
+| `clientSecret` | native confidential | — | Operatör zorunlu kıldığında |
+| `clientVersion` | hayır | — | `X-ESR-Client-Version` telemetri |
 | `document` | birinden* | — | Tek belge (`primary`) |
 | `documents` | birinden* | — | Çoklu slot (`documentId?` + `adapter`) |
 | `storage` | evet | — | `EsrStorage` — web'de `createLocalStorageAdapter()` |
@@ -289,7 +294,7 @@ Mobilde Keychain / Keystore — düz localStorage kullanmayın.
 | `sync(documentId?)` | Tam pull/push; id ile tek belge, yoksa tüm slotlar |
 | `notifyLocalChange(documentId?)` | Kirli işaretle; gecikmeli push |
 | `flushPush(documentId?)` | Anında push |
-| `startPairing()` | Ana cihaz: `{ code, qrPayload, expiresAt }` |
+| `startPairing(opts?)` | Ana cihaz: `{ code, qrPayload, expiresAt }`; `apps.enabled` iken isteğe bağlı `{ allowedAppIds }` |
 | `joinPairing(code)` | Misafir: kodu kullanır, `sync()` çalıştırır |
 | `recover(phrase)` | Kurtarma; diğer cihazları iptal eder |
 | `listDevices()` | Cihazlar + limitler |
@@ -301,6 +306,14 @@ Mobilde Keychain / Keystore — düz localStorage kullanmayın.
 | `disable()` | Zamanlayıcı ve bildirimleri durdur |
 
 Salt okunur: `relayUrl`, `relay` (`RelayClient`), `documentIds`.
+
+`apps.enabled` iken misafir redeem'i belirli app'lere kısıtlamak için:
+
+```typescript
+await sync.startPairing({
+  allowedAppIds: ['esr_app_mynotes', 'esr_app_mynotes_mobile'],
+})
+```
 
 #### Çakışmalar
 

@@ -77,6 +77,35 @@ unlock:
   defaultExpiryDays: 365
   hmacSecret: "${ESR_UNLOCK_HMAC_SECRET}"
 
+# Uygulama kaydı (v1.3 — planlandı). Bkz. doc 16.
+apps:
+  enabled: false
+  registrationMode: operator_managed   # operator_managed | self_service
+  requireRegistration: true
+  allowLocalhostOrigins: false
+  legacyDefaultAppId: null
+  verification:
+    dnsRecordPrefix: "_esr-verify"
+    wellKnownPath: "/.well-known/esr-app-verification"
+    challengeTtlSeconds: 86400
+    fetchTimeoutSeconds: 10
+  limits:
+    perApp:
+      namespacesPerDay: 100
+      pairingTokensPerHour: 30
+      recoverPerHour: 5
+    perDeveloper:
+      maxApps: 10
+  native:
+    requireClientSecret: false
+    requireManualReview: true
+  developerPortal:
+    enabled: false
+    jwtSecret: "${ESR_DEVELOPER_JWT_SECRET}"
+    sessionTtlHours: 168
+    requireEmailVerification: true
+  seed: []
+
 payment:                                     # optional phase 2
   enabled: false
   provider: "stripe"
@@ -127,6 +156,17 @@ ESR_WS_PING_INTERVAL=30
 ESR_MAX_ENVELOPE_BYTES=52428800
 ESR_MAX_DOCUMENTS_PER_NAMESPACE=32      # 0 = sınırsız
 ESR_ALLOWED_DOCUMENT_IDS=primary,settings   # isteğe bağlı virgülle ayrılmış allowlist
+
+# Uygulama kaydı (v1.3 — isteğe bağlı)
+ESR_APPS__ENABLED=false
+ESR_APPS__REGISTRATION_MODE=operator_managed   # operator_managed | self_service
+ESR_APPS__REQUIRE_REGISTRATION=true
+ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
+# ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary
+# ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
+ESR_DEVELOPER_JWT_SECRET=change-me-long-random-min-32-chars
+# ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY=100
+# apps.seed (origin, bundle) — yalnızca YAML; env ile override edilemez
 ```
 
 ## 4. docker-compose.yml (referans)
@@ -199,6 +239,11 @@ sync.example.com {
 | Demo | `free: 99`, `mode: block` |
 | Sıkı | `free: 1`, `mode: payment` |
 | Kapalı ticari | `free: 2`, `mode: block` (3. cihaz imkansız) |
+| **App registry kapalı (varsayılan)** | `apps.enabled: false` — v1.2 açık relay |
+| **Self-hosted tek uygulama** | `apps.enabled: true`, `registrationMode: operator_managed`, `seed: [...]` |
+| **Public hosted platform** | `apps.enabled: true`, `registrationMode: self_service`, geliştirici portalı açık |
+
+Tam app registry config: [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) §5.
 
 ## 7. contentType kısıtlama (opsiyonel)
 

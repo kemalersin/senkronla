@@ -69,6 +69,8 @@ export async function registerNamespaceRoutes(app: FastifyInstance, ctx: AppCont
       recoveryHash: recovery.recoveryHash,
       deviceLabel: body.deviceLabel,
       clientDeviceId: body.clientDeviceId,
+      appUuid: request.appAuth?.appUuid ?? null,
+      appId: request.appAuth?.appId ?? null,
     })
 
     return reply.code(201).send(result)
@@ -76,7 +78,7 @@ export async function registerNamespaceRoutes(app: FastifyInstance, ctx: AppCont
 
   app.get('/namespaces/:namespaceId', { preHandler: requireDeviceAuth }, async (request) => {
     const { namespaceId } = request.params as { namespaceId: string }
-    const namespace = await requireNamespaceExists(ctx, namespaceId)
+    const namespace = await requireNamespaceExists(ctx, namespaceId, request)
 
     if (request.deviceAuth?.namespaceId !== namespaceId) {
       throw new AppError(403, 'FORBIDDEN', 'Device token does not match namespace')

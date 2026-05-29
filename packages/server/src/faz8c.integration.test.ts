@@ -1,0 +1,186 @@
+import { randomUUID } from 'node:crypto'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql'
+import type { ServerConfig } from './config/schema.js'
+import { loadConfig } from './config/load-config.js'
+import { runMigrations } from './db/migrate.js'
+import { createPool } from './db/pool.js'
+import { buildApp } from './app.js'
+
+const ADMIN_TOKEN = 'test-admin-token-01234567890123456789012'
+
+function withAppRegistryConfig(base: ServerConfig): ServerConfig {
+  return {
+    ...base,
+    auth: {
+      ...base.auth,
+      adminApiToken: ADMIN_TOKEN,
+    },
+    apps: {
+      ...base.apps,
+      enabled: true,
+      requireRegistration: true,
+      allowLocalhostOrigins: true,
+      seed: [],
+    },
+  }
+}
+
+describe('Faz 8c — origin verification (integration)', () => {
+  let container: StartedPostgreSqlContainer | undefined
+  let app: Awaited<ReturnType<typeof buildApp>> | undefined
+
+  const adminAuth = { authorization: `Bearer ${ADMIN_TOKEN}` }
+
+  beforeAll(async () => {
+    try {
+      container = await new PostgreSqlContainer('postgres:16-alpine').start()
+    } catch {
+      container = undefined
+      return
+    }
+
+    const baseConfig = loadConfig({
+      ESR_DATABASE_URL: container.getConnectionUri(),
+      ESR_ADMIN_TOKEN: ADMIN_TOKEN,
+    })
+
+    const config = withAppRegistryConfig(baseConfig)
+    const db = createPool(config)
+    await runMigrations(db)
+    app = await buildApp({ config, db })
+    await app.ready()
+  }, 120_000)
+
+  afterAll(async () => {
+    await app?.close()
+    await container?.stop()
+  })
+
+  it.skipIf(!container || !app)(
+    'unverified origin includes instructions; localhost verify succeeds',
+    async () => {
+      const appId = 'esr_app_verifytest'
+      const origin = 'http://localhost:4321'
+
+      const createResponse = await app!.inject({
+        method: 'POST',
+        url: '/v1/admin/apps',
+        headers: adminAuth,
+        payload: {
+          appId,
+          name: 'Verify Test App',
+          type: 'web',
+          status: 'pending_verification',
+        },
+      })
+
+      expect(createResponse.statusCode).toBe(201)
+
+      const addOriginResponse = await app!.inject({
+        method: 'POST',
+        url: `/v1/admin/apps/${appId}/origins`,
+        headers: adminAuth,
+        payload: { origin, verified: false },
+      })
+
+      expect(addOriginResponse.statusCode).toBe(201)
+      const added = addOriginResponse.json()
+      const originRow = added.origins.find((row: { origin: string }) => row.origin === origin)
+
+      expect(originRow).toBeTruthy()
+      expect(originRow.verifiedAt).toBeNull()
+      expect(originRow.verification).toMatchObject({
+        dnsHost: '_esr-verify.localhost',
+        wellKnownUrl: `${origin}/.well-known/esr-app-verification`,
+      })
+      expect(originRow.verification.dnsTxt).toContain(`esr_verify=${appId}:`)
+
+      const failedVerify = await app!.inject({
+        method: 'POST',
+        url: `/v1/admin/apps/${appId}/origins/${originRow.id}/verify`,
+        headers: adminAuth,
+      })
+
+      expect(failedVerify.statusCode).toBe(200)
+      expect(failedVerify.json().verification.method).toBe('localhost')
+      expect(failedVerify.json().app.origins[0].verifiedAt).toBeTruthy()
+      expect(failedVerify.json().app.status).toBe('active')
+    },
+  )
+
+  it.skipIf(!container || !app)('verification failure returns APP_ORIGIN_VERIFICATION_FAILED', async () => {
+    const appId = 'esr_app_verifyfail'
+    const origin = 'https://example.com'
+
+    await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/apps',
+      headers: adminAuth,
+      payload: {
+        appId,
+        name: 'Verify Fail App',
+        type: 'web',
+        status: 'pending_verification',
+      },
+    })
+
+    const addOriginResponse = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/apps/${appId}/origins`,
+      headers: adminAuth,
+      payload: { origin, verified: false },
+    })
+
+    const originRow = addOriginResponse.json().origins[0]
+
+    const verifyResponse = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/apps/${appId}/origins/${originRow.id}/verify`,
+      headers: adminAuth,
+    })
+
+    expect(verifyResponse.statusCode).toBe(422)
+    expect(verifyResponse.json().error.code).toBe('APP_ORIGIN_VERIFICATION_FAILED')
+    expect(verifyResponse.json().error.details.instructions.dnsHost).toBe('_esr-verify.example.com')
+  })
+
+  it.skipIf(!container || !app)('verified origin allows namespace creation', async () => {
+    const appId = 'esr_app_verifyns'
+    const origin = 'http://127.0.0.1:3000'
+
+    await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/apps',
+      headers: adminAuth,
+      payload: {
+        appId,
+        name: 'Verify NS App',
+        type: 'web',
+        status: 'active',
+        origins: [origin],
+      },
+    })
+
+    const namespaceId = randomUUID()
+    const createNs = await app!.inject({
+      method: 'POST',
+      url: '/v1/namespaces',
+      headers: {
+        'x-esr-app-id': appId,
+        origin,
+      },
+      payload: {
+        namespaceId,
+        namespaceLabel: 'Verified Origin Workspace',
+        recoveryKeySalt: 'c2FsdA',
+        recoveryKeyHash: 'aGFzaA',
+        deviceLabel: 'Host',
+        clientDeviceId: randomUUID(),
+      },
+    })
+
+    expect(createNs.statusCode).toBe(201)
+    expect(createNs.json().appId).toBe(appId)
+  })
+})

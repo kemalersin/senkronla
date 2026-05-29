@@ -6,6 +6,7 @@ export interface RequestOptions {
   body?: unknown
   token?: string | null
   fetchImpl?: typeof fetch
+  headers?: Record<string, string>
 }
 
 export async function relayRequest<T>(
@@ -28,6 +29,12 @@ export async function relayRequest<T>(
 
   if (options.token) {
     headers.authorization = `Bearer ${options.token}`
+  }
+
+  if (options.headers) {
+    for (const [key, value] of Object.entries(options.headers)) {
+      headers[key.toLowerCase()] = value
+    }
   }
 
   let response: Response

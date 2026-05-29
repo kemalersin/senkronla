@@ -2,9 +2,11 @@
 
 > Open-source, self-hosted Envelope Sync Relay for offline-first applications — integrate via JavaScript SDK or REST API.
 
-Senkronla stores opaque ESR-DOC1 envelopes and coordinates multi-device sync. Spec v1.2 supports multiple named documents per namespace (`primary`, `settings`, etc.) via `EsrSync.connect({ documents: [...] })` and `/documents/{documentId}/...` REST paths.
+Senkronla stores opaque ESR-DOC1 envelopes and coordinates multi-device sync. Spec **v1.3** adds optional application registry (`X-ESR-App-Id`, namespace–app binding). Spec v1.2 supports multiple named documents per namespace (`primary`, `settings`, etc.) via `EsrSync.connect({ documents: [...] })` and `/documents/{documentId}/...` REST paths.
 
 Production payloads use **ENV-ENC1** envelope encryption (PBKDF2-SHA256 + AES-256-GCM). The **sync password** is app-provided — never sent to the relay — and is separate from the 24-word recovery phrase.
+
+When the relay operator enables **app registry** (`apps.enabled`), integrations must send `X-ESR-App-Id` (+ web `Origin` or native bundle headers). Namespaces are bound to the creating app. Spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md).
 
 ## Agent integration (start here)
 
@@ -26,6 +28,8 @@ Production payloads use **ENV-ENC1** envelope encryption (PBKDF2-SHA256 + AES-25
 - [Integration guides](/guides): Step-by-step product integration
 - [SDK reference](/sdk): EsrSync client API (interactive) — includes `#encryption`
 - [REST API](/api): HTTP endpoints and error codes (interactive) — includes `#encryption`
+- [Operator portal](/operator): App registry admin (when `apps.enabled`)
+- [Developer portal](/developer): Self-service app registration (`self_service` mode)
 - [Postman collection](/postman/senkronla-relay.postman_collection.json): importable `/v1` requests + local environment
 
 ## Optional

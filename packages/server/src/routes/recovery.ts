@@ -1,8 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { trackRateLimitQuota, withRateLimits } from '../lib/rate-limit-headers.js'
-import { AppError } from '../errors/app-error.js'
-import { findNamespaceByPublicId } from '../services/namespace-service.js'
+import { requireNamespaceExists } from '../middleware/auth-device.js'
 import { recoverNamespace } from '../services/recovery-service.js'
 import type { AppContext } from '../types/context.js'
 
@@ -22,10 +21,7 @@ export async function registerRecoveryRoutes(app: FastifyInstance, ctx: AppConte
     const { namespaceId } = request.params as { namespaceId: string }
     const body = recoverNamespaceBodySchema.parse(request.body)
 
-    const namespace = await findNamespaceByPublicId(ctx.db, namespaceId)
-    if (!namespace) {
-      throw new AppError(404, 'NAMESPACE_NOT_FOUND', 'Namespace not found')
-    }
+    const namespace = await requireNamespaceExists(ctx, namespaceId, request)
 
     const result = await recoverNamespace(ctx.db, ctx.config, namespace, body)
     trackRateLimitQuota(request, result.rateLimit)

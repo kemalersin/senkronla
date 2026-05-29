@@ -13,6 +13,8 @@ import {
   buildLimitsResponse,
   getLimitsForNamespace,
 } from './slot-service.js'
+import type { AppAuthContext } from './app-registry-service.js'
+import { assertPairingAppAllowed } from './pairing-scope-service.js'
 import type { DeviceRow, NamespaceRow } from '../types/db.js'
 
 export async function findDeviceByTokenHash(
@@ -117,6 +119,7 @@ export async function pairDeviceWithCode(
   config: ServerConfig,
   namespace: NamespaceRow,
   input: PairDeviceInput,
+  appAuth?: AppAuthContext | null,
 ): Promise<PairDeviceResult> {
   const pairRateLimit = await enforceRateLimit(pool, config, getPairDeviceRateLimitRule(config), {
     namespaceUuid: namespace.id,
@@ -158,19 +161,23 @@ export async function pairDeviceWithCode(
     }
 
     const codeHash = hashPairingCode(input.pairingCode, namespace.namespace_id)
-    const tokenResult = await client.query<{ id: string }>(
+    const tokenResult = await client.query<{ id: string; allowed_app_ids: string[] | null }>(
       `UPDATE pairing_tokens
        SET redeemed_at = now()
        WHERE namespace_uuid = $1
          AND code_hash = $2
          AND redeemed_at IS NULL
          AND expires_at > now()
-       RETURNING id`,
+       RETURNING id, allowed_app_ids`,
       [namespace.id, codeHash],
     )
 
     if (tokenResult.rowCount === 0) {
       throw new AppError(400, 'PAIRING_CODE_INVALID', 'Pairing code is invalid, expired, or already used')
+    }
+
+    if (config.apps.enabled && config.apps.requireRegistration) {
+      assertPairingAppAllowed(tokenResult.rows[0]?.allowed_app_ids ?? null, appAuth?.appId)
     }
 
     const deviceToken = generateDeviceToken()

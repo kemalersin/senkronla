@@ -21,9 +21,10 @@ Yığınınıza uygun **tek** dosyayla başlayın. Tam indeks için [llms.txt](/
 1. [Mimari](#mimari)
 2. [Entegrasyon kontrol listesi](#entegrasyon-kontrol-listesi)
 3. [Temel kavramlar](#temel-kavramlar)
-4. [Güvenlik](#güvenlik)
-5. [Paketler](#paketler)
-6. [Agent uygulama kuralları](#agent-uygulama-kuralları)
+4. [Uygulama kaydı (v1.3)](#uygulama-kaydı-v13)
+5. [Güvenlik](#güvenlik)
+6. [Paketler](#paketler)
+7. [Agent uygulama kuralları](#agent-uygulama-kuralları)
 
 ---
 
@@ -75,6 +76,7 @@ Spec v1.2 namespace başına çoklu belge destekler (`primary`, `settings`, …)
 - [ ] Sync döngüsü: `ensureNamespace()` → `sync()`; `notifyLocalChange(documentId?)`; `flushPush(documentId?)`
 - [ ] `DEVICE_LIMIT_*` için cihaz limiti UX
 - [ ] `deviceToken` güvenli depolama (Keychain / Keystore)
+- [ ] Relay'de **app registry** açıksa: `appId` kaydı; SDK veya REST'te `X-ESR-App-Id` ([Uygulama kaydı](#uygulama-kaydı-v13))
 
 ---
 
@@ -89,6 +91,43 @@ Spec v1.2 namespace başına çoklu belge destekler (`primary`, `settings`, …)
 | **envelope** | JSON'unuzu saran `ESR-DOC1`. Relay opak bayt saklar. Üretimde `ENV-ENC1` ile şifrelenir. |
 | **sync password** | Zarf şifreleme parolası — uygulama sağlar; relay'e gitmez; kurtarma ifadesinden farklıdır. |
 | **recovery phrase** | 24 kelime BIP39. Bir kez. **Sunucuya gitmez** — yalnızca hash kanıtı. |
+
+---
+
+## Uygulama kaydı (v1.3)
+
+Operatör `apps.enabled` açtığında her entegrasyon kendini tanıtmalı. **Namespace'ler oluşturan app'e bağlıdır.**
+
+| Katman | Soru |
+|--------|------|
+| **App** (`appId` + origin/bundle) | Hangi entegrasyon relay'i kullanabilir? |
+| **Cihaz token** | Hangi cihaz hangi namespace'te? |
+
+| Relay config | Sizin yapmanız gereken |
+|--------------|------------------------|
+| `apps.enabled: false` | Değişiklik yok (v1.2) |
+| `apps.enabled: true` | `appId` alın (operatör veya geliştirici portalı) |
+
+**Web:**
+
+```http
+X-ESR-App-Id: esr_app_mynotes
+Origin: https://app.example.com
+```
+
+**Native:**
+
+```http
+X-ESR-App-Id: esr_app_mynotes_mobile
+X-ESR-Platform: ios
+X-ESR-Bundle-Id: com.example.mynotes
+```
+
+**SDK:** `EsrSync.connect({ appId, … })` — bkz. [sdk-tr.md](sdk-tr.md).
+
+Tam spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md).
+
+**Operatör / geliştirici portalları (insan UI):** `/operator` (app registry yönetimi) · `/developer` (self-service kayıt, etkinse). SDK entegrasyonu için gerekli değil — agent'lar `/v1` ve yukarıdaki referansları kullanır.
 
 ---
 

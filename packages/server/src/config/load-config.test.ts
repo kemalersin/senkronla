@@ -38,6 +38,26 @@ describe('loadConfig', () => {
     expect(config.limits.rateLimit.generalPerMinutePerIp).toBe(100)
   })
 
+  it('applies ESR_APPS__ environment overrides', () => {
+    const config = loadConfig({
+      ESR_APPS__ENABLED: 'true',
+      ESR_APPS__REGISTRATION_MODE: 'self_service',
+      ESR_APPS__REQUIRE_REGISTRATION: 'false',
+      ESR_APPS__ALLOW_LOCALHOST_ORIGINS: 'true',
+      ESR_APPS__LEGACY_DEFAULT_APP_ID: 'esr_app_legacy',
+      ESR_DEVELOPER_JWT_SECRET: 'x'.repeat(32),
+      ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY: '50',
+    })
+
+    expect(config.apps.enabled).toBe(true)
+    expect(config.apps.registrationMode).toBe('self_service')
+    expect(config.apps.requireRegistration).toBe(false)
+    expect(config.apps.allowLocalhostOrigins).toBe(true)
+    expect(config.apps.legacyDefaultAppId).toBe('esr_app_legacy')
+    expect(config.apps.developerPortal.jwtSecret).toBe('x'.repeat(32))
+    expect(config.apps.limits.perApp.namespacesPerDay).toBe(50)
+  })
+
   it('detects bundled vs external database mode', () => {
     expect(getDatabaseMode('postgresql://esr:esr@postgres:5432/esr')).toBe('bundled')
     expect(getDatabaseMode('postgresql://esr:esr@localhost:5432/esr')).toBe('external')

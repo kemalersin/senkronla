@@ -19,7 +19,7 @@ export async function registerUnlockRoutes(app: FastifyInstance, ctx: AppContext
     async (request) => {
       const { namespaceId } = request.params as { namespaceId: string }
       const body = redeemUnlockBodySchema.parse(request.body)
-      const namespace = await requireNamespaceExists(ctx, namespaceId)
+      const namespace = await requireNamespaceExists(ctx, namespaceId, request)
 
       if (request.deviceAuth?.namespaceId !== namespaceId) {
         throw new AppError(403, 'FORBIDDEN', 'Device token does not match namespace')

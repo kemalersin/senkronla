@@ -117,7 +117,7 @@ function registerDocumentIdRoutes(
         documentId?: string
       }
       const documentId = resolveDocumentId({ documentId: pathDocumentId })
-      const namespace = await requireNamespaceExists(ctx, namespaceId)
+      const namespace = await requireNamespaceExists(ctx, namespaceId, request)
       return handleGetHeadMeta(ctx, namespace, documentId, request)
     },
   )
@@ -131,7 +131,7 @@ function registerDocumentIdRoutes(
         documentId?: string
       }
       const documentId = resolveDocumentId({ documentId: pathDocumentId })
-      const namespace = await requireNamespaceExists(ctx, namespaceId)
+      const namespace = await requireNamespaceExists(ctx, namespaceId, request)
       return handleGetHead(ctx, namespace, documentId, request)
     },
   )
@@ -145,7 +145,7 @@ function registerDocumentIdRoutes(
         documentId?: string
       }
       const documentId = resolveDocumentId({ documentId: pathDocumentId })
-      const namespace = await requireNamespaceExists(ctx, namespaceId)
+      const namespace = await requireNamespaceExists(ctx, namespaceId, request)
       const payload = await handlePush(ctx, namespace, namespaceId, documentId, request)
       return reply.code(201).send(withRateLimits(request, payload))
     },
@@ -160,7 +160,7 @@ export async function registerDocumentRoutes(app: FastifyInstance, ctx: AppConte
     { preHandler: requireDeviceAuth },
     async (request) => {
       const { namespaceId } = request.params as { namespaceId: string }
-      const namespace = await requireNamespaceExists(ctx, namespaceId)
+      const namespace = await requireNamespaceExists(ctx, namespaceId, request)
       const documents = await listDocumentHeads(ctx.db, namespace.id)
       return withRateLimits(request, { documents })
     },

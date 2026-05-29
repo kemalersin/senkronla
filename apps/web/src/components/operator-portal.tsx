@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 
+import { OperatorAppsPanel } from '@/components/operator-apps-panel'
+import { OperatorDevelopersPanel } from '@/components/operator-developers-panel'
+import { OperatorSpinner } from '@/components/operator-spinner'
 import { getPublicApiOrigin } from '@/lib/public-api-url'
 
-type Tab = 'overview' | 'namespaces' | 'unlockCodes' | 'unlockEvents' | 'rateLimits'
+type Tab = 'overview' | 'namespaces' | 'unlockCodes' | 'unlockEvents' | 'rateLimits' | 'apps' | 'developers'
 
 interface Paginated<T> {
   items: T[]
@@ -143,14 +146,6 @@ function rateLimitActionLabel(
 
 async function readJson<T>(response: Response): Promise<T & ApiErrorBody> {
   return (await response.json()) as T & ApiErrorBody
-}
-
-function OperatorSpinner({ label }: { label: string }) {
-  return (
-    <div className="operator-content is-loading" aria-busy="true" aria-live="polite">
-      <div className="operator-spinner" aria-label={label} role="status" />
-    </div>
-  )
 }
 
 export function OperatorPortal() {
@@ -523,13 +518,15 @@ export function OperatorPortal() {
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: 'overview', label: t('tabs.overview') },
     { id: 'namespaces', label: t('tabs.namespaces') },
+    { id: 'apps', label: t('tabs.apps') },
+    { id: 'developers', label: t('tabs.developers') },
     { id: 'unlockCodes', label: t('tabs.unlockCodes') },
     { id: 'unlockEvents', label: t('tabs.unlockEvents') },
     { id: 'rateLimits', label: t('tabs.rateLimits') },
   ]
 
   const showOverviewSpinner = tab === 'overview' && (authState === 'loading' || loading)
-  const isListTab = tab !== 'overview'
+  const isListTab = tab !== 'overview' && tab !== 'apps' && tab !== 'developers'
 
   function renderTabContent() {
     if (error) {
@@ -788,6 +785,28 @@ export function OperatorPortal() {
             rateLimits.total,
           )}
         </section>
+      )
+    }
+
+    if (tab === 'apps') {
+      return (
+        <OperatorAppsPanel
+          authState={authState}
+          page={page}
+          onUnauthorized={() => setAuthState('guest')}
+          onPageChange={setPage}
+        />
+      )
+    }
+
+    if (tab === 'developers') {
+      return (
+        <OperatorDevelopersPanel
+          authState={authState}
+          page={page}
+          onUnauthorized={() => setAuthState('guest')}
+          onPageChange={setPage}
+        />
       )
     }
 

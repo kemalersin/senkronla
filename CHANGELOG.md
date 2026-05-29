@@ -12,6 +12,20 @@ The published version number lives only in the [`package.json`](package.json) `v
 ## [Unreleased]
 
 
+## [0.1.4]
+### Added
+
+- **protocol/server (v1.3):** application registry — `apps.enabled`, namespace `appId` binding, dynamic CORS from verified origins, native bundle + client secret, pairing `allowedAppIds`
+- **server:** admin API `/v1/admin/apps` (list/create/suspend, origins, bundles, verification)
+- **server:** developer API `/v1/developer/*` (register/login, app CRUD, DNS TXT + HTTPS well-known origin verification)
+- **server:** `POST .../origins/:originId/verify`, `APP_PAIRING_NOT_ALLOWED`, `APP_CLIENT_SECRET_INVALID`, and related app error codes
+- **client:** `EsrSync.connect({ appId })`, `startPairing({ allowedAppIds })`
+- **web:** operator Apps panel (`/operator`) and developer portal (`/developer`) with BFF routes
+- **docs:** OpenAPI v1.3.0 (admin/developer/app schemas), agent MD + `llms.txt`, OPERATOR.md app registry sections
+
+### Changed
+
+- **docs:** root `openapi.yaml` SSOT synced to `docs/envelope-sync-relay/openapi.yaml`
 ## [0.1.3]
 ### Added
 

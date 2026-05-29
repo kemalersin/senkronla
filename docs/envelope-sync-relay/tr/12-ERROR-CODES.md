@@ -45,6 +45,26 @@ Tüm API hataları aşağıdaki JSON gövdesini kullanır:
 | 429 | RATE_LIMIT_EXCEEDED | Rate limit | `{ retryAfterSeconds, action, rateLimit }` — `rateLimit`: `action`, `limit`, `remaining` (0), `resetAfterSeconds`, `windowSeconds`; ayrıca `Retry-After` ve `RateLimit-*` başlıkları |
 | 500 | INTERNAL_ERROR | Beklenmeyen sunucu hatası | — |
 
+## Uygulama kaydı (v1.3 — planlandı)
+
+Bkz. [16-APP-REGISTRY.md](./16-APP-REGISTRY.md). `apps.enabled: true` iken geçerli.
+
+| HTTP | code | Açıklama | details |
+|------|------|----------|---------|
+| 400 | APP_ID_REQUIRED | `X-ESR-App-Id` header eksik | — |
+| 400 | APP_ORIGIN_REQUIRED | Web istemcisinde `Origin` yok | — |
+| 400 | APP_NATIVE_ID_REQUIRED | Native header eksik | — |
+| 401 | APP_CLIENT_SECRET_INVALID | Native secret yanlış | — |
+| 403 | APP_NOT_FOUND | Bilinmeyen `appId` | — |
+| 403 | APP_NOT_VERIFIED | App `active` değil | `{ status }` |
+| 403 | APP_SUSPENDED | Operatör askıya aldı | — |
+| 403 | APP_ORIGIN_NOT_ALLOWED | Origin kayıtlı değil | `{ origin }` |
+| 403 | APP_BUNDLE_NOT_ALLOWED | Bundle kayıtlı değil | `{ platform, bundleId }` |
+| 403 | APP_NAMESPACE_MISMATCH | Namespace başka app'e ait | — |
+| 403 | APP_PAIRING_NOT_ALLOWED | `allowedAppIds` dışında | `{ allowedAppIds }` |
+| 409 | APP_ORIGIN_EXISTS | Origin zaten kayıtlı | — |
+| 409 | APP_BUNDLE_EXISTS | Bundle zaten kayıtlı | — |
+
 ## İstemci eşlemesi (önerilen)
 
 ```typescript

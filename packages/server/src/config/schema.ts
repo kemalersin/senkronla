@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { APP_ID_PATTERN } from '../lib/app-id.js'
 
 export const DEFAULT_DATABASE_URL = 'postgresql://esr:esr@localhost:5432/esr'
 
@@ -86,6 +87,73 @@ export const serverConfigSchema = z.object({
       codePrefix: z.string().default('ESR-UNLK'),
       defaultExpiryDays: z.coerce.number().int().positive().default(365),
       hmacSecret: z.string().min(32).optional(),
+    })
+    .default({}),
+  apps: z
+    .object({
+      enabled: z.coerce.boolean().default(false),
+      registrationMode: z.enum(['operator_managed', 'self_service']).default('operator_managed'),
+      requireRegistration: z.coerce.boolean().default(true),
+      allowLocalhostOrigins: z.coerce.boolean().default(false),
+      legacyDefaultAppId: z.string().nullable().default(null),
+      verification: z
+        .object({
+          dnsRecordPrefix: z.string().default('_esr-verify'),
+          wellKnownPath: z.string().default('/.well-known/esr-app-verification'),
+          challengeTtlSeconds: z.coerce.number().int().positive().default(86_400),
+          fetchTimeoutSeconds: z.coerce.number().int().positive().default(10),
+        })
+        .default({}),
+      limits: z
+        .object({
+          perApp: z
+            .object({
+              namespacesPerDay: z.coerce.number().int().positive().default(100),
+              pairingTokensPerHour: z.coerce.number().int().positive().default(30),
+              recoverPerHour: z.coerce.number().int().positive().default(5),
+            })
+            .default({}),
+          perDeveloper: z
+            .object({
+              maxApps: z.coerce.number().int().positive().default(10),
+            })
+            .default({}),
+        })
+        .default({}),
+      native: z
+        .object({
+          requireClientSecret: z.coerce.boolean().default(false),
+          requireManualReview: z.coerce.boolean().default(true),
+        })
+        .default({}),
+      developerPortal: z
+        .object({
+          enabled: z.coerce.boolean().default(false),
+          jwtSecret: z.string().min(32).optional(),
+          sessionTtlHours: z.coerce.number().int().positive().default(168),
+          requireEmailVerification: z.coerce.boolean().default(true),
+        })
+        .default({}),
+      seed: z
+        .array(
+          z.object({
+            appId: z.string().regex(APP_ID_PATTERN),
+            name: z.string().min(1).max(256),
+            type: z.enum(['web', 'native']),
+            status: z
+              .enum(['pending', 'pending_verification', 'active', 'suspended', 'archived'])
+              .default('active'),
+            origins: z.array(z.string().url()).default([]),
+            bundleIds: z
+              .object({
+                ios: z.string().min(1).optional(),
+                android: z.string().min(1).optional(),
+              })
+              .optional(),
+            clientSecretHash: z.string().nullable().optional(),
+          }),
+        )
+        .default([]),
     })
     .default({}),
   cors: z

@@ -6,6 +6,9 @@ import { registerNamespaceRoutes } from './namespaces.js'
 import { registerRecoveryRoutes } from './recovery.js'
 import { registerUnlockRoutes } from './unlock.js'
 import { registerAdminRoutes } from './admin.js'
+import { registerAdminAppRoutes } from './admin-apps.js'
+import { registerAdminDeveloperRoutes } from './admin-developers.js'
+import { registerDeveloperRoutes } from './developer.js'
 import { registerNotificationRoutes } from './notifications.js'
 import type { AppContext } from '../types/context.js'
 
@@ -20,6 +23,9 @@ export async function registerApiRoutes(app: FastifyInstance, ctx: AppContext) {
       await registerRecoveryRoutes(v1, ctx)
       await registerUnlockRoutes(v1, ctx)
       await registerAdminRoutes(v1, ctx)
+      await registerAdminAppRoutes(v1, ctx)
+      await registerAdminDeveloperRoutes(v1, ctx)
+      await registerDeveloperRoutes(v1, ctx)
       await registerNotificationRoutes(v1, ctx)
     },
     { prefix: '/v1' },

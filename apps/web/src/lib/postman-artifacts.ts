@@ -372,7 +372,8 @@ function buildDeviceItems(): PostmanItem[] {
       method: 'POST',
       url: '{{relayBaseUrl}}/namespaces/{{namespaceId}}/pairing-tokens',
       headers: jsonHeaders(),
-      description: 'Host device generates a 6-digit pairing code.',
+      description:
+        'Host device generates a 6-digit pairing code. When `apps.enabled`, add header `X-ESR-App-Id: {{esrAppId}}` (enable in environment). Optional body scope: `{ "ttlSeconds": 600, "allowedAppIds": ["esr_app_a", "esr_app_b"] }`.',
       body: { ttlSeconds: 600 },
       tests: [
         "pm.test('Pairing token created', function () {",
@@ -508,6 +509,8 @@ export function buildPostmanCollection() {
         '',
         'Collection auth uses `{{deviceToken}}`. Unauthenticated routes override auth per request.',
         '',
+        '**App registry (v1.3, optional):** When the relay has `apps.enabled: true`, set `esrAppId` in the environment and add `X-ESR-App-Id` to namespace/pairing requests. See agent API docs for native bundle headers.',
+        '',
         'Docs: https://senkronla.dev/api',
       ].join('\n'),
       schema: POSTMAN_SCHEMA,
@@ -582,6 +585,12 @@ export function buildPostmanEnvironment(spec: PostmanEnvironmentSpec) {
     { key: 'recoverySalt', value: API_SAMPLE.recoverySalt, type: 'default', enabled: true },
     { key: 'recoveryHash', value: API_SAMPLE.recoveryHash, type: 'default', enabled: true },
     { key: 'pairingCode', value: API_SAMPLE.pairingCode, type: 'default', enabled: true },
+    {
+      key: 'esrAppId',
+      value: '',
+      type: 'default',
+      enabled: false,
+    },
     { key: 'unlockCode', value: API_SAMPLE.unlockCode, type: 'default', enabled: true },
     { key: 'deviceLabelHost', value: API_SAMPLE.deviceLabelHost, type: 'default', enabled: true },
     { key: 'deviceLabelGuest', value: API_SAMPLE.deviceLabelGuest, type: 'default', enabled: true },

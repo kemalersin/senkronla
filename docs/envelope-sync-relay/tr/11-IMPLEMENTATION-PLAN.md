@@ -287,6 +287,21 @@ Agent bu script'i çalışır halde teslim etmeli.
 
 **Bitti tanımı:** Aynı namespace'te iki döküman bağımsız sync; primary-only istemci + güncel sunucu değişmeden; doc 15 §13 entegrasyon testleri.
 
+### Faz 8 — Uygulama kaydı (v1.3 — tamamlandı)
+
+Bkz. [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) §20.
+
+| Alt faz | Kapsam | Durum |
+|---------|--------|--------|
+| 8a | Migrasyon 006, config `apps`, app middleware, namespace `app_uuid`, dinamik CORS | tamamlandı |
+| 8b | Admin API `/v1/admin/apps`, YAML seed, suspend | tamam |
+| 8c | DNS TXT + HTTPS well-known doğrulama, localhost dev | tamamlandı |
+| 8d | Geliştirici portalı `/v1/developer/*`, self_service modu | tamamlandı |
+| 8e | Native bundle, client secret, pairing `allowedAppIds`, SDK `appId` | tamamlandı |
+| 8f | OpenAPI, agent docs, OPERATOR.md, v1.2 migrasyon rehberi | tamamlandı |
+
+**Bitti tanımı:** `apps.enabled: false` mevcut testleri geçer; operator_managed web app namespace oluşturur; self_service geliştirici operatörsüz domain doğrular; yanlış origin / cross-app namespace reddedilir.
+
 ## 11. Bilinen sınırlamalar (güncel sürüm)
 
 - Çoklu belge için `documents[]` kullanan `@senkronla/client` gerekir (bkz. belge 14 §5.2)

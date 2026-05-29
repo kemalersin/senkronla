@@ -1,10 +1,16 @@
 openapi: 3.1.0
 info:
   title: Envelope Sync Relay API
-  version: 1.0.0
+  version: 1.3.0
   description: |
     Zero-knowledge document sync relay for offline-first applications.
     Full specification: docs/envelope-sync-relay/README.md
+
+    **v1.3:** Application registry — `X-ESR-App-Id`, namespace–app binding, operator admin API,
+    developer self-service portal, origin verification, pairing `allowedAppIds`.
+    See docs/envelope-sync-relay/en/16-APP-REGISTRY.md
+
+    **v1.2:** Multi-document per namespace (`/documents/{documentId}/...`).
 
     WebSocket notifications (v1.1): wss://{host}/v1/namespaces/{namespaceId}/notifications
     See 13-WEBSOCKET-NOTIFICATIONS.md — not covered by this OpenAPI file.
@@ -22,6 +28,8 @@ tags:
   - name: Limits
   - name: Recovery
   - name: Admin
+  - name: Applications
+  - name: Developer
   - name: Health
 
 components:
@@ -34,8 +42,47 @@ components:
       type: http
       scheme: bearer
       bearerFormat: admin_api_token
+    DeveloperToken:
+      type: http
+      scheme: bearer
+      bearerFormat: developer_jwt
 
   parameters:
+    AppIdHeader:
+      name: X-ESR-App-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^esr_app_[a-z0-9_]+$'
+      description: Public application id (required when apps.enabled)
+    OriginHeader:
+      name: Origin
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Browser origin — must match registered origin for web apps
+    NativePlatformHeader:
+      name: X-ESR-Platform
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [ios, android]
+    NativeBundleIdHeader:
+      name: X-ESR-Bundle-Id
+      in: header
+      required: false
+      schema:
+        type: string
+    NativeClientSecretHeader:
+      name: X-ESR-Client-Secret
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Required for confidential native apps when native.requireClientSecret is true
     NamespaceId:
       name: namespaceId
       in: path
@@ -175,6 +222,193 @@ components:
         isCurrent:
           type: boolean
 
+    RateLimitQuota:
+      type: object
+      required: [action, limit, remaining, resetAfterSeconds, windowSeconds]
+      properties:
+        action:
+          type: string
+          enum: [global_ip, put_document, recover, pair_device, pairing_token]
+          description: Internal action id; JSON `rateLimits` keys match this value (document PUT uses `put_document`).
+        limit:
+          type: integer
+        remaining:
+          type: integer
+        resetAfterSeconds:
+          type: integer
+          description: Seconds until the oldest event in the sliding window expires.
+        windowSeconds:
+          type: integer
+
+    RateLimits:
+      type: object
+      description: Optional on success when limits.rateLimit.enabled; keys are action ids.
+      additionalProperties:
+        $ref: '#/components/schemas/RateLimitQuota'
+
+    PushDocumentResult:
+      type: object
+      required: [revision, writtenAt, contentSha256, writerDeviceId]
+      properties:
+        revision:
+          type: string
+        writtenAt:
+          type: string
+          format: date-time
+        contentSha256:
+          type: string
+        writerDeviceId:
+          type: string
+        rateLimits:
+          $ref: '#/components/schemas/RateLimits'
+
+    OriginVerification:
+      type: object
+      properties:
+        dnsHost:
+          type: string
+        dnsTxt:
+          type: string
+        wellKnownUrl:
+          type: string
+          format: uri
+
+    AppOrigin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        origin:
+          type: string
+          format: uri
+        verifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        verification:
+          $ref: '#/components/schemas/OriginVerification'
+          nullable: true
+
+    AppBundle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        platform:
+          type: string
+          enum: [ios, android]
+        bundleId:
+          type: string
+        verifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AppSummary:
+      type: object
+      properties:
+        appId:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [web, native]
+        status:
+          type: string
+          enum: [pending, pending_verification, active, suspended, archived]
+        originCount:
+          type: integer
+        bundleCount:
+          type: integer
+        namespaceCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AppDetail:
+      allOf:
+        - $ref: '#/components/schemas/AppSummary'
+        - type: object
+          properties:
+            origins:
+              type: array
+              items:
+                $ref: '#/components/schemas/AppOrigin'
+            bundles:
+              type: array
+              items:
+                $ref: '#/components/schemas/AppBundle'
+            hasClientSecret:
+              type: boolean
+
+    PaginatedApps:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppSummary'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    DeveloperProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    DeveloperAuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        developer:
+          $ref: '#/components/schemas/DeveloperProfile'
+
+    PairingTokenResult:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: '^\\d{6}$'
+        expiresAt:
+          type: string
+          format: date-time
+        qrPayload:
+          type: string
+        allowedAppIds:
+          type: array
+          items:
+            type: string
+        rateLimits:
+          $ref: '#/components/schemas/RateLimits'
+
   responses:
     Error400:
       description: Bad request
@@ -206,6 +440,36 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorBody'
+    Error429:
+      description: |
+        Rate limit exceeded (`RATE_LIMIT_EXCEEDED`). No top-level `rateLimits` on errors —
+        use `error.details.rateLimit` (single quota). Matching `RateLimit-*` or prefixed
+        headers (e.g. `RateLimit-PutDocument-*` for `put_document`).
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ErrorBody'
+              - type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      details:
+                        type: object
+                        properties:
+                          retryAfterSeconds:
+                            type: integer
+                          action:
+                            type: string
+                            enum: [global_ip, put_document, recover, pair_device, pairing_token]
+                          rateLimit:
+                            $ref: '#/components/schemas/RateLimitQuota'
 
 paths:
   /health:
@@ -350,11 +614,13 @@ paths:
                   type: string
       responses:
         '201':
-          description: Paired
+          description: Paired (may include `rateLimits` with `global_ip` and `pair_device`)
         '400':
           $ref: '#/components/responses/Error400'
         '403':
           $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/devices/{deviceId}:
     delete:
@@ -399,11 +665,24 @@ paths:
               properties:
                 ttlSeconds:
                   type: integer
+                allowedAppIds:
+                  type: array
+                  maxItems: 10
+                  items:
+                    type: string
+                    pattern: '^esr_app_[a-z0-9_]+$'
+                  description: Optional — restrict pairing redeem to listed active apps
       responses:
         '201':
           description: Token created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairingTokenResult'
         '403':
           $ref: '#/components/responses/Error403'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/recover:
     post:
@@ -436,11 +715,11 @@ paths:
                   type: string
       responses:
         '200':
-          description: Recovered
+          description: Recovered (may include `rateLimits` in body)
         '401':
           $ref: '#/components/responses/Error401'
         '429':
-          description: Rate limited
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents:
     get:
@@ -456,7 +735,7 @@ paths:
             type: string
       responses:
         '200':
-          description: OK
+          description: OK (may include `rateLimits` with `global_ip`)
           content:
             application/json:
               schema:
@@ -473,6 +752,10 @@ paths:
                           properties:
                             documentId:
                               type: string
+                  rateLimits:
+                    $ref: '#/components/schemas/RateLimits'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/{documentId}/head/meta:
     get:
@@ -485,15 +768,22 @@ paths:
         - $ref: '#/components/parameters/DocumentId'
       responses:
         '200':
-          description: OK
+          description: OK (may include `rateLimits` with `global_ip`)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentHeadMeta'
+                allOf:
+                  - $ref: '#/components/schemas/DocumentHeadMeta'
+                  - type: object
+                    properties:
+                      rateLimits:
+                        $ref: '#/components/schemas/RateLimits'
         '400':
           description: Invalid documentId
         '404':
           $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/{documentId}/head:
     get:
@@ -506,15 +796,22 @@ paths:
         - $ref: '#/components/parameters/DocumentId'
       responses:
         '200':
-          description: OK
+          description: OK (may include `rateLimits` with `global_ip`)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EsrDocEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/EsrDocEnvelope'
+                  - type: object
+                    properties:
+                      rateLimits:
+                        $ref: '#/components/schemas/RateLimits'
         '400':
           description: Invalid documentId
         '404':
           $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/{documentId}:
     put:
@@ -540,13 +837,19 @@ paths:
                   $ref: '#/components/schemas/EsrDocEnvelope'
       responses:
         '201':
-          description: Pushed
+          description: Pushed (includes `rateLimits` with `global_ip` and `put_document` when enabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushDocumentResult'
         '403':
           description: Document limit or id not allowed
         '409':
           $ref: '#/components/responses/Error409'
         '422':
           description: Invalid envelope or documentId mismatch
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/primary/head/meta:
     get:
@@ -562,13 +865,20 @@ paths:
             type: string
       responses:
         '200':
-          description: OK
+          description: OK (may include `rateLimits` with `global_ip`)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentHeadMeta'
+                allOf:
+                  - $ref: '#/components/schemas/DocumentHeadMeta'
+                  - type: object
+                    properties:
+                      rateLimits:
+                        $ref: '#/components/schemas/RateLimits'
         '404':
           $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/primary/head:
     get:
@@ -584,13 +894,20 @@ paths:
             type: string
       responses:
         '200':
-          description: OK
+          description: OK (may include `rateLimits` with `global_ip`)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EsrDocEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/EsrDocEnvelope'
+                  - type: object
+                    properties:
+                      rateLimits:
+                        $ref: '#/components/schemas/RateLimits'
         '404':
           $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/documents/primary:
     put:
@@ -619,11 +936,17 @@ paths:
                   $ref: '#/components/schemas/EsrDocEnvelope'
       responses:
         '201':
-          description: Pushed
+          description: Pushed (includes `rateLimits` with `global_ip` and `put_document` when enabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushDocumentResult'
         '409':
           $ref: '#/components/responses/Error409'
         '422':
           description: Invalid envelope
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /namespaces/{namespaceId}/limits:
     get:
@@ -793,3 +1116,687 @@ paths:
       responses:
         '201':
           description: Code generated
+
+  # --- v1.3 Application registry ---
+
+  /admin/apps:
+    get:
+      tags: [Applications, Admin]
+      summary: List registered applications (operator)
+      security:
+        - AdminToken: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, pending_verification, active, suspended, archived]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated apps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedApps'
+    post:
+      tags: [Applications, Admin]
+      summary: Create application (operator_managed)
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [appId, name, type]
+              properties:
+                appId:
+                  type: string
+                  pattern: '^esr_app_[a-z0-9_]+$'
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: [web, native]
+                status:
+                  type: string
+                  enum: [pending, pending_verification, active, suspended, archived]
+                origins:
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+                bundleIds:
+                  type: object
+                  properties:
+                    ios:
+                      type: string
+                    android:
+                      type: string
+                clientSecret:
+                  type: string
+                  minLength: 16
+      responses:
+        '201':
+          description: App created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /admin/apps/{appId}:
+    get:
+      tags: [Applications, Admin]
+      summary: Get application detail
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: App detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+    patch:
+      tags: [Applications, Admin]
+      summary: Update application name or status
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                status:
+                  type: string
+                  enum: [pending, pending_verification, active, suspended, archived]
+      responses:
+        '200':
+          description: Updated app
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+    delete:
+      tags: [Applications, Admin]
+      summary: Archive application
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Archived app
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /admin/apps/{appId}/origins:
+    post:
+      tags: [Applications, Admin]
+      summary: Add web origin
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [origin]
+              properties:
+                origin:
+                  type: string
+                  format: uri
+                verified:
+                  type: boolean
+                  default: true
+      responses:
+        '201':
+          description: Origin added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /admin/apps/{appId}/origins/{originId}:
+    delete:
+      tags: [Applications, Admin]
+      summary: Remove origin
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: originId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Updated app
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /admin/apps/{appId}/origins/{originId}/verify:
+    post:
+      tags: [Applications, Admin]
+      summary: Run DNS TXT or HTTPS well-known verification
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: originId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verification:
+                    type: object
+                    properties:
+                      method:
+                        type: string
+                        enum: [dns, https, localhost]
+                      verifiedAt:
+                        type: string
+                        format: date-time
+                  app:
+                    $ref: '#/components/schemas/AppDetail'
+        '422':
+          description: Verification failed (APP_ORIGIN_VERIFICATION_FAILED)
+
+  /admin/apps/{appId}/bundles:
+    post:
+      tags: [Applications, Admin]
+      summary: Add native bundle
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, bundleId]
+              properties:
+                platform:
+                  type: string
+                  enum: [ios, android]
+                bundleId:
+                  type: string
+                verified:
+                  type: boolean
+      responses:
+        '201':
+          description: Bundle added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /admin/apps/{appId}/bundles/{bundleId}/approve:
+    post:
+      tags: [Applications, Admin]
+      summary: Approve pending native bundle
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: bundleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Bundle approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /developer/register:
+    post:
+      tags: [Developer]
+      summary: Register developer account (self_service)
+      description: Requires apps.registrationMode self_service and ESR_DEVELOPER_JWT_SECRET
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 12
+      responses:
+        '201':
+          description: Developer registered
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/DeveloperAuthResponse'
+                  - type: object
+                    properties:
+                      developer:
+                        $ref: '#/components/schemas/DeveloperProfile'
+                      message:
+                        type: string
+        '503':
+          description: Developer portal disabled
+
+  /developer/login:
+    post:
+      tags: [Developer]
+      summary: Developer login (JWT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 12
+      responses:
+        '200':
+          description: JWT issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeveloperAuthResponse'
+
+  /developer/logout:
+    post:
+      tags: [Developer]
+      summary: Invalidate developer session
+      security:
+        - DeveloperToken: []
+      responses:
+        '200':
+          description: Logged out
+
+  /developer/me:
+    get:
+      tags: [Developer]
+      summary: Developer profile
+      security:
+        - DeveloperToken: []
+      responses:
+        '200':
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeveloperProfile'
+
+  /developer/password:
+    patch:
+      tags: [Developer]
+      summary: Change developer password
+      security:
+        - DeveloperToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+
+  /developer/apps:
+    get:
+      tags: [Developer, Applications]
+      summary: List own applications
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated apps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedApps'
+    post:
+      tags: [Developer, Applications]
+      summary: Create app (self_service)
+      security:
+        - DeveloperToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type]
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: [web, native]
+      responses:
+        '201':
+          description: App created (pending)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /developer/apps/{appId}:
+    get:
+      tags: [Developer, Applications]
+      summary: Get own application detail
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: App detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+    patch:
+      tags: [Developer, Applications]
+      summary: Update application name
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Updated app
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+    delete:
+      tags: [Developer, Applications]
+      summary: Archive own application
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Archived app
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /developer/apps/{appId}/origins:
+    post:
+      tags: [Developer, Applications]
+      summary: Add web origin (verification challenge)
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [origin]
+              properties:
+                origin:
+                  type: string
+                  format: uri
+      responses:
+        '201':
+          description: Verification challenge issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /developer/apps/{appId}/origins/{originId}:
+    delete:
+      tags: [Developer, Applications]
+      summary: Remove origin
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: originId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Updated app
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /developer/apps/{appId}/origins/{originId}/verify:
+    post:
+      tags: [Developer, Applications]
+      summary: Run DNS TXT or HTTPS well-known verification
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: originId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Origin verified; app may become active
+        '422':
+          description: Verification failed
+
+  /developer/apps/{appId}/bundles:
+    post:
+      tags: [Developer, Applications]
+      summary: Add native bundle
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, bundleId]
+              properties:
+                platform:
+                  type: string
+                  enum: [ios, android]
+                bundleId:
+                  type: string
+      responses:
+        '201':
+          description: Bundle added (may require operator approval)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppDetail'
+
+  /developer/apps/{appId}/rotate-secret:
+    post:
+      tags: [Developer, Applications]
+      summary: Rotate native client secret
+      security:
+        - DeveloperToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: New secret (shown once)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clientSecret:
+                    type: string
+                  app:
+                    $ref: '#/components/schemas/AppDetail'

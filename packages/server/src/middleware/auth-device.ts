@@ -1,6 +1,7 @@
 import type { FastifyRequest } from 'fastify'
 import { AppError } from '../errors/app-error.js'
 import { hashDeviceToken } from '../lib/crypto.js'
+import { assertNamespaceAppAccess } from '../services/app-registry-service.js'
 import { findDeviceByTokenHash } from '../services/device-service.js'
 import { findNamespaceByPublicId } from '../services/namespace-service.js'
 import type { AppContext } from '../types/context.js'
@@ -28,12 +29,18 @@ export function createRequireDeviceAuth(ctx: AppContext) {
       throw new AppError(400, 'VALIDATION_ERROR', 'namespaceId path parameter is required')
     }
 
+    const namespace = await requireNamespaceExists(ctx, namespaceId, request)
+
     const token = extractBearerToken(request)
     const tokenHash = hashDeviceToken(token)
     const device = await findDeviceByTokenHash(ctx.db, namespaceId, tokenHash)
 
     if (!device || !device.device_id) {
       throw new AppError(401, 'DEVICE_TOKEN_INVALID', 'Device token is invalid or revoked')
+    }
+
+    if (device.namespace_uuid !== namespace.id) {
+      throw new AppError(403, 'APP_NAMESPACE_MISMATCH', 'Namespace belongs to another application')
     }
 
     request.deviceAuth = {
@@ -48,10 +55,18 @@ export function createRequireDeviceAuth(ctx: AppContext) {
   }
 }
 
-export async function requireNamespaceExists(ctx: AppContext, namespaceId: string) {
+export async function requireNamespaceExists(
+  ctx: AppContext,
+  namespaceId: string,
+  request?: FastifyRequest,
+) {
   const namespace = await findNamespaceByPublicId(ctx.db, namespaceId)
   if (!namespace) {
     throw new AppError(404, 'NAMESPACE_NOT_FOUND', 'Namespace not found')
+  }
+
+  if (request?.appAuth) {
+    await assertNamespaceAppAccess(ctx.db, ctx.config, namespace.app_uuid, request.appAuth)
   }
 
   return namespace

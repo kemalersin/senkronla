@@ -15,10 +15,13 @@ export interface CreateNamespaceInput {
   recoveryHash: string
   deviceLabel: string
   clientDeviceId: string
+  appUuid?: string | null
+  appId?: string | null
 }
 
 export interface CreateNamespaceResult {
   namespaceId: string
+  appId?: string
   deviceToken: string
   deviceId: string
   limits: ReturnType<typeof buildLimitsResponse>
@@ -30,7 +33,7 @@ export async function findNamespaceByPublicId(
 ): Promise<NamespaceRow | null> {
   const result = await pool.query<NamespaceRow>(
     `SELECT id, namespace_id, namespace_label, free_device_limit, purchased_slots,
-            recovery_salt, recovery_hash, created_at, updated_at
+            recovery_salt, recovery_hash, app_uuid, created_at, updated_at
      FROM namespaces
      WHERE namespace_id = $1`,
     [namespaceId],
@@ -50,6 +53,10 @@ export async function createNamespace(
     })
   }
 
+  if (config.apps.enabled && !input.appUuid) {
+    throw new AppError(400, 'APP_ID_REQUIRED', 'Application context is required to create a namespace')
+  }
+
   const existing = await findNamespaceByPublicId(pool, input.namespaceId)
   if (existing) {
     throw new AppError(409, 'NAMESPACE_EXISTS', 'Namespace already exists')
@@ -67,16 +74,17 @@ export async function createNamespace(
     const namespaceResult = await client.query<NamespaceRow>(
       `INSERT INTO namespaces (
          namespace_id, namespace_label, free_device_limit, purchased_slots,
-         recovery_salt, recovery_hash
-       ) VALUES ($1, $2, $3, 0, $4, $5)
+         recovery_salt, recovery_hash, app_uuid
+       ) VALUES ($1, $2, $3, 0, $4, $5, $6)
        RETURNING id, namespace_id, namespace_label, free_device_limit, purchased_slots,
-                 recovery_salt, recovery_hash, created_at, updated_at`,
+                 recovery_salt, recovery_hash, app_uuid, created_at, updated_at`,
       [
         input.namespaceId,
         input.namespaceLabel,
         config.limits.defaultFreeDeviceLimit,
         input.recoverySalt,
         input.recoveryHash,
+        input.appUuid ?? null,
       ],
     )
 
@@ -103,6 +111,7 @@ export async function createNamespace(
 
     return {
       namespaceId: namespace.namespace_id,
+      ...(input.appId ? { appId: input.appId } : {}),
       deviceToken,
       deviceId: devicePublicId,
       limits: buildLimitsResponse(config, limits),

@@ -8,15 +8,18 @@ import {
 } from './rate-limit-service.js'
 import { assertCanAddDevice, getLimitsForNamespace } from './slot-service.js'
 import type { NamespaceRow } from '../types/db.js'
+import { assertPairingAppAllowed, normalizeAllowedAppIds } from './pairing-scope-service.js'
 
 export interface CreatePairingTokenInput {
   ttlSeconds?: number
+  allowedAppIds?: string[]
 }
 
 export interface CreatePairingTokenResult {
   code: string
   expiresAt: string
   qrPayload: string
+  allowedAppIds?: string[]
   rateLimit?: RateLimitQuota | null
 }
 
@@ -40,6 +43,10 @@ export async function createPairingToken(
 
   assertCanAddDevice(config, limits)
 
+  const allowedAppIds = config.apps.enabled
+    ? await normalizeAllowedAppIds(pool, input.allowedAppIds)
+    : null
+
   const ttlSeconds = Math.min(
     input.ttlSeconds ?? config.pairing.codeTtlSeconds,
     config.pairing.maxTtlSeconds,
@@ -50,18 +57,21 @@ export async function createPairingToken(
   const expiresAt = new Date(Date.now() + ttlSeconds * 1000)
 
   await pool.query(
-    `INSERT INTO pairing_tokens (namespace_uuid, code_hash, expires_at)
-     VALUES ($1, $2, $3)`,
-    [namespace.id, codeHash, expiresAt.toISOString()],
+    `INSERT INTO pairing_tokens (namespace_uuid, code_hash, expires_at, allowed_app_ids)
+     VALUES ($1, $2, $3, $4)`,
+    [namespace.id, codeHash, expiresAt.toISOString(), allowedAppIds],
   )
 
   const expUnix = Math.floor(expiresAt.getTime() / 1000)
-  const qrPayload = `esr://pair/v1/${namespace.namespace_id}?code=${code}&exp=${expUnix}&host=${encodeURIComponent(hostLabel)}`
+  const qrPayload = allowedAppIds?.length
+    ? `esr://pair/v1/${namespace.namespace_id}?code=${code}&exp=${expUnix}&host=${encodeURIComponent(hostLabel)}&apps=${encodeURIComponent(allowedAppIds.join(','))}`
+    : `esr://pair/v1/${namespace.namespace_id}?code=${code}&exp=${expUnix}&host=${encodeURIComponent(hostLabel)}`
 
   return {
     code,
     expiresAt: expiresAt.toISOString(),
     qrPayload,
+    ...(allowedAppIds ? { allowedAppIds } : {}),
     rateLimit: pairingTokenRateLimit,
   }
 }

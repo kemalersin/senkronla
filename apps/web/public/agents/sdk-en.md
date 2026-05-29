@@ -153,6 +153,11 @@ Non-`primary` ids use envelope `schemaVersion: 2` (SDK handles this automaticall
 | Option | Required | Default | Description |
 |--------|----------|---------|-------------|
 | `relayUrl` | yes | — | Base URL ending in `/v1` |
+| `appId` | when relay requires | — | Public app id (`esr_app_…`) when `apps.enabled` |
+| `appPlatform` | native | — | `ios` or `android` |
+| `bundleId` | native | — | Bundle ID or package name |
+| `clientSecret` | native confidential | — | Only when operator requires native secret |
+| `clientVersion` | no | — | Telemetry header `X-ESR-Client-Version` |
 | `document` | one of* | — | Single-document shorthand (`primary`) |
 | `documents` | one of* | — | Multi-document slots (`documentId?` + `adapter`) |
 | `storage` | yes | — | `EsrStorage` — `createLocalStorageAdapter()` on web |
@@ -292,7 +297,7 @@ On mobile, implement `EsrStorage` backed by Keychain / Keystore — do not use p
 | `sync(documentId?)` | Full pull/push cycle; one document by id, or all slots when omitted |
 | `notifyLocalChange(documentId?)` | Mark dirty; debounced push (omit id for all slots) |
 | `flushPush(documentId?)` | Push immediately (logout, critical save) |
-| `startPairing()` | Host: returns `{ code, qrPayload, expiresAt }` |
+| `startPairing(opts?)` | Host: returns `{ code, qrPayload, expiresAt }`; optional `{ allowedAppIds }` when `apps.enabled` |
 | `joinPairing(code)` | Guest: redeems code, stores token, runs `sync()` (all documents) |
 | `recover(phrase)` | Recovery flow; revokes all other devices |
 | `listDevices()` | Settings UI: devices + limits |
@@ -343,7 +348,14 @@ await sync.flushPush('settings') // skip debounce — before logout
 #### Pairing
 
 ```typescript
+// Any active app allowed (default when apps.enabled)
 const { code, qrPayload, expiresAt } = await sync.startPairing()
+
+// Restrict guest redeem to specific app ids (web + native variants)
+await sync.startPairing({
+  allowedAppIds: ['esr_app_mynotes', 'esr_app_mynotes_mobile'],
+})
+
 await sync.joinPairing('482913') // guest — same namespaceId in adapters
 ```
 

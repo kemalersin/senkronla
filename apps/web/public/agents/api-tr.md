@@ -9,7 +9,7 @@ Sağlık (auth yok): `GET https://relay.ornek.com/health`
 
 **Postman:** İnteraktif API sayfasından koleksiyon + ortam dosyalarını indirin — [`/postman/senkronla-relay.postman_collection.json`](/postman/senkronla-relay.postman_collection.json), [`senkronla-relay-local.postman_environment.json`](/postman/senkronla-relay-local.postman_environment.json). `Quick start` klasörü sırayla çalıştırıldığında `deviceToken` ve diğer alanlar otomatik kaydedilir.
 
-Spec v1.2, namespace başına **çoklu adlandırılmış belge** (`primary`, `settings`, …) destekler: `/documents/{documentId}/...`. `/documents/primary/...` alias'ı geçerlidir.
+Spec v1.3, isteğe bağlı **uygulama kaydı** (`X-ESR-App-Id`, namespace–app bağlama) ekler. Spec v1.2, namespace başına **çoklu adlandırılmış belge** (`primary`, `settings`, …) destekler: `/documents/{documentId}/...`. `/documents/primary/...` alias'ı geçerlidir.
 
 ---
 
@@ -33,10 +33,13 @@ Spec v1.2, namespace başına **çoklu adlandırılmış belge** (`primary`, `se
 16. [WebSocket bildirimleri](#websocket-bildirimleri)
 17. [Hata kodları](#hata-kodları)
 18. [Relay kotaları](#relay-kotaları)
+19. [App registry admin & geliştirici API'leri](#app-registry-admin--geliştirici-apileri)
 
 ---
 
 ## Kimlik doğrulama
+
+### Cihaz token
 
 Oluşturma, eşleştirme veya kurtarma sonrası `deviceToken`:
 
@@ -44,9 +47,20 @@ Oluşturma, eşleştirme veya kurtarma sonrası `deviceToken`:
 Authorization: Bearer dvt_a1b2c3d4e5f6...
 ```
 
-WebSocket: aynı token, alt protokol `esr-notifications-v1`.
+### Uygulama bağlamı (v1.3 — `apps.enabled` iken)
 
-**Auth gerektirmeyen:** `POST /v1/namespaces`, `POST .../devices`, `POST .../recover`.
+Tüm `/v1` uçlarında zorunlu (`/health`, `/v1/admin/*`, `/v1/developer/*` hariç):
+
+| İstemci | Header'lar |
+|---------|------------|
+| Web SPA | `X-ESR-App-Id` + tarayıcı `Origin` |
+| iOS / Android | `X-ESR-App-Id` + `X-ESR-Platform` + `X-ESR-Bundle-Id` |
+
+Namespace oluşturma yanıtında `appId` döner. Yanlış app → `403 APP_NAMESPACE_MISMATCH`.
+
+WebSocket: handshake `Origin`; `Authorization: Bearer {deviceToken}`; alt protokol `esr-notifications-v1`.
+
+**Auth'suz uçlar (app bağlamı yine gerekli):** `POST /v1/namespaces`, `POST .../devices`, `POST .../recover`.
 
 ---
 
@@ -145,7 +159,18 @@ Başarı `201` — `RateLimit-PutDocument-*` başlıkları ve `rateLimits.put_do
 
 ## Eşleştirme
 
-Ana: `POST .../pairing-tokens` → `{ code, qrPayload, expiresAt }`  
+Ana: `POST .../pairing-tokens` → `{ code, qrPayload, expiresAt }`
+
+İsteğe bağlı **eşleştirme kapsamı** (`apps.enabled` iken):
+
+```json
+{ "ttlSeconds": 600, "allowedAppIds": ["esr_app_mynotes", "esr_app_mynotes_mobile"] }
+```
+
+Listede olmayan `X-ESR-App-Id` ile misafir redeem → `403 APP_PAIRING_NOT_ALLOWED`. `allowedAppIds` atlanırsa tüm aktif app'ler kabul edilir.
+
+Kapsamlı token'da `qrPayload` içinde `&apps=esr_app_a,esr_app_b` olabilir; yanıt `allowedAppIds` döner.
+
 Misafir: `POST .../devices` + `pairingCode` → yeni `deviceToken`
 
 ---
@@ -351,6 +376,31 @@ Authorization: Bearer dvt_...
 | `ENVELOPE_TOO_LARGE` | 413 | ~50 MB limit |
 | `ENVELOPE_INVALID` | 422 | Zarf şeması |
 | `RATE_LIMIT_EXCEEDED` | 429 | `Retry-After`, `RateLimit-*` |
+| `APP_ID_REQUIRED` | 400 | `X-ESR-App-Id` gönderin |
+| `APP_ORIGIN_NOT_ALLOWED` | 403 | Origin kayıtlı değil |
+| `APP_NAMESPACE_MISMATCH` | 403 | Namespace başka app'e ait |
+| `APP_SUSPENDED` | 403 | Operatör app'i askıya aldı |
+| `APP_PAIRING_NOT_ALLOWED` | 403 | App, pairing token `allowedAppIds` listesinde değil |
+| `APP_CLIENT_SECRET_INVALID` | 401 | Yanlış native client secret |
+| `APP_NOT_VERIFIED` | 403 | App doğrulama bekliyor |
+| `APP_NATIVE_ID_REQUIRED` | 400 | Platform/bundle başlıkları eksik |
+
+Bkz. [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md).
+
+---
+
+## App registry admin & geliştirici API'leri
+
+`apps.enabled: true` iken operatörler ve (`self_service` modunda) geliştiriciler app'leri sync rotalarından ayrı yönetir.
+
+| Hedef | Taban | Auth | Web UI |
+|-------|-------|------|--------|
+| Operatör | `/v1/admin/apps` | `ESR_ADMIN_TOKEN` | `/operator` (Apps sekmesi) |
+| Geliştirici | `/v1/developer/*` | `/developer/login` JWT | `/developer` |
+
+OpenAPI: repo kökü `openapi.yaml` (etiketler **Applications**, **Developer**, **Admin**). Operatör rehberi: [docs/OPERATOR.md](https://github.com/kemalersin/senkronla/blob/main/docs/OPERATOR.md).
+
+**v1.2 → v1.3 geçiş:** İstemciler app başlığı gönderene kadar `apps.enabled: false` bırakın; ardından kaydı açın, app'leri seed/register edin, mevcut namespace'ler için `legacyDefaultAppId` ayarlayın. Ayrıntı: [16-APP-REGISTRY §19](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md#19-v12den-geçiş).
 
 ---
 

@@ -6,8 +6,39 @@ export interface NamespaceRow {
   purchased_slots: number
   recovery_salt: string
   recovery_hash: string
+  app_uuid: string | null
   created_at: Date
   updated_at: Date
+}
+
+export interface AppRow {
+  id: string
+  app_id: string
+  developer_uuid: string | null
+  name: string
+  type: 'web' | 'native'
+  status: string
+  client_secret_hash: string | null
+  created_at: Date
+  updated_at: Date
+}
+
+export interface AppOriginRow {
+  id: string
+  app_uuid: string
+  origin: string
+  verification_token: string
+  verified_at: Date | null
+  created_at: Date
+}
+
+export interface AppBundleRow {
+  id: string
+  app_uuid: string
+  platform: 'ios' | 'android'
+  bundle_id: string
+  verified_at: Date | null
+  created_at: Date
 }
 
 export interface DeviceRow {

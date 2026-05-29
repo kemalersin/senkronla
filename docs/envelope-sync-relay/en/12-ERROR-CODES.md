@@ -45,6 +45,26 @@ All API errors use the following JSON body:
 | 429 | RATE_LIMIT_EXCEEDED | Rate limit | `{ retryAfterSeconds, action, rateLimit }` — `rateLimit` has `action`, `limit`, `remaining` (0), `resetAfterSeconds`, `windowSeconds`; also `Retry-After` and `RateLimit-*` headers |
 | 500 | INTERNAL_ERROR | Unexpected server error | — |
 
+## Application registry (v1.3 — planned)
+
+See [16-APP-REGISTRY.md](./16-APP-REGISTRY.md). Active when `apps.enabled: true`.
+
+| HTTP | code | Description | details |
+|------|------|-------------|---------|
+| 400 | APP_ID_REQUIRED | Missing `X-ESR-App-Id` header | — |
+| 400 | APP_ORIGIN_REQUIRED | Web client without `Origin` | — |
+| 400 | APP_NATIVE_ID_REQUIRED | Native client missing platform/bundle headers | — |
+| 401 | APP_CLIENT_SECRET_INVALID | Native confidential secret wrong | — |
+| 403 | APP_NOT_FOUND | Unknown `appId` | — |
+| 403 | APP_NOT_VERIFIED | App not in `active` status | `{ status }` |
+| 403 | APP_SUSPENDED | Operator suspended app | — |
+| 403 | APP_ORIGIN_NOT_ALLOWED | `Origin` not in registered origins | `{ origin }` |
+| 403 | APP_BUNDLE_NOT_ALLOWED | Bundle/package not registered | `{ platform, bundleId }` |
+| 403 | APP_NAMESPACE_MISMATCH | Namespace belongs to another app | — |
+| 403 | APP_PAIRING_NOT_ALLOWED | App not in pairing token `allowedAppIds` | `{ allowedAppIds }` |
+| 409 | APP_ORIGIN_EXISTS | Origin already registered | — |
+| 409 | APP_BUNDLE_EXISTS | Bundle already registered for app | — |
+
 ## Client mapping (recommended)
 
 ```typescript

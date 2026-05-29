@@ -30,6 +30,7 @@ The service is designed to transport an **encrypted snapshot envelope** for any 
 | 13 | [13-WEBSOCKET-NOTIFICATIONS.md](./13-WEBSOCKET-NOTIFICATIONS.md) | WebSocket push-to-pull notifications (v1.1) |
 | 14 | [openapi.yaml](../openapi.yaml) | Machine-readable REST API definition |
 | 15 | [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) | **Multi-document per namespace (spec v1.2)** |
+| 16 | [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) | **Application registry, namespace–app binding (spec v1.3 — planned)** |
 
 ---
 
@@ -77,11 +78,13 @@ This specification is application-agnostic. Each consumer app should maintain it
 
 **v1.2.0:** Multiple documents per namespace — server, client SDK, WS subscribe, docs — see [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md).
 
+**v1.3.0 (planned):** Application registry — operator-managed or self-service app registration; namespaces bound to apps — see [16-APP-REGISTRY.md](./16-APP-REGISTRY.md).
+
 ---
 
 | Field | Value |
 |-------|-------|
-| Spec version | 1.2.0 (multi-document in v1.2) |
+| Spec version | 1.2.0 shipped; 1.3.0 planned (app registry) |
 | Protocol magic | `ESR-DOC1` |
 | API prefix | `/v1` |
 | Min. TLS | 1.2 |
