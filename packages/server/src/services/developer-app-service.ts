@@ -287,6 +287,7 @@ export async function deleteDeveloperAppOrigin(
   originRowId: string,
 ): Promise<AdminAppDetail> {
   const app = await requireOwnedApp(pool, developerUuid, appId)
+  assertAppNotArchived(app)
 
   const result = await pool.query(`DELETE FROM app_origins WHERE id = $1 AND app_uuid = $2`, [
     originRowId,

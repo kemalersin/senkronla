@@ -1131,6 +1131,7 @@
       "wellKnown": "HTTPS URL",
       "addOrigin": "Origin ekle",
       "addOriginButton": "Ekle",
+      "removeOrigin": "Kaldır",
       "noOrigins": "Kayıtlı origin yok.",
       "platform": "Platform",
       "bundleId": "Bundle ID",

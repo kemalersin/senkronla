@@ -1130,6 +1130,7 @@
       "wellKnown": "HTTPS URL",
       "addOrigin": "Add origin",
       "addOriginButton": "Add",
+      "removeOrigin": "Remove",
       "noOrigins": "No origins registered.",
       "platform": "Platform",
       "bundleId": "Bundle ID",

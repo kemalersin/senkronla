@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 
 import { OperatorCopyField } from '@/components/operator-copy-field'
+import { OperatorCopyButton } from '@/components/operator-copy-button'
 import {
   OperatorOriginVerifyError,
   type OriginVerifyErrorState,
@@ -502,6 +503,39 @@ export function OperatorAppsPanel({
     }
   }
 
+  async function handleDeleteOrigin(originId: string) {
+    if (!selectedAppId || selectedApp?.status === 'archived') return
+
+    setActionLoading(true)
+    setActionError(null)
+
+    try {
+      const response = await fetch(
+        `${apiBase}/apps/${encodeURIComponent(selectedAppId)}/origins/${encodeURIComponent(originId)}`,
+        { method: 'DELETE' },
+      )
+
+      const body = await readJson<AppDetail>(response)
+
+      if (!response.ok) {
+        setActionError(body.error?.message ?? t('requestFailed'))
+        return
+      }
+
+      setOriginVerifyErrors((current) => {
+        const next = { ...current }
+        delete next[originId]
+        return next
+      })
+      setSelectedApp(body)
+      await loadApps()
+    } catch {
+      setActionError(t('requestFailed'))
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   async function handleAddBundle(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selectedAppId || !addBundleId.trim()) return
@@ -795,6 +829,7 @@ export function OperatorAppsPanel({
             <div className="operator-apps-drawer-heading">
               <p className="operator-apps-drawer-id">
                 <code>{selectedApp.appId}</code>
+                <OperatorCopyButton value={selectedApp.appId} />
               </p>
               <h3 id="operator-apps-drawer-title">{selectedApp.name}</h3>
               <div className="operator-apps-drawer-badges">
@@ -866,7 +901,26 @@ export function OperatorAppsPanel({
                           const verifyError = originVerifyErrors[origin.id]
 
                           return (
-                          <li key={origin.id}>
+                          <li
+                            key={origin.id}
+                            className={
+                              selectedApp.status !== 'archived'
+                                ? 'operator-apps-origin-item operator-apps-origin-item--removable'
+                                : 'operator-apps-origin-item'
+                            }
+                          >
+                            {selectedApp.status !== 'archived' && (
+                              <button
+                                type="button"
+                                className="operator-apps-origin-remove"
+                                aria-label={t('apps.removeOrigin')}
+                                title={t('apps.removeOrigin')}
+                                disabled={Boolean(verifyingOriginId) || actionLoading}
+                                onClick={() => void handleDeleteOrigin(origin.id)}
+                              >
+                                ×
+                              </button>
+                            )}
                             <div className="operator-apps-origin-row">
                               <code className="operator-apps-origin-url">{origin.origin}</code>
                               <div className="operator-apps-origin-actions">
@@ -1089,7 +1143,13 @@ export function OperatorAppsPanel({
                     >
                       <td className="operator-apps-cell-primary">
                         <span className="operator-apps-cell-name">{row.name}</span>
-                        <code className="operator-apps-cell-id">{row.appId}</code>
+                        <span
+                          className="operator-apps-cell-id-row"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <code className="operator-apps-cell-id">{row.appId}</code>
+                          <OperatorCopyButton value={row.appId} />
+                        </span>
                       </td>
                       <td>{row.type === 'web' ? t('apps.typeWeb') : t('apps.typeNative')}</td>
                       <td className="operator-table-col-status">
