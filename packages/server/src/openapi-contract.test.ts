@@ -9,6 +9,37 @@ import type { DbPool } from './db/pool.js'
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..')
 
+const TEST_PATH_PARAMS: Record<string, string> = {
+  namespaceId: '550e8400-e29b-41d4-a716-446655440000',
+  deviceId: '01JFTESTDEVICE000000000000',
+  documentId: 'primary',
+  appId: '550e8400-e29b-41d4-a716-446655440001',
+  originId: '550e8400-e29b-41d4-a716-446655440002',
+  bundleId: '550e8400-e29b-41d4-a716-446655440003',
+}
+
+function isRouteNotFound(statusCode: number, body: string): boolean {
+  if (statusCode !== 404) {
+    return false
+  }
+
+  try {
+    const parsed = JSON.parse(body) as {
+      message?: string
+      error?: { code?: string }
+    }
+
+    // Handler reached — application-level 404, route is registered.
+    if (parsed.error?.code) {
+      return false
+    }
+
+    return true
+  } catch {
+    return true
+  }
+}
+
 function createMockPool(): DbPool {
   return {
     query: vi.fn(async (sql: string) => {
@@ -51,13 +82,13 @@ function toServerPath(openApiPath: string): string {
     return '/health'
   }
 
-  return `/v1${openApiPath}`.replace(
-    /\{namespaceId\}/g,
-    '550e8400-e29b-41d4-a716-446655440000',
-  ).replace(
-    /\{deviceId\}/g,
-    '01JFTESTDEVICE000000000000',
-  )
+  let path = `/v1${openApiPath}`
+
+  for (const [param, value] of Object.entries(TEST_PATH_PARAMS)) {
+    path = path.replaceAll(`{${param}}`, value)
+  }
+
+  return path
 }
 
 describe('OpenAPI contract', () => {
@@ -80,7 +111,10 @@ describe('OpenAPI contract', () => {
         url,
       })
 
-      expect(response.statusCode, `${operation.method} ${url}`).not.toBe(404)
+      expect(
+        isRouteNotFound(response.statusCode, response.body),
+        `${operation.method} ${url}`,
+      ).toBe(false)
     }
 
     await app.close()
