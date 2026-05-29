@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "1b5bf967-42c9-4ec2-8abc-00c6d3ea3ae7",
+    "_postman_id": "ca271a4c-56c9-4d08-8ef4-7482497a1ef0",
     "name": "Senkronla Relay API v1",
-    "description": "Runnable Postman collection for the Senkronla Envelope Sync Relay REST API (`/v1`).\n\n**Setup**\n1. Import `senkronla-relay-local.postman_environment.json` (or the production template).\n2. Set `relayOrigin` to your relay host (default: `http://localhost:8080`).\n3. Run **Quick start** folder in order, or use the pre-filled sample variables for read-only requests.\n\nCollection auth uses `{{deviceToken}}`. Unauthenticated routes override auth per request.\n\nDocs: https://senkronla.dev/api",
+    "description": "Runnable Postman collection for the Senkronla Envelope Sync Relay REST API (`/v1`).\n\n**Setup**\n1. Import `senkronla-relay-local.postman_environment.json` (or the production template).\n2. Set `relayOrigin` to your relay host (default: `http://localhost:8080`).\n3. Run **Quick start** folder in order, or use the pre-filled sample variables for read-only requests.\n\nCollection auth uses `{{deviceToken}}`. Unauthenticated routes override auth per request.\n\n**App registry (v1.3, optional):** When the relay has `apps.enabled: true`, set `esrAppId` in the environment and add `X-ESR-App-Id` to namespace/pairing requests. See agent API docs for native bundle headers.\n\nDocs: https://senkronla.dev/api",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -601,7 +601,7 @@
               }
             ],
             "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/pairing-tokens",
-            "description": "Host device generates a 6-digit pairing code.",
+            "description": "Host device generates a 6-digit pairing code. When `apps.enabled`, add header `X-ESR-App-Id: {{esrAppId}}` (enable in environment). Optional body scope: `{ \"ttlSeconds\": 600, \"allowedAppIds\": [\"esr_app_a\", \"esr_app_b\"] }`.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -637,7 +637,7 @@
               }
             }
           ],
-          "description": "Host device generates a 6-digit pairing code."
+          "description": "Host device generates a 6-digit pairing code. When `apps.enabled`, add header `X-ESR-App-Id: {{esrAppId}}` (enable in environment). Optional body scope: `{ \"ttlSeconds\": 600, \"allowedAppIds\": [\"esr_app_a\", \"esr_app_b\"] }`."
         },
         {
           "name": "Redeem pairing code (guest)",
