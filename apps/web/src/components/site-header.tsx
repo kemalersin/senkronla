@@ -15,6 +15,7 @@ import { GITHUB_REPO_URL } from '@/lib/site-links'
 interface SiteHeaderProps {
   locale: Locale
   initialDeveloperAuthenticated?: boolean
+  developerPortalEnabled?: boolean
 }
 
 function GitHubIcon() {
@@ -41,7 +42,11 @@ function CloseIcon() {
   )
 }
 
-export function SiteHeader({ locale, initialDeveloperAuthenticated = false }: SiteHeaderProps) {
+export function SiteHeader({
+  locale,
+  initialDeveloperAuthenticated = false,
+  developerPortalEnabled = false,
+}: SiteHeaderProps) {
   const t = useTranslations('nav')
   const tLocale = useTranslations('locale')
   const pathname = usePathname()
@@ -104,25 +109,26 @@ export function SiteHeader({ locale, initialDeveloperAuthenticated = false }: Si
             {link.label}
           </Link>
         ))}
-        {!developerAuthenticated ? (
-          <Link
-            href="/developer"
-            className="header-login-link"
-            data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
-            onClick={onNavigate}
-          >
-            {t('login')}
-          </Link>
-        ) : (
-          <Link
-            href="/developer"
-            className="header-login-link"
-            data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
-            onClick={onNavigate}
-          >
-            {t('panel')}
-          </Link>
-        )}
+        {developerPortalEnabled &&
+          (!developerAuthenticated ? (
+            <Link
+              href="/developer"
+              className="header-login-link"
+              data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
+              onClick={onNavigate}
+            >
+              {t('login')}
+            </Link>
+          ) : (
+            <Link
+              href="/developer"
+              className="header-login-link"
+              data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
+              onClick={onNavigate}
+            >
+              {t('panel')}
+            </Link>
+          ))}
       </nav>
     )
   }

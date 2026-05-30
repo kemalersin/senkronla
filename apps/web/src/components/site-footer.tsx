@@ -7,8 +7,10 @@ import { DONATE_URL, GITHUB_REPO_URL } from '@/lib/site-links'
 
 export function SiteFooter({
   initialDeveloperAuthenticated = false,
+  developerPortalEnabled = false,
 }: {
   initialDeveloperAuthenticated?: boolean
+  developerPortalEnabled?: boolean
 }) {
   const t = useTranslations('footer')
   const developerAuthenticated = useDeveloperSession(initialDeveloperAuthenticated)
@@ -25,15 +27,16 @@ export function SiteFooter({
           <div>
             <h4>{t('developers')}</h4>
             <Link href="/guides">{t('guides')}</Link>
-            {!developerAuthenticated ? (
-              <p className="footer-inline-links">
-                <Link href="/developer">{t('developerLogin')}</Link>
-                <span aria-hidden="true">·</span>
-                <Link href="/developer/register">{t('developerRegister')}</Link>
-              </p>
-            ) : (
-              <Link href="/developer">{t('developerPortal')}</Link>
-            )}
+            {developerPortalEnabled &&
+              (!developerAuthenticated ? (
+                <p className="footer-inline-links">
+                  <Link href="/developer">{t('developerLogin')}</Link>
+                  <span aria-hidden="true">·</span>
+                  <Link href="/developer/register">{t('developerRegister')}</Link>
+                </p>
+              ) : (
+                <Link href="/developer">{t('developerPortal')}</Link>
+              ))}
             <p className="footer-inline-links">
               <Link href="/guides/esr">{t('esr')}</Link>
               <span aria-hidden="true">·</span>

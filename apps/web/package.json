@@ -1,6 +1,6 @@
 {
   "name": "@senkronla/web",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "private": true,
   "description": "Senkronla operator portal and developer documentation",
   "license": "MIT",

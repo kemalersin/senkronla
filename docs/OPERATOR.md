@@ -47,7 +47,7 @@ Optional layer: registered apps (`appId`) with verified web origins or native bu
 | `apps.registrationMode: operator_managed` | Operator registers apps via YAML seed or admin API |
 | `apps.registrationMode: self_service` | Application owners register via developer portal + DNS verification |
 
-Key variables: `ESR_APPS__ENABLED`, `ESR_APPS__REGISTRATION_MODE`, `ESR_APPS__ALLOW_LOCALHOST_ORIGINS`, `ESR_DEVELOPER_JWT_SECRET`.
+Key variables: `ESR_APPS__ENABLED`, `ESR_APPS__REGISTRATION_MODE`, `ESR_APPS__REQUIRE_REGISTRATION`, `ESR_APPS__ALLOW_LOCALHOST_ORIGINS`, `ESR_APPS__LEGACY_DEFAULT_APP_ID`, `ESR_DEVELOPER_JWT_SECRET` (or `ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET`), `ESR_APPS__LIMITS__PER_APP__*`. Full list: [16-APP-REGISTRY §5.2](envelope-sync-relay/en/16-APP-REGISTRY.md#52-environment-variables).
 
 When `apps.enabled: true`, static CORS lists are superseded by per-app verified origins (localhost allowed only if `allowLocalhostOrigins: true`).
 

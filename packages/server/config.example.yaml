@@ -62,6 +62,26 @@ apps:
   requireRegistration: true
   allowLocalhostOrigins: false
   legacyDefaultAppId: null
+  verification:
+    dnsRecordPrefix: "_esr-verify"
+    wellKnownPath: "/.well-known/esr-app-verification"
+    challengeTtlSeconds: 86400
+    fetchTimeoutSeconds: 10
+  limits:
+    perApp:
+      namespacesPerDay: 100
+      pairingTokensPerHour: 30
+      recoverPerHour: 5
+    perDeveloper:
+      maxApps: 10
+  native:
+    requireClientSecret: false
+    requireManualReview: true
+  developerPortal:
+    enabled: false
+    jwtSecret: "${ESR_DEVELOPER_JWT_SECRET}"
+    sessionTtlHours: 168
+    requireEmailVerification: true
   seed: []
 
 cors:

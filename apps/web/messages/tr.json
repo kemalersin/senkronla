@@ -514,6 +514,7 @@
       "quick-start": "Hızlı başlangıç",
       "install": "Kurulum",
       "connect": "Bağlantı seçenekleri",
+      "app-registry": "Uygulama kaydı",
       "multi-document": "Çoklu belge",
       "adapter": "Belge adapter'ı",
       "encryption": "Zarf şifrelemesi",
@@ -529,6 +530,8 @@
     "table": {
       "option": "Seçenek",
       "description": "Açıklama",
+      "layer": "Katman",
+      "relayConfig": "Relay yapılandırması",
       "field": "Alan / metod",
       "method": "Metod",
       "status": "Durum",
@@ -555,6 +558,10 @@
         "exampleTitle": "Tam connect örneği",
         "options": {
           "relayUrl": "<tag>/v1</tag> ile biten temel URL, örn. https://sync.example.com/v1",
+          "appId": "Public app id (<tag>esr_app_…</tag>) — relay'de <tag>apps.enabled</tag> açıkken zorunlu",
+          "appPlatform": "Yalnızca native: <tag>ios</tag> veya <tag>android</tag>",
+          "bundleId": "Yalnızca native: uygulama için kayıtlı bundle ID veya paket adı",
+          "clientSecret": "Yalnızca gizli native istemciler — operatör secret gerektiriyorsa",
           "document": "Tek belge kısayolu — ilk slot <tag>primary</tag>",
           "documents": "Çoklu belge: isteğe bağlı <tag>documentId</tag> ve <tag>adapter</tag> içeren slot dizisi (ilk slot varsayılan <tag>primary</tag>)",
           "storage": "<tag>EsrStorage</tag> uygulaması (web için <tag>createLocalStorageAdapter</tag>)",
@@ -566,6 +573,35 @@
           "notificationsEnabled": "Varsayılan true. CLI araçları veya testler için false yapın.",
           "persistRecoveryPhrase": "Varsayılan true. İfadeyi <tag>EsrStorage</tag>'da saklar (güvenlik etkilerini değerlendirin)."
         }
+      },
+      "appRegistry": {
+        "title": "Uygulama kaydı (v1.3)",
+        "p1": "Relay operatörü <tag>apps.enabled</tag> açtığında her entegrasyon kayıtlı bir <tag>appId</tag> ile kendini tanıtmalıdır. Namespace'ler onu oluşturan uygulamaya bağlanır. Tam spec: <specLink>16-APP-REGISTRY.md</specLink>. REST ayrıntıları: <apiAppLink>API — Uygulama kaydı</apiAppLink>.",
+        "layersTitle": "İki kimlik doğrulama katmanı",
+        "layers": {
+          "app": "Uygulama (<tag>appId</tag> + origin veya bundle)",
+          "appDesc": "Sorusu: hangi entegrasyon bu relay'i kullanabilir?",
+          "device": "Cihaz token'ı",
+          "deviceDesc": "Sorusu: hangi eşleşmiş cihaz, hangi namespace'te? v1.2 ile aynı."
+        },
+        "configTitle": "Relay yapılandırması",
+        "config": {
+          "disabled": "<tag>apps.enabled: false</tag> (varsayılan)",
+          "disabledDesc": "App başlığı gerekmez — v1.2 davranışı.",
+          "operatorManaged": "<tag>apps.enabled: true</tag>, operatör yönetimli",
+          "operatorManagedDesc": "Operatör YAML seed veya <operatorLink>/operator</operatorLink> portalı ile uygulama kaydeder.",
+          "selfService": "<tag>apps.enabled: true</tag>, self-service",
+          "selfServiceDesc": "Geliştiriciler <developerLink>/developer</developerLink> üzerinden kayıt olur; domain veya bundle sahipliğini doğrular."
+        },
+        "p2": "<tag>appId</tag> (ve native alanları) <tag>EsrSync.connect()</tag>'e verin. SDK her relay isteğinde <tag>X-ESR-App-Id</tag> gönderir; tarayıcılar <tag>Origin</tag>'i otomatik ekler.",
+        "webExampleTitle": "Web SPA",
+        "nativeExampleTitle": "Native (iOS / Android)",
+        "registrationTitle": "Uygulama kaydetme",
+        "registrationP1": "Uygulama kaydı senkron verisinden ayrıdır — mevcut namespace'lere erişim vermez. Web uygulamaları HTTPS origin kaydeder ve DNS TXT veya well-known doğrulamasını tamamlar. Native uygulamalar platform + bundle ID kaydeder. Uygulamaları <operatorLink>/operator</operatorLink> (operatör) veya <developerLink>/developer</developerLink> (self-service) üzerinden yönetin.",
+        "tipTitle": "Yerel geliştirme",
+        "tipBody": "Operatör <tag>allowLocalhostOrigins: true</tag> ayarlar ve <tag>http://localhost:'{port}'</tag> origin'ini kaydeder.",
+        "migrationTitle": "v1.2'den geçiş",
+        "migrationP1": "Tüm istemciler app başlığı gönderene kadar <tag>apps.enabled: false</tag> bırakın. Ardından kaydı açın, uygulamaları kaydedin ve mevcut namespace'ler için <tag>legacyDefaultAppId</tag> ayarlayın. Bkz. <specLink>16-APP-REGISTRY §19</specLink>."
       },
       "multiDocument": {
         "title": "Çoklu belge",
@@ -743,6 +779,7 @@
     "nav": {
       "overview": "Genel bakış",
       "auth": "Kimlik doğrulama",
+      "app-registry": "Uygulama kaydı",
       "workflows": "Tipik akış",
       "namespaces": "Çalışma alanları",
       "documents": "Belgeler",
@@ -765,7 +802,9 @@
       "scope": "Kapsam",
       "window": "Pencere",
       "request": "İstek",
-      "response": "Yanıt"
+      "response": "Yanıt",
+      "clientType": "İstemci türü",
+      "headers": "Gerekli başlıklar"
     },
     "sections": {
       "overview": {
@@ -790,7 +829,70 @@
         "p1": "Cihaz oluşturduktan, eşleştirdikten veya kurtardıktan sonra yanıtta <tag>deviceToken</tag> alırsınız. Sonraki her istekte gönderin:",
         "p2": "Cihaz silindiğinde veya kurtarma sonrasında (tüm cihazlar iptal) geçersiz olur. İstemcide güvenle saklayın.",
         "li1": "HTTP: <tag>Authorization: Bearer</tag> başlığı",
-        "li2": "<tag>WebSocket</tag>: aynı token <tag>Authorization</tag> başlığında veya ilk auth mesajında"
+        "li2": "<tag>WebSocket</tag>: aynı token <tag>Authorization</tag> başlığında veya ilk auth mesajında",
+        "appNote": "<tag>apps.enabled</tag> açıkken her <tag>/v1</tag> isteğinde uygulama başlıkları da gönderin — bkz. <apiAppLink>Uygulama kaydı</apiAppLink>."
+      },
+      "appRegistry": {
+        "title": "Uygulama kaydı (v1.3)",
+        "p1": "Cihaz token'larının üstünde isteğe bağlı bir katman. Açıkken her namespace tam olarak bir kayıtlı uygulamaya aittir. Uygulama kimlik bilgileri hangi entegrasyonun relay'i kullanabileceğini; cihaz token'ları workspace erişimini belirler. Tam spec: <specLink>16-APP-REGISTRY.md</specLink>.",
+        "headersTitle": "Uygulama bağlamı başlıkları",
+        "headers": {
+          "web": "Web SPA",
+          "webDesc": "<tag>X-ESR-App-Id</tag> ve tarayıcı <tag>Origin</tag> (uygulama için doğrulanmış origin ile eşleşmeli). Tarayıcı build'lerinde client secret yok.",
+          "native": "iOS / Android",
+          "nativeDesc": "<tag>X-ESR-App-Id</tag> + <tag>X-ESR-Platform</tag> (<tag>ios</tag> | <tag>android</tag>) + <tag>X-ESR-Bundle-Id</tag>. Operatör gerektiriyorsa isteğe bağlı <tag>X-ESR-Client-Secret</tag>."
+        },
+        "p2": "Açıkken kimlik doğrulamasız create, pair ve recover dahil tüm <tag>/v1</tag> rotalarında zorunlu. İstisnalar: <tag>/health</tag>, <tag>/v1/admin/*</tag> ve <tag>/v1/developer/*</tag>. WebSocket el sıkışmasında tarayıcı <tag>Origin</tag> kullanır.",
+        "flow": {
+          "s1": {
+            "title": "Uygulamayı kaydedin",
+            "body": "Operatör YAML seed kullanır veya <operatorLink>/operator</operatorLink>; self-service modda geliştiriciler <developerLink>/developer</developerLink> kullanır."
+          },
+          "s2": {
+            "title": "Origin veya bundle doğrulayın",
+            "body": "Web: DNS TXT veya HTTPS <tag>/.well-known/esr-app-verification</tag> ekleyin. Native: platform ve bundle ID kaydedin; operatör manuel onaylayabilir."
+          },
+          "s3": {
+            "title": "Her senkron çağrısında başlık gönderin",
+            "body": "<tag>POST /v1/namespaces</tag>, kimlik doğrulamalı rotalar ve WebSocket upgrade'de <tag>X-ESR-App-Id</tag> (ve web <tag>Origin</tag> veya native platform başlıkları) ekleyin."
+          },
+          "s4": {
+            "title": "Namespace bağlı kalır",
+            "body": "Oluşturma yanıtında <tag>appId</tag> olabilir. Farklı uygulama ile sonraki istekler <tag>403 APP_NAMESPACE_MISMATCH</tag> döndürür."
+          }
+        },
+        "webExampleTitle": "Namespace oluşturma (web istemci)",
+        "nativeExampleTitle": "Kimlik doğrulamalı istek (native istemci)",
+        "managementTitle": "Admin ve geliştirici API'leri",
+        "managementP1": "Uygulama yönetimi senkron rotalarından ayrıdır. OpenAPI: repo kökü <tag>openapi.yaml</tag> (Applications, Developer, Admin etiketleri). Operatör rehberi: docs/OPERATOR.md.",
+        "management": {
+          "audience": "Kitle",
+          "auth": "Kimlik",
+          "ui": "Web arayüzü",
+          "operator": "Operatör",
+          "operatorAuth": "<tag>ESR_ADMIN_TOKEN</tag>",
+          "operatorUi": "<operatorLink>/operator</operatorLink> — Uygulamalar sekmesi",
+          "developer": "Geliştirici",
+          "developerAuth": "<tag>/developer/login</tag> JWT",
+          "developerUi": "<developerLink>/developer</developerLink> — self-service açıkken"
+        },
+        "errorsTitle": "Uygulama ile ilgili hata kodları",
+        "errorsP1": "<tag>error.code</tag> üzerinden dallanın. Tam liste: <specLink>16-APP-REGISTRY.md</specLink> ve <sdkAppLink>SDK — Uygulama kaydı</sdkAppLink>.",
+        "errors": {
+          "appIdRequired": "<tag>X-ESR-App-Id</tag> gönderin — relay'de uygulama kaydı açık",
+          "originRequired": "Web istemcide <tag>Origin</tag> başlığı eksik",
+          "originNotAllowed": "Origin bu uygulama için kayıtlı veya doğrulanmış değil",
+          "namespaceMismatch": "Namespace başka bir uygulamaya ait",
+          "notFound": "Bilinmeyen <tag>appId</tag>",
+          "suspended": "Operatör uygulamayı askıya aldı",
+          "pairingNotAllowed": "Uygulama pairing token <tag>allowedAppIds</tag> listesinde değil",
+          "clientSecretInvalid": "Yanlış native client secret",
+          "notVerified": "Uygulama doğrulama bekliyor",
+          "nativeIdRequired": "<tag>X-ESR-Platform</tag> veya <tag>X-ESR-Bundle-Id</tag> eksik"
+        },
+        "migrationTitle": "v1.2'den geçiş",
+        "migrationP1": "Önce app başlıklı istemcileri yayınlayın, ardından <tag>apps.enabled</tag> açın, uygulamaları kaydedin ve mevcut namespace'ler için <tag>legacyDefaultAppId</tag> ayarlayın. Ayrıntı: <specLink>16-APP-REGISTRY §19</specLink>.",
+        "p3": "JavaScript istemcileri başlıkları elle ayarlamak yerine <sdkAppLink>SDK — Uygulama kaydı</sdkAppLink> tercih etmeli — <tag>appId</tag>'yi <tag>EsrSync.connect()</tag>'e verin."
       },
       "workflows": {
         "title": "Tipik REST akışı (SDK yok)",

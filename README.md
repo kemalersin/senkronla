@@ -1,6 +1,6 @@
 # Senkronla
 
-[![Version](https://img.shields.io/github/package-json/v/kemalersin/senkronla?filename=packages%2Fserver%2Fpackage.json&label=version)](packages/server/package.json)
+[![Version](https://img.shields.io/github/package-json/v/kemalersin/senkronla?label=version)](package.json)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
@@ -92,7 +92,14 @@ pnpm typecheck   # Alias for lint in packages
 
 ## Version and CHANGELOG
 
-The sole semver source is the [`package.json`](package.json) `version` field. Release notes follow [Keep a Changelog](https://keepachangelog.com/) format in [`CHANGELOG.md`](CHANGELOG.md).
+The sole semver source is the root [`package.json`](package.json) `version` field. Release notes follow [Keep a Changelog](https://keepachangelog.com/) in the root [`CHANGELOG.md`](CHANGELOG.md) and per-package changelogs under `packages/*/CHANGELOG.md` and `apps/web/CHANGELOG.md`.
+
+When you run `pnpm version patch` (or `minor` / `major`), npm bumps the root version and runs `scripts/promote-changelog-unreleased.mjs`, which:
+
+1. Promotes `[Unreleased]` → `[X.Y.Z]` in the root and any package changelog that has unreleased notes
+2. Sets the same `version` in all workspace `package.json` files (`packages/*`, `apps/*`)
+
+Write release notes under `[Unreleased]` before bumping. Package changelogs with an empty `[Unreleased]` section are left unchanged (version field is still synced).
 
 ## Release target
 

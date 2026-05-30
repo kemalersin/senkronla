@@ -125,7 +125,7 @@ apps:
     requireManualReview: true
 
   developerPortal:
-    enabled: false                         # registrationMode: self_service iken otomatik true
+    enabled: false                         # şema alanı; runtime kapısı registrationMode + jwtSecret kullanır (aşağıya bakın)
     jwtSecret: "${ESR_DEVELOPER_JWT_SECRET}"
     sessionTtlHours: 168
     requireEmailVerification: true
@@ -150,13 +150,25 @@ apps:
 
 ### 5.2 Ortam değişkenleri
 
+İç içe anahtarlar `__` ile yazılır ([07-SERVER-CONFIGURATION.md](./07-SERVER-CONFIGURATION.md) §3). `load-config.ts` destekledikleri:
+
 ```bash
 ESR_APPS__ENABLED=true
-ESR_APPS__REGISTRATION_MODE=self_service
+ESR_APPS__REGISTRATION_MODE=self_service          # operator_managed | self_service
 ESR_APPS__REQUIRE_REGISTRATION=true
 ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
-ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET=change-me-long-random
+ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary   # yalnızca v1.2 geçişi
+ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
+ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET=change-me-long-random-min-32-chars
+ESR_DEVELOPER_JWT_SECRET=change-me-long-random-min-32-chars   # jwtSecret alias'ı
+ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY=100
+ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR=30
+ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
 ```
+
+**Yalnızca YAML (şu an env override yok):** `verification.*`, `limits.perDeveloper.maxApps`, `native.requireManualReview`, `developerPortal.enabled`, `developerPortal.sessionTtlHours`, `developerPortal.requireEmailVerification`, `seed[]`.
+
+**Geliştirici portalı runtime:** Portal `apps.enabled: true`, `registrationMode: self_service` ve `developerPortal.jwtSecret` (min 32 karakter) varken açılır. `developerPortal.enabled` alanı config'te durur ama sunucu kapısı **okumaz** — `registrationMode` + JWT secret kullanın.
 
 ### 5.3 Mod matrisi
 

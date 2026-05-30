@@ -7,8 +7,10 @@ const DOCS_PATHS = ['/guides', '/sdk', '/api'] as const
 
 export function ConditionalFooter({
   initialDeveloperAuthenticated = false,
+  developerPortalEnabled = false,
 }: {
   initialDeveloperAuthenticated?: boolean
+  developerPortalEnabled?: boolean
 }) {
   const pathname = usePathname()
 
@@ -16,5 +18,10 @@ export function ConditionalFooter({
     return null
   }
 
-  return <SiteFooter initialDeveloperAuthenticated={initialDeveloperAuthenticated} />
+  return (
+    <SiteFooter
+      initialDeveloperAuthenticated={initialDeveloperAuthenticated}
+      developerPortalEnabled={developerPortalEnabled}
+    />
+  )
 }

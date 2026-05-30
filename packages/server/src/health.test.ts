@@ -43,6 +43,7 @@ describe('@senkronla/server health', () => {
       status: 'ok',
       database: { status: 'ok', mode: 'external' },
       blob: { status: 'ok' },
+      developerPortal: { enabled: false },
     })
 
     await app.close()

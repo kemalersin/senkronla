@@ -514,6 +514,7 @@
       "quick-start": "Quick start",
       "install": "Install",
       "connect": "Connect options",
+      "app-registry": "Application registry",
       "multi-document": "Multiple documents",
       "adapter": "Document adapter",
       "encryption": "Envelope encryption",
@@ -529,6 +530,8 @@
     "table": {
       "option": "Option",
       "description": "Description",
+      "layer": "Layer",
+      "relayConfig": "Relay config",
       "field": "Field / method",
       "method": "Method",
       "status": "Status",
@@ -555,6 +558,10 @@
         "exampleTitle": "Full connect example",
         "options": {
           "relayUrl": "Base URL ending in <tag>/v1</tag>, e.g. https://sync.example.com/v1",
+          "appId": "Public app id (<tag>esr_app_…</tag>) — required when relay has <tag>apps.enabled</tag>",
+          "appPlatform": "Native only: <tag>ios</tag> or <tag>android</tag>",
+          "bundleId": "Native only: bundle ID or package name registered for the app",
+          "clientSecret": "Native confidential clients only — when operator requires a secret",
           "document": "Single-document shorthand — first slot is <tag>primary</tag>",
           "documents": "Multi-document: array of slots with optional <tag>documentId</tag> and <tag>adapter</tag> (first slot defaults to <tag>primary</tag>)",
           "storage": "<tag>EsrStorage</tag> implementation (<tag>createLocalStorageAdapter</tag> for web)",
@@ -566,6 +573,35 @@
           "notificationsEnabled": "Default true. Set false for CLI tools or tests.",
           "persistRecoveryPhrase": "Default true. Stores phrase in <tag>EsrStorage</tag> (consider security implications)."
         }
+      },
+      "appRegistry": {
+        "title": "Application registry (v1.3)",
+        "p1": "When the relay operator enables <tag>apps.enabled</tag>, every integration must identify itself with a registered <tag>appId</tag>. Namespaces are bound to the app that created them. Full spec: <specLink>16-APP-REGISTRY.md</specLink>. REST details: <apiAppLink>API — Application registry</apiAppLink>.",
+        "layersTitle": "Two auth layers",
+        "layers": {
+          "app": "App (<tag>appId</tag> + origin or bundle)",
+          "appDesc": "Answers: which integration may call this relay?",
+          "device": "Device token",
+          "deviceDesc": "Answers: which paired device in which namespace? Unchanged from v1.2."
+        },
+        "configTitle": "Relay configuration",
+        "config": {
+          "disabled": "<tag>apps.enabled: false</tag> (default)",
+          "disabledDesc": "No app headers required — v1.2 behaviour.",
+          "operatorManaged": "<tag>apps.enabled: true</tag>, operator-managed",
+          "operatorManagedDesc": "Operator registers apps via YAML seed or <operatorLink>/operator</operatorLink> portal.",
+          "selfService": "<tag>apps.enabled: true</tag>, self-service",
+          "selfServiceDesc": "Developers register at <developerLink>/developer</developerLink> and verify domain or bundle ownership."
+        },
+        "p2": "Pass <tag>appId</tag> (and native fields) to <tag>EsrSync.connect()</tag>. The SDK sends <tag>X-ESR-App-Id</tag> on every relay request; browsers also send <tag>Origin</tag> automatically.",
+        "webExampleTitle": "Web SPA",
+        "nativeExampleTitle": "Native (iOS / Android)",
+        "registrationTitle": "Registering an app",
+        "registrationP1": "App registration is separate from sync data — it does not grant access to existing namespaces. Web apps register an HTTPS origin and complete DNS TXT or well-known verification. Native apps register platform + bundle ID. Manage apps in <operatorLink>/operator</operatorLink> (operator) or <developerLink>/developer</developerLink> (self-service).",
+        "tipTitle": "Local development",
+        "tipBody": "Operator sets <tag>allowLocalhostOrigins: true</tag> and registers <tag>http://localhost:'{port}'</tag> as an origin.",
+        "migrationTitle": "Migrating from v1.2",
+        "migrationP1": "Keep <tag>apps.enabled: false</tag> until all clients send app headers. Then enable the registry, register apps, and set <tag>legacyDefaultAppId</tag> for existing namespaces. See <specLink>16-APP-REGISTRY §19</specLink>."
       },
       "multiDocument": {
         "title": "Multiple documents",
@@ -743,6 +779,7 @@
     "nav": {
       "overview": "Overview",
       "auth": "Authentication",
+      "app-registry": "Application registry",
       "workflows": "Typical flow",
       "namespaces": "Workspaces",
       "documents": "Documents",
@@ -765,7 +802,9 @@
       "scope": "Scope",
       "window": "Window",
       "request": "Request",
-      "response": "Response"
+      "response": "Response",
+      "clientType": "Client type",
+      "headers": "Required headers"
     },
     "sections": {
       "overview": {
@@ -790,7 +829,70 @@
         "p1": "After creating, pairing, or recovering a device you receive <tag>deviceToken</tag> in the response. Send it on every subsequent request:",
         "p2": "Revoked when the device is deleted or after recovery (all devices revoked). Store securely on the client.",
         "li1": "HTTP: <tag>Authorization: Bearer</tag> header",
-        "li2": "<tag>WebSocket</tag>: same token in <tag>Authorization</tag> header or first auth message"
+        "li2": "<tag>WebSocket</tag>: same token in <tag>Authorization</tag> header or first auth message",
+        "appNote": "When <tag>apps.enabled</tag> is on, also send application headers on every <tag>/v1</tag> route — see <apiAppLink>Application registry</apiAppLink>."
+      },
+      "appRegistry": {
+        "title": "Application registry (v1.3)",
+        "p1": "Optional layer above device tokens. When enabled, each namespace belongs to exactly one registered app. App credentials answer which integration may use this relay; device tokens still gate workspace access. Full spec: <specLink>16-APP-REGISTRY.md</specLink>.",
+        "headersTitle": "Application context headers",
+        "headers": {
+          "web": "Web SPA",
+          "webDesc": "<tag>X-ESR-App-Id</tag> plus browser <tag>Origin</tag> (must match a verified origin for that app). No client secret in browser builds.",
+          "native": "iOS / Android",
+          "nativeDesc": "<tag>X-ESR-App-Id</tag> + <tag>X-ESR-Platform</tag> (<tag>ios</tag> | <tag>android</tag>) + <tag>X-ESR-Bundle-Id</tag>. Optional <tag>X-ESR-Client-Secret</tag> when operator requires it."
+        },
+        "p2": "Required on all <tag>/v1</tag> routes when enabled — including unauthenticated create, pair, and recover. Exceptions: <tag>/health</tag>, <tag>/v1/admin/*</tag>, and <tag>/v1/developer/*</tag>. WebSocket uses browser <tag>Origin</tag> at handshake time.",
+        "flow": {
+          "s1": {
+            "title": "Register the app",
+            "body": "Operator seeds YAML or uses <operatorLink>/operator</operatorLink>; in self-service mode developers use <developerLink>/developer</developerLink>."
+          },
+          "s2": {
+            "title": "Verify origin or bundle",
+            "body": "Web: add DNS TXT or HTTPS <tag>/.well-known/esr-app-verification</tag>. Native: register platform and bundle ID; operator may approve manually."
+          },
+          "s3": {
+            "title": "Send headers on every sync call",
+            "body": "Include <tag>X-ESR-App-Id</tag> (and web <tag>Origin</tag> or native platform headers) on <tag>POST /v1/namespaces</tag>, authenticated routes, and WebSocket upgrade."
+          },
+          "s4": {
+            "title": "Namespace stays bound",
+            "body": "Create response may include <tag>appId</tag>. Later requests with a different app return <tag>403 APP_NAMESPACE_MISMATCH</tag>."
+          }
+        },
+        "webExampleTitle": "Create namespace (web client)",
+        "nativeExampleTitle": "Authenticated request (native client)",
+        "managementTitle": "Admin & developer APIs",
+        "managementP1": "App management is out-of-band from sync routes. OpenAPI: repo root <tag>openapi.yaml</tag> (tags Applications, Developer, Admin). Operator guide: docs/OPERATOR.md.",
+        "management": {
+          "audience": "Audience",
+          "auth": "Auth",
+          "ui": "Web UI",
+          "operator": "Operator",
+          "operatorAuth": "<tag>ESR_ADMIN_TOKEN</tag>",
+          "operatorUi": "<operatorLink>/operator</operatorLink> — Apps tab",
+          "developer": "Developer",
+          "developerAuth": "JWT from <tag>/developer/login</tag>",
+          "developerUi": "<developerLink>/developer</developerLink> — when self-service enabled"
+        },
+        "errorsTitle": "App-related error codes",
+        "errorsP1": "Branch on <tag>error.code</tag>. Full list in <specLink>16-APP-REGISTRY.md</specLink> and <sdkAppLink>SDK — Application registry</sdkAppLink>.",
+        "errors": {
+          "appIdRequired": "Send <tag>X-ESR-App-Id</tag> — relay has app registry enabled",
+          "originRequired": "Web client missing <tag>Origin</tag> header",
+          "originNotAllowed": "Origin not registered or verified for this app",
+          "namespaceMismatch": "Namespace belongs to another app",
+          "notFound": "Unknown <tag>appId</tag>",
+          "suspended": "Operator suspended the app",
+          "pairingNotAllowed": "App not in pairing token <tag>allowedAppIds</tag>",
+          "clientSecretInvalid": "Wrong native client secret",
+          "notVerified": "App pending verification",
+          "nativeIdRequired": "Missing <tag>X-ESR-Platform</tag> or <tag>X-ESR-Bundle-Id</tag>"
+        },
+        "migrationTitle": "Migrating from v1.2",
+        "migrationP1": "Ship clients with app headers first, then enable <tag>apps.enabled</tag>, register apps, and set <tag>legacyDefaultAppId</tag> for existing namespaces. Details: <specLink>16-APP-REGISTRY §19</specLink>.",
+        "p3": "JavaScript clients should prefer <sdkAppLink>SDK — Application registry</sdkAppLink> — pass <tag>appId</tag> to <tag>EsrSync.connect()</tag> instead of setting headers manually."
       },
       "workflows": {
         "title": "Typical REST flow (no SDK)",

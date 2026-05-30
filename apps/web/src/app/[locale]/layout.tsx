@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { ConditionalFooter } from '@/components/conditional-footer'
 import { SiteHeader } from '@/components/site-header'
 import { hasDeveloperSessionCookie } from '@/lib/developer-auth'
+import { isDeveloperPortalEnabled } from '@/lib/developer-portal-status'
 import { routing } from '@/i18n/routing'
 import type { Locale } from '@/i18n/config'
 import '../globals.css'
@@ -37,6 +38,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
   setRequestLocale(locale)
   const messages = await getMessages()
   const initialDeveloperAuthenticated = await hasDeveloperSessionCookie()
+  const developerPortalEnabled = await isDeveloperPortalEnabled()
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -52,11 +54,15 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
           <SiteHeader
             locale={locale as Locale}
             initialDeveloperAuthenticated={initialDeveloperAuthenticated}
+            developerPortalEnabled={developerPortalEnabled}
           />
           <main key={locale} className="site-main">
             {children}
           </main>
-          <ConditionalFooter initialDeveloperAuthenticated={initialDeveloperAuthenticated} />
+          <ConditionalFooter
+            initialDeveloperAuthenticated={initialDeveloperAuthenticated}
+            developerPortalEnabled={developerPortalEnabled}
+          />
         </NextIntlClientProvider>
       </body>
     </html>

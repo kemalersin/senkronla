@@ -326,6 +326,26 @@ if (lastError) {
   console.error(lastError.code, lastError.message)
 }`,
 
+    connectWithAppWeb: `const sync = await EsrSync.connect({
+  relayUrl: '${relayUrl}',
+  appId: 'esr_app_mynotes',
+  document,
+  storage: createLocalStorageAdapter('myapp'),
+  onRecoveryPhrase: async ({ phrase }) => { /* required */ },
+  onConflict: async () => 'remote',
+})`,
+
+    connectWithAppNative: `const sync = await EsrSync.connect({
+  relayUrl: '${relayUrl}',
+  appId: 'esr_app_mynotes_mobile',
+  appPlatform: 'ios',
+  bundleId: 'com.example.mynotes',
+  document,
+  storage: createSecureStorageAdapter(),
+  onRecoveryPhrase: async ({ phrase }) => { /* required */ },
+  onConflict: async () => 'remote',
+})`,
+
     connectOptions: `const sync = await EsrSync.connect({
   relayUrl: '${relayUrl}',
   document,
@@ -401,6 +421,27 @@ export function createApiSnippets(relayUrl: string) {
   const auth = authHeader()
 
   return {
+    appHeadersWeb: `POST ${v1}/namespaces
+Content-Type: application/json
+X-ESR-App-Id: esr_app_mynotes
+Origin: https://app.example.com
+
+{
+  "namespaceId": "${ns}",
+  "namespaceLabel": "${SAMPLE.namespaceLabel}",
+  "deviceLabel": "Alice laptop",
+  "clientDeviceId": "${SAMPLE.clientDeviceId}",
+  "recoveryKeyProof": {
+    "salt": "${SAMPLE.recoverySalt}",
+    "hash": "${SAMPLE.recoveryHash}"
+  }
+}`,
+
+    appHeadersNative: `GET ${v1}/namespaces/${ns}
+${auth}X-ESR-App-Id: esr_app_mynotes_mobile
+X-ESR-Platform: ios
+X-ESR-Bundle-Id: com.example.mynotes`,
+
     health: {
       request: `GET ${origin}/health`,
       response: `{

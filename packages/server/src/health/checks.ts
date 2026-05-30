@@ -2,6 +2,7 @@ import type { FastifyServerOptions } from 'fastify'
 import type { ServerConfig } from '../config/schema.js'
 import { checkBlobStorage } from '../blob/filesystem.js'
 import { checkDatabase, type DbPool } from '../db/pool.js'
+import { isDeveloperPortalEnabled } from '../lib/developer-portal.js'
 
 export interface HealthCheckResult {
   status: 'ok' | 'degraded'
@@ -17,6 +18,9 @@ export interface HealthCheckResult {
     message?: string
   }
   websocket: boolean
+  developerPortal: {
+    enabled: boolean
+  }
 }
 
 export async function runHealthChecks(
@@ -61,6 +65,9 @@ export async function runHealthChecks(
     database: databaseStatus,
     blob: blobStatus,
     websocket: config.websocket.enabled,
+    developerPortal: {
+      enabled: isDeveloperPortalEnabled(config),
+    },
   }
 }
 

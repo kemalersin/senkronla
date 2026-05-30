@@ -23,9 +23,8 @@ export function DocsLayout({ title, intro, nav, children }: DocsLayoutProps) {
   const isEsrGuide = pathname === '/guides/esr'
   const isAgentsGuide = pathname === '/guides/agents'
   const showGuidesBackLink = !isGuidesIndex
-  const showEsrLink = isGuidesIndex || pathname === '/sdk' || pathname === '/api'
-  const showAgentsLink =
-    (isGuidesIndex || pathname === '/sdk' || pathname === '/api') && !isEsrGuide && !isAgentsGuide
+  const showEsrLink = isGuidesIndex
+  const showAgentsLink = isGuidesIndex
   const [activeId, setActiveId] = useState(nav[0]?.id ?? '')
   const pendingNavIdRef = useRef<string | null>(null)
 

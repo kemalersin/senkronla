@@ -18,6 +18,7 @@ const sectionKeys = [
   'quick-start',
   'install',
   'connect',
+  'app-registry',
   'multi-document',
   'adapter',
   'encryption',
@@ -73,11 +74,26 @@ export default async function SdkPage({ params }: PageProps) {
   const tGuides = await getTranslations('guides')
   const relayUrl = getRelayApiBaseUrl()
   const snippets = createGuideSnippets(relayUrl)
+  const specHref =
+    locale === 'tr'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md'
   const rich = withDocRich({ relayUrl })
   const encryptionRich = withDocRich({
     relayUrl,
     apiLink: (chunks) => <Link href="/api#encryption">{chunks}</Link>,
     encryptionLink: (chunks) => <a href="#encryption">{chunks}</a>,
+  })
+  const appRegistryRich = withDocRich({
+    relayUrl,
+    apiAppLink: (chunks) => <Link href="/api#app-registry">{chunks}</Link>,
+    specLink: (chunks) => (
+      <a href={specHref} target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
+    developerLink: (chunks) => <Link href="/developer">{chunks}</Link>,
+    operatorLink: (chunks) => <Link href="/operator">{chunks}</Link>,
   })
 
   const nav = sectionKeys.map((key) => ({
@@ -85,8 +101,35 @@ export default async function SdkPage({ params }: PageProps) {
     label: t(`nav.${key}`),
   }))
 
+  const appLayerRows = [
+    [t.rich('sections.appRegistry.layers.app', withDocRich()), t.rich('sections.appRegistry.layers.appDesc', withDocRich())],
+    [
+      t('sections.appRegistry.layers.device'),
+      t.rich('sections.appRegistry.layers.deviceDesc', withDocRich()),
+    ],
+  ]
+
+  const appConfigRows = [
+    [
+      t.rich('sections.appRegistry.config.disabled', withDocRich()),
+      t('sections.appRegistry.config.disabledDesc'),
+    ],
+    [
+      t.rich('sections.appRegistry.config.operatorManaged', withDocRich()),
+      t.rich('sections.appRegistry.config.operatorManagedDesc', appRegistryRich),
+    ],
+    [
+      t.rich('sections.appRegistry.config.selfService', withDocRich()),
+      t.rich('sections.appRegistry.config.selfServiceDesc', appRegistryRich),
+    ],
+  ]
+
   const optionRows = [
     ['relayUrl', t.rich('sections.connect.options.relayUrl', withDocRich())],
+    ['appId', t.rich('sections.connect.options.appId', withDocRich())],
+    ['appPlatform', t.rich('sections.connect.options.appPlatform', withDocRich())],
+    ['bundleId', t.rich('sections.connect.options.bundleId', withDocRich())],
+    ['clientSecret', t.rich('sections.connect.options.clientSecret', withDocRich())],
     ['document', t.rich('sections.connect.options.document', withDocRich())],
     ['documents', t.rich('sections.connect.options.documents', withDocRich())],
     ['storage', t.rich('sections.connect.options.storage', withDocRich())],
@@ -153,6 +196,33 @@ export default async function SdkPage({ params }: PageProps) {
         <p>{t.rich('sections.connect.p2', withDocRich())}</p>
         <p className="doc-subheading">{t('sections.connect.exampleTitle')}</p>
         <CodeBlock code={snippets.connectOptions} language="typescript" />
+      </DocSection>
+
+      <DocSection id="app-registry" title={t('sections.appRegistry.title')}>
+        <p>{t.rich('sections.appRegistry.p1', appRegistryRich)}</p>
+        <p className="doc-subheading">{t('sections.appRegistry.layersTitle')}</p>
+        <DocsTable
+          headers={[t('table.layer'), t('table.description')]}
+          rows={appLayerRows}
+        />
+        <p className="doc-subheading">{t('sections.appRegistry.configTitle')}</p>
+        <DocsTable
+          headers={[t('table.relayConfig'), t('table.action')]}
+          rows={appConfigRows}
+        />
+        <p>{t.rich('sections.appRegistry.p2', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.appRegistry.webExampleTitle')}</p>
+        <CodeBlock code={snippets.connectWithAppWeb} language="typescript" />
+        <p className="doc-subheading">{t('sections.appRegistry.nativeExampleTitle')}</p>
+        <CodeBlock code={snippets.connectWithAppNative} language="typescript" />
+        <p className="doc-subheading">{t('sections.appRegistry.registrationTitle')}</p>
+        <p>{t.rich('sections.appRegistry.registrationP1', appRegistryRich)}</p>
+        <DocCallout variant="tip" title={t('sections.appRegistry.tipTitle')}>
+          <p>{t.rich('sections.appRegistry.tipBody', withDocRich())}</p>
+        </DocCallout>
+        <DocCallout variant="info" title={t('sections.appRegistry.migrationTitle')}>
+          <p>{t.rich('sections.appRegistry.migrationP1', appRegistryRich)}</p>
+        </DocCallout>
       </DocSection>
 
       <DocSection id="multi-document" title={t('sections.multiDocument.title')}>

@@ -265,14 +265,13 @@ MVP'de **tek instance yeter**; docker-compose tek `api` servisi.
 ```yaml
 websocket:
   enabled: true
-  path: "/v1/namespaces/:namespaceId/notifications"  # sabit
   pingIntervalSeconds: 30
   pongTimeoutSeconds: 10
   maxConnectionsPerNamespace: 20
   maxConnectionsPerDevice: 3          # aynı cihaz çoklu sekme
 ```
 
-Env:
+Env override (`load-config.ts`): `ESR_WEBSOCKET_ENABLED`, `ESR_WS_PING_INTERVAL`. Yukarıdaki diğer anahtarlar bugün **yalnızca YAML**.
 
 ```bash
 ESR_WEBSOCKET_ENABLED=true

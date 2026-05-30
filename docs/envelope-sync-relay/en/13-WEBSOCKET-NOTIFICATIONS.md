@@ -265,14 +265,13 @@ MVP **single instance sufficient**; docker-compose single `api` service.
 ```yaml
 websocket:
   enabled: true
-  path: "/v1/namespaces/:namespaceId/notifications"  # fixed
   pingIntervalSeconds: 30
   pongTimeoutSeconds: 10
   maxConnectionsPerNamespace: 20
   maxConnectionsPerDevice: 3          # same device multiple tabs
 ```
 
-Env:
+Env overrides (`load-config.ts`): `ESR_WEBSOCKET_ENABLED`, `ESR_WS_PING_INTERVAL`. Other keys above are **YAML only** today.
 
 ```bash
 ESR_WEBSOCKET_ENABLED=true

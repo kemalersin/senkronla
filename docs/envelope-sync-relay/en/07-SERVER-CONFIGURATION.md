@@ -23,15 +23,10 @@ database:
   ssl: false
 
 blob:
-  driver: "filesystem"                     # filesystem | s3
+  driver: "filesystem"                     # filesystem only in current schema
   filesystem:
     path: "/data/blobs"
-  s3:
-    endpoint: ""
-    bucket: "esr-blobs"
-    accessKey: ""
-    secretKey: ""
-    region: "auto"
+  # s3: — not implemented in packages/server schema yet; reserved for future docs
 
 auth:
   adminApiToken: "${ESR_ADMIN_TOKEN}"      # min 32 char random
@@ -100,20 +95,17 @@ apps:
     requireClientSecret: false
     requireManualReview: true
   developerPortal:
-    enabled: false
+    enabled: false                         # schema field; portal gate uses registrationMode + jwtSecret
     jwtSecret: "${ESR_DEVELOPER_JWT_SECRET}"
     sessionTtlHours: 168
     requireEmailVerification: true
   seed: []                             # operator_managed static apps at startup
 
-payment:                                     # optional phase 2
-  enabled: false
-  provider: "stripe"
-  webhookSecret: ""
-  priceByPackage:
-    "3": "price_xxx"
-    "5": "price_yyy"
-    "10": "price_zzz"
+# payment — not in packages/server schema yet (phase 2 design only)
+# payment:
+#   enabled: false
+#   provider: "stripe"
+#   ...
 
 cors:
   allowedOrigins:
@@ -140,6 +132,8 @@ websocket:
   maxConnectionsPerDevice: 3
 ```
 
+> **Schema note:** Authoritative keys are in `packages/server/src/config/schema.ts`. Blocks marked “not implemented” above (`blob.s3`, `payment`) are design placeholders — do not copy them into production YAML expecting the server to load them.
+
 ## 3. Environment variables (minimum docker)
 
 ```bash
@@ -157,7 +151,7 @@ ESR_MAX_ENVELOPE_BYTES=52428800
 ESR_MAX_DOCUMENTS_PER_NAMESPACE=32      # 0 = unlimited
 ESR_ALLOWED_DOCUMENT_IDS=primary,settings   # optional comma-separated allowlist
 
-# Application registry (v1.3 — optional)
+# Application registry (v1.3 — optional; see doc 16)
 ESR_APPS__ENABLED=false
 ESR_APPS__REGISTRATION_MODE=operator_managed   # operator_managed | self_service
 ESR_APPS__REQUIRE_REGISTRATION=true
@@ -165,8 +159,11 @@ ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
 # ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary
 # ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
 ESR_DEVELOPER_JWT_SECRET=change-me-long-random-min-32-chars
+# ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET=...   # alias for ESR_DEVELOPER_JWT_SECRET
 # ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY=100
-# apps.seed (origins, bundles) — YAML only; not overridable via env
+# ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR=30
+# ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
+# apps.verification.*, limits.perDeveloper.*, developerPortal.enabled/sessionTtlHours/requireEmailVerification, seed — YAML only
 ```
 
 ## 4. docker-compose.yml (reference)

@@ -1,0 +1,54 @@
+---
+description: Keep a Changelog — update package CHANGELOG when that package changes
+alwaysApply: true
+---
+
+# CHANGELOG
+
+Follow [Keep a Changelog](https://keepachangelog.com/). Semver source: root [`package.json`](package.json). Release flow: [`README.md` — Version and CHANGELOG](../README.md#version-and-changelog).
+
+## When to update
+
+Any **user-visible or release-notable** change in a workspace package requires that package's `CHANGELOG.md` under `## [Unreleased]`. Do not finish the task without it.
+
+| Changed paths | Update |
+|---------------|--------|
+| `packages/server/**` | `packages/server/CHANGELOG.md` |
+| `packages/client/**` | `packages/client/CHANGELOG.md` |
+| `packages/protocol/**` | `packages/protocol/CHANGELOG.md` |
+| `packages/cli/**` | `packages/cli/CHANGELOG.md` |
+| `apps/web/**` | `apps/web/CHANGELOG.md` |
+| Monorepo-wide (root config, CI, multi-package features, spec docs) | Root `CHANGELOG.md` |
+
+Multi-package work: update **each affected package** changelog **and** root `CHANGELOG.md` when the release spans packages or docs.
+
+Skip changelog only for trivial chores with no behavioral or release impact (typo in comment, whitespace-only).
+
+## How to write entries
+
+- Add bullets under `## [Unreleased]` only — never edit past release sections.
+- Use sections: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`.
+- Imperative, user-facing wording; no commit hashes or file lists.
+- Root entries may prefix scope: `**server:**`, `**web:**`, `**client:**`, `**docs:**`.
+
+```markdown
+## [Unreleased]
+
+### Added
+
+- Origin removal in operator app panel
+
+### Fixed
+
+- Hide developer routes when portal is disabled
+```
+
+## Release
+
+Before bumping version, ensure `[Unreleased]` is filled in every touched package. Then:
+
+```bash
+pnpm version patch --no-git-tag-version
+```
+
+This promotes `[Unreleased]` → `[X.Y.Z]` and syncs all workspace `package.json` versions. Do not run `node scripts/promote-changelog-unreleased.mjs` alone.

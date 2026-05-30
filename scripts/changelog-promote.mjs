@@ -1,5 +1,9 @@
+import { existsSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+
 const UNRELEASED_HEADER_RE = /^## \[Unreleased\]\s*$/m
 const RELEASE_HEADER_RE = /^## \[\d/
+const PACKAGE_VERSION_RE = /("version"\s*:\s*")([^"]+)(")/
 
 /**
  * @param {string} source
@@ -28,6 +32,58 @@ export function promoteUnreleasedChangelog(source, version) {
   const content = `${before}\n\n## [${version}]\n${trimmedBody}\n${after}`
 
   return { content, promoted: true, body: trimmedBody }
+}
+
+/**
+ * @param {string} source
+ * @param {string} version
+ * @returns {{ content: string; changed: boolean; previous: string | null }}
+ */
+export function syncPackageJsonVersion(source, version) {
+  const match = source.match(PACKAGE_VERSION_RE)
+  if (!match) {
+    return { content: source, changed: false, previous: null }
+  }
+
+  const previous = match[2]
+  const content = source.replace(PACKAGE_VERSION_RE, `$1${version}$3`)
+
+  return { content, changed: content !== source, previous }
+}
+
+/**
+ * @param {string} root
+ * @returns {string[]}
+ */
+export function findWorkspacePackageJsonFiles(root) {
+  const files = []
+
+  for (const workspaceRoot of ['packages', 'apps']) {
+    const base = join(root, workspaceRoot)
+    if (!existsSync(base)) continue
+
+    for (const entry of readdirSync(base)) {
+      const dir = join(base, entry)
+      if (!statSync(dir).isDirectory()) continue
+
+      const packageJson = join(dir, 'package.json')
+      if (existsSync(packageJson)) {
+        files.push(packageJson)
+      }
+    }
+  }
+
+  return files.sort()
+}
+
+/**
+ * @param {string} packageJsonPath
+ * @returns {string | null}
+ */
+export function changelogPathForPackage(packageJsonPath) {
+  const dir = join(packageJsonPath, '..')
+  const changelog = join(dir, 'CHANGELOG.md')
+  return existsSync(changelog) ? changelog : null
 }
 
 /** @param {string} afterUnreleasedHeader */

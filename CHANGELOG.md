@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Package-level changelogs: `packages/*/CHANGELOG.md`, `apps/web/CHANGELOG.md`.
 
-The published version number lives only in the [`package.json`](package.json) `version` field (`0.1.x`). **The latest release section must always match `package.json` `version`** (e.g. `0.1.25` → `## [0.1.25]`). Write new entries under `## [Unreleased]` first; when you run `pnpm version patch --no-git-tag-version`, the `version` script moves `[Unreleased]` content to `## [X.Y.Z]` automatically (`scripts/promote-changelog-unreleased.mjs`). See [README — Version and CHANGELOG](README.md#version-and-changelog).
+The published version number lives only in the [`package.json`](package.json) `version` field (`0.1.x`). **The latest release section must always match `package.json` `version`** (e.g. `0.1.4` → `## [0.1.4]`). Write new entries under `## [Unreleased]` first (root and affected packages); when you run `pnpm version patch --no-git-tag-version`, the `version` script promotes root and package `CHANGELOG.md` files and syncs all workspace `package.json` versions (`scripts/promote-changelog-unreleased.mjs`). See [README — Version and CHANGELOG](README.md#version-and-changelog).
 
 ## [Unreleased]
 
 
+## [0.1.5]
+### Changed
+
+- **server:** OpenAPI contract tests — dynamic path parameter coverage
+- **web:** Postman environment files updated
 ## [0.1.4]
+
 ### Added
 
 - **protocol/server (v1.3):** application registry — `apps.enabled`, namespace `appId` binding, dynamic CORS from verified origins, native bundle + client secret, pairing `allowedAppIds`
@@ -21,16 +27,25 @@ The published version number lives only in the [`package.json`](package.json) `v
 - **server:** `POST .../origins/:originId/verify`, `APP_PAIRING_NOT_ALLOWED`, `APP_CLIENT_SECRET_INVALID`, and related app error codes
 - **client:** `EsrSync.connect({ appId })`, `startPairing({ allowedAppIds })`
 - **web:** operator Apps panel (`/operator`) and developer portal (`/developer`) with BFF routes
+- **web:** origin removal in operator/developer app panels; copy app ID in lists and drawer
+- **web:** hide developer login/register and `/developer` routes when developer portal is disabled (`developerPortal.enabled` from relay health)
+- **web:** SDK and API reference — Application registry sections; doc sidebar cleanup (ESR/Agents links only on guides index)
+- **server:** `/health` includes `developerPortal.enabled`
 - **docs:** OpenAPI v1.3.0 (admin/developer/app schemas), agent MD + `llms.txt`, OPERATOR.md app registry sections
+- **docs:** config/env examples aligned across 07, 16, OPERATOR.md, `config.example.yaml`, `.env.example`
 
 ### Changed
 
 - **docs:** root `openapi.yaml` SSOT synced to `docs/envelope-sync-relay/openapi.yaml`
+
 ## [0.1.3]
+
 ### Added
 
 - **web:** dokümantasyon araması — build-time indeks (`pnpm generate:search`), header'da ⌘K / Ctrl+K modal; rehberler, SDK, API (TR/EN); agent MD hariç
+
 ## [0.1.2]
+
 ### Added
 
 - **protocol:** `ENV-ENC1` iç payload — `buildEnvEnc1Payload`, `extractDocumentFromInnerPayload`, `buildInnerPayload`; PBKDF2-SHA256 + AES-256-GCM; birim testleri
@@ -46,6 +61,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 - **client:** şifreli zarf için `envelope-builder` birim testleri
 
 ## [0.1.1]
+
 ### Added
 
 - **multi-document:** namespace başına çoklu döküman (protocol, server, client, WS subscribe filter, docs, örnek script); spec [15-MULTI-DOCUMENT.md](docs/envelope-sync-relay/tr/15-MULTI-DOCUMENT.md)
@@ -54,6 +70,11 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 - **server:** rate limit action `put_primary` renamed to `put_document`; HTTP headers `RateLimit-PutDocument-*` (breaking for API clients)
 - **docs:** referans belgeleri çoklu belge ve `@senkronla/client` API ile hizalandı (09, 12, 14, agents, README)
+
+## [0.1.0]
+
+### Added
+
 - Monorepo scaffold with pnpm workspaces and Turborepo
 - `@senkronla/protocol`, `@senkronla/server`, `@senkronla/client`, `@senkronla/cli` packages
 - `@senkronla/web` operator portal with EN/TR i18n

@@ -24,6 +24,7 @@ interface PageProps {
 const sectionKeys = [
   'overview',
   'auth',
+  'app-registry',
   'workflows',
   'namespaces',
   'documents',
@@ -44,6 +45,10 @@ export default async function ApiPage({ params }: PageProps) {
   const relayApiBaseUrl = getRelayApiBaseUrl()
   const apiOrigin = getPublicApiOrigin()
   const apiSnippets = createApiSnippets(relayApiBaseUrl)
+  const specHref =
+    locale === 'tr'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md'
 
   const nav = sectionKeys.map((key) => ({
     id: key,
@@ -86,6 +91,53 @@ export default async function ApiPage({ params }: PageProps) {
   const encryptionRich = withDocRich({
     sdkLink: (chunks) => <Link href="/sdk#encryption">{chunks}</Link>,
   })
+  const appRegistryRich = withDocRich({
+    apiAppLink: (chunks) => <a href="#app-registry">{chunks}</a>,
+    sdkAppLink: (chunks) => <Link href="/sdk#app-registry">{chunks}</Link>,
+    specLink: (chunks) => (
+      <a href={specHref} target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
+    developerLink: (chunks) => <Link href="/developer">{chunks}</Link>,
+    operatorLink: (chunks) => <Link href="/operator">{chunks}</Link>,
+  })
+
+  const appHeaderRows = [
+    [t('sections.appRegistry.headers.web'), t.rich('sections.appRegistry.headers.webDesc', withDocRich())],
+    [
+      t('sections.appRegistry.headers.native'),
+      t.rich('sections.appRegistry.headers.nativeDesc', withDocRich()),
+    ],
+  ]
+
+  const appManagementRows = [
+    [
+      t('sections.appRegistry.management.operator'),
+      '/v1/admin/apps',
+      t.rich('sections.appRegistry.management.operatorAuth', withDocRich()),
+      t.rich('sections.appRegistry.management.operatorUi', appRegistryRich),
+    ],
+    [
+      t('sections.appRegistry.management.developer'),
+      '/v1/developer/*',
+      t.rich('sections.appRegistry.management.developerAuth', withDocRich()),
+      t.rich('sections.appRegistry.management.developerUi', appRegistryRich),
+    ],
+  ]
+
+  const appErrorRows = [
+    ['APP_ID_REQUIRED', '400', t.rich('sections.appRegistry.errors.appIdRequired', withDocRich())],
+    ['APP_ORIGIN_REQUIRED', '400', t.rich('sections.appRegistry.errors.originRequired', withDocRich())],
+    ['APP_ORIGIN_NOT_ALLOWED', '403', t.rich('sections.appRegistry.errors.originNotAllowed', withDocRich())],
+    ['APP_NAMESPACE_MISMATCH', '403', t.rich('sections.appRegistry.errors.namespaceMismatch', withDocRich())],
+    ['APP_NOT_FOUND', '403', t.rich('sections.appRegistry.errors.notFound', withDocRich())],
+    ['APP_SUSPENDED', '403', t.rich('sections.appRegistry.errors.suspended', withDocRich())],
+    ['APP_PAIRING_NOT_ALLOWED', '403', t.rich('sections.appRegistry.errors.pairingNotAllowed', withDocRich())],
+    ['APP_CLIENT_SECRET_INVALID', '401', t.rich('sections.appRegistry.errors.clientSecretInvalid', withDocRich())],
+    ['APP_NOT_VERIFIED', '403', t.rich('sections.appRegistry.errors.notVerified', withDocRich())],
+    ['APP_NATIVE_ID_REQUIRED', '400', t.rich('sections.appRegistry.errors.nativeIdRequired', withDocRich())],
+  ]
 
   const exampleProps = {
     requestLabel: t('table.request'),
@@ -153,6 +205,48 @@ export default async function ApiPage({ params }: PageProps) {
           <li>{t.rich('sections.auth.li1', withDocRich())}</li>
           <li>{t.rich('sections.auth.li2', withDocRich())}</li>
         </ul>
+        <p>{t.rich('sections.auth.appNote', appRegistryRich)}</p>
+      </DocSection>
+
+      <DocSection id="app-registry" title={t('sections.appRegistry.title')}>
+        <p>{t.rich('sections.appRegistry.p1', appRegistryRich)}</p>
+        <p className="doc-subheading">{t('sections.appRegistry.headersTitle')}</p>
+        <DocsTable
+          headers={[t('table.clientType'), t('table.headers')]}
+          rows={appHeaderRows}
+        />
+        <p>{t.rich('sections.appRegistry.p2', withDocRich())}</p>
+        <DocStepList
+          steps={[1, 2, 3, 4].map((n) => ({
+            title: t(`sections.appRegistry.flow.s${n}.title`),
+            body: t.rich(`sections.appRegistry.flow.s${n}.body`, appRegistryRich),
+          }))}
+        />
+        <p className="doc-subheading">{t('sections.appRegistry.webExampleTitle')}</p>
+        <CodeBlock code={apiSnippets.appHeadersWeb} language="http" />
+        <p className="doc-subheading">{t('sections.appRegistry.nativeExampleTitle')}</p>
+        <CodeBlock code={apiSnippets.appHeadersNative} language="http" />
+        <p className="doc-subheading">{t('sections.appRegistry.managementTitle')}</p>
+        <p>{t.rich('sections.appRegistry.managementP1', withDocRich())}</p>
+        <DocsTable
+          headers={[
+            t('sections.appRegistry.management.audience'),
+            t('table.path'),
+            t('sections.appRegistry.management.auth'),
+            t('sections.appRegistry.management.ui'),
+          ]}
+          rows={appManagementRows}
+        />
+        <p className="doc-subheading">{t('sections.appRegistry.errorsTitle')}</p>
+        <p>{t.rich('sections.appRegistry.errorsP1', appRegistryRich)}</p>
+        <DocsTable
+          headers={[t('table.code'), t('table.http'), t('table.action')]}
+          rows={appErrorRows}
+        />
+        <DocCallout variant="info" title={t('sections.appRegistry.migrationTitle')}>
+          <p>{t.rich('sections.appRegistry.migrationP1', appRegistryRich)}</p>
+        </DocCallout>
+        <p>{t.rich('sections.appRegistry.p3', appRegistryRich)}</p>
       </DocSection>
 
       <DocSection id="workflows" title={t('sections.workflows.title')}>

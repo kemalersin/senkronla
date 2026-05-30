@@ -23,15 +23,10 @@ database:
   ssl: false
 
 blob:
-  driver: "filesystem"                     # filesystem | s3
+  driver: "filesystem"                     # mevcut şemada yalnızca filesystem
   filesystem:
     path: "/data/blobs"
-  s3:
-    endpoint: ""
-    bucket: "esr-blobs"
-    accessKey: ""
-    secretKey: ""
-    region: "auto"
+  # s3: — packages/server şemasında henüz yok; gelecek tasarım
 
 auth:
   adminApiToken: "${ESR_ADMIN_TOKEN}"      # min 32 char random
@@ -100,20 +95,17 @@ apps:
     requireClientSecret: false
     requireManualReview: true
   developerPortal:
-    enabled: false
+    enabled: false                         # şema alanı; portal kapısı registrationMode + jwtSecret kullanır
     jwtSecret: "${ESR_DEVELOPER_JWT_SECRET}"
     sessionTtlHours: 168
     requireEmailVerification: true
   seed: []
 
-payment:                                     # optional phase 2
-  enabled: false
-  provider: "stripe"
-  webhookSecret: ""
-  priceByPackage:
-    "3": "price_xxx"
-    "5": "price_yyy"
-    "10": "price_zzz"
+# payment — packages/server şemasında henüz yok (yalnızca faz 2 tasarımı)
+# payment:
+#   enabled: false
+#   provider: "stripe"
+#   ...
 
 cors:
   allowedOrigins:
@@ -140,6 +132,8 @@ websocket:
   maxConnectionsPerDevice: 3
 ```
 
+> **Şema notu:** Yetkili anahtarlar `packages/server/src/config/schema.ts` içindedir. Yukarıda “henüz yok” işaretli bloklar (`blob.s3`, `payment`) tasarım yer tutucusudur — production YAML'e kopyalamayın.
+
 ## 3. Ortam değişkenleri (minimum docker)
 
 ```bash
@@ -157,7 +151,7 @@ ESR_MAX_ENVELOPE_BYTES=52428800
 ESR_MAX_DOCUMENTS_PER_NAMESPACE=32      # 0 = sınırsız
 ESR_ALLOWED_DOCUMENT_IDS=primary,settings   # isteğe bağlı virgülle ayrılmış allowlist
 
-# Uygulama kaydı (v1.3 — isteğe bağlı)
+# Uygulama kaydı (v1.3 — isteğe bağlı; bkz. doc 16)
 ESR_APPS__ENABLED=false
 ESR_APPS__REGISTRATION_MODE=operator_managed   # operator_managed | self_service
 ESR_APPS__REQUIRE_REGISTRATION=true
@@ -165,8 +159,11 @@ ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
 # ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary
 # ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
 ESR_DEVELOPER_JWT_SECRET=change-me-long-random-min-32-chars
+# ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET=...   # ESR_DEVELOPER_JWT_SECRET alias'ı
 # ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY=100
-# apps.seed (origin, bundle) — yalnızca YAML; env ile override edilemez
+# ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR=30
+# ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
+# apps.verification.*, limits.perDeveloper.*, developerPortal.enabled/sessionTtlHours/requireEmailVerification, seed — yalnızca YAML
 ```
 
 ## 4. docker-compose.yml (referans)
