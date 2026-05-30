@@ -29,11 +29,21 @@ JS/TS yığınları için varsayılan yol: **`EsrSync`** facade. SDK çalıştı
 
 ```bash
 pnpm add @senkronla/client
-# EsrSync dışında manuel zarf veya kurtarma kanıtı için:
-pnpm add @senkronla/protocol
 ```
 
 Node 18+ veya `fetch` ve Web Crypto destekleyen modern tarayıcı gerekir.
+
+**`@senkronla/client`** TypeScript tiplerini ve tipik bir `EsrSync` entegrasyonu için gereken her şeyi içerir. SDK push/pull sırasında `ESR-DOC1` / `ENV-ENC1` zarflarını oluşturur ve çözer — bu yol için ikinci bir paket gerekmez.
+
+### Yalnızca REST entegrasyonu
+
+`EsrSync` kullanmadan relay'e doğrudan HTTP ile istek atıyorsanız **`@senkronla/protocol`** ekleyin — örneğin Swift/Kotlin native uygulama, sunucu tarafı iş veya özel bir fetch istemcisi:
+
+```bash
+pnpm add @senkronla/protocol
+```
+
+Protocol paketi `buildEnvEnc1Payload`, `sha256Hex` ve şema doğrulama gibi düşük seviye yardımcılar sağlar; dış zarfı siz birleştirip `PUT .../documents/{documentId}` gönderirsiniz. Web ve Node uygulamalarının çoğu yalnızca SDK ile başlamalıdır. Tam REST akışı: [API — Zarf şifreleme](/tr/api#encryption).
 
 Çalıştırılabilir örnek: `examples/multi-document-sync.ts` (`ESR_RELAY_URL` ile `pnpm example:multi-document`).
 

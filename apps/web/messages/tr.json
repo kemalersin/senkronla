@@ -612,7 +612,11 @@
       "install": {
         "title": "Kurulum",
         "p1": "Node 18+ veya fetch ve Web Crypto destekleyen modern bir tarayıcı gerektirir.",
-        "p2": "TypeScript tipleri dahildir. Zarfı elle oluşturmak için <tag>@senkronla/protocol</tag> paketini de ekleyin."
+        "p2": "<tag>@senkronla/client</tag> TypeScript tiplerini ve tipik bir <tag>EsrSync</tag> entegrasyonu için gereken her şeyi içerir. SDK push/pull sırasında <tag>ESR-DOC1</tag> / <tag>ENV-ENC1</tag> zarflarını oluşturur ve çözer — bu yol için ikinci bir paket gerekmez.",
+        "protocolTitle": "Yalnızca REST entegrasyonu",
+        "protocolP1Before": "<tag>EsrSync</tag> kullanmadan relay'e doğrudan HTTP ile istek atıyorsanız <tag>@senkronla/protocol</tag> ekleyin — örneğin Swift/Kotlin native uygulama, sunucu tarafı iş veya özel bir fetch istemcisi. Protocol paketi <tag>buildEnvEnc1Payload</tag>, <tag>sha256Hex</tag> ve şema doğrulama gibi düşük seviye yardımcılar sağlar; dış zarfı siz birleştirip ",
+        "protocolP1After": " gönderirsiniz.",
+        "protocolP2": "Web ve Node uygulamalarının çoğu yalnızca SDK ile başlamalıdır. Tam REST akışı için <apiEncryptionLink>API — Zarf şifreleme</apiEncryptionLink> bölümüne bakın."
       },
       "connect": {
         "title": "EsrSync.connect seçenekleri",

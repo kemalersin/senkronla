@@ -29,11 +29,21 @@ Default path for JS/TS stacks: **`EsrSync`** facade. Use [REST](api-en.md) only 
 
 ```bash
 pnpm add @senkronla/client
-# Manual envelopes or recovery proof outside EsrSync:
-pnpm add @senkronla/protocol
 ```
 
 Requires Node 18+ or a modern browser with `fetch` and Web Crypto.
+
+**`@senkronla/client`** includes TypeScript types and everything needed for a typical `EsrSync` integration. The SDK builds and decrypts `ESR-DOC1` / `ENV-ENC1` envelopes on push and pull — you do not need a second package for that path.
+
+### REST-only integrations
+
+Add **`@senkronla/protocol`** when you call the relay over HTTP yourself, without `EsrSync` — for example a native app in Swift or Kotlin, a server-side job, or a custom fetch client:
+
+```bash
+pnpm add @senkronla/protocol
+```
+
+The protocol package provides low-level helpers such as `buildEnvEnc1Payload`, `sha256Hex`, and schema validation; you assemble the outer envelope and send `PUT .../documents/{documentId}` yourself. Most web and Node apps should start with the SDK only. Full REST walkthrough: [API — Envelope encryption](/api#encryption).
 
 Runnable example: `examples/multi-document-sync.ts` (`pnpm example:multi-document` with relay at `ESR_RELAY_URL`).
 

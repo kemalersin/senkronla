@@ -97,6 +97,7 @@ export default async function SdkPage({ params }: PageProps) {
   const sdkRich = withDocRich({
     relayUrl,
     appRegistryLink: (chunks) => <a href="#app-registry">{chunks}</a>,
+    apiEncryptionLink: (chunks) => <Link href="/api#encryption">{chunks}</Link>,
   })
   const encryptionRich = withDocRich({
     relayUrl,
@@ -232,6 +233,14 @@ export default async function SdkPage({ params }: PageProps) {
         <p>{t('sections.install.p1')}</p>
         <CodeBlock code="pnpm add @senkronla/client" language="bash" />
         <p>{t.rich('sections.install.p2', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.install.protocolTitle')}</p>
+        <p>
+          {t.rich('sections.install.protocolP1Before', withDocRich())}
+          <DocTag>PUT .../documents/{'{documentId}'}</DocTag>
+          {t('sections.install.protocolP1After')}
+        </p>
+        <CodeBlock code="pnpm add @senkronla/protocol" language="bash" />
+        <p>{t.rich('sections.install.protocolP2', sdkRich)}</p>
       </DocSection>
 
       <DocSection id="connect" title={t('sections.connect.title')}>

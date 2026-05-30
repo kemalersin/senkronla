@@ -612,7 +612,11 @@
       "install": {
         "title": "Install",
         "p1": "Requires Node 18+ or a modern browser with fetch and Web Crypto.",
-        "p2": "TypeScript types are included. For manual envelope building, also add <tag>@senkronla/protocol</tag>."
+        "p2": "<tag>@senkronla/client</tag> includes TypeScript types and everything needed for a typical <tag>EsrSync</tag> integration. The SDK builds and decrypts <tag>ESR-DOC1</tag> / <tag>ENV-ENC1</tag> envelopes on push and pull — you do not need a second package for that path.",
+        "protocolTitle": "REST-only integrations",
+        "protocolP1Before": "Add <tag>@senkronla/protocol</tag> when you call the relay over HTTP yourself, without <tag>EsrSync</tag> — for example a native app in Swift or Kotlin, a server-side job, or a custom fetch client. The protocol package provides low-level helpers such as <tag>buildEnvEnc1Payload</tag>, <tag>sha256Hex</tag>, and schema validation; you assemble the outer envelope and send ",
+        "protocolP1After": " yourself.",
+        "protocolP2": "Most web and Node apps should start with the SDK only. For a full REST walkthrough, see <apiEncryptionLink>API — Envelope encryption</apiEncryptionLink>."
       },
       "connect": {
         "title": "EsrSync.connect options",
