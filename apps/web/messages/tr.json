@@ -164,6 +164,10 @@
           "s6": {
             "title": "Senkron döngüsünü bağlayın",
             "body": "<tag>ensureNamespace()</tag> → başlangıçta <tag>sync()</tag> (tüm belgeler) → düzenlemede <tag>notifyLocalChange(documentId?)</tag> → çıkışta <tag>flushPush(documentId?)</tag>."
+          },
+          "s7": {
+            "title": "Uygulamanızı kaydedin (relay gerektiriyorsa)",
+            "body": "Operatör <tag>apps.enabled</tag> açtıysa <tag>appId</tag> alın, origin veya bundle onayını tamamlayın, app alanlarını <tag>EsrSync.connect()</tag>'e verin. Bkz. <sdkAppLink>SDK — Uygulama kaydı</sdkAppLink>."
           }
         }
       },
@@ -179,7 +183,7 @@
           },
           "s2": {
             "title": "Adapter'ı oluşturun",
-            "body": "<tag>exportDocument</tag>'ı mağaza anlık görüntünüze, <tag>importDocument</tag>'ı geri yükleme mantığınıza bağlayın."
+            "body": "<tag>exportDocument</tag>'ı store anlık görüntünüze, <tag>importDocument</tag>'ı geri yükleme mantığınıza bağlayın."
           },
           "s3": {
             "title": "EsrSync'i bağlayın",
@@ -191,7 +195,7 @@
           },
           "s5": {
             "title": "Yerel değişiklikleri bağlayın",
-            "body": "İlgili mağaza her değiştiğinde <tag>notifyLocalChange('primary')</tag> (veya <tag>documentId</tag>) çağırın. SDK push'ları geciktirir (varsayılan 2 saniye)."
+            "body": "İlgili store her değiştiğinde <tag>notifyLocalChange('primary')</tag> (veya <tag>documentId</tag>) çağırın. SDK push'ları geciktirir (varsayılan 2 saniye)."
           }
         }
       },
@@ -274,7 +278,7 @@
         "sdkTitle": "JavaScript SDK (önerilen)",
         "sdkBody": "Tarayıcı, Electron, React Native (fetch ile), Node 18+. Token, debounce, WS bildirimleri ve çakışmaları yönetir.",
         "apiTitle": "Doğrudan REST API",
-        "apiBody": "Swift, Kotlin, sunucu işleri veya özel senkron motorları. Revision kontrolleri, token saklama ve bildirim yoklamasını kendiniz uygularsınız.",
+        "apiBody": "Swift, Kotlin, sunucu işleri veya özel senkron motorları. Revision kontrolleri, token saklama ve bildirim polling'ini kendiniz uygularsınız.",
         "next": "Referans:",
         "sdkLink": "SDK dokümantasyonu",
         "apiLink": "API dokümantasyonu"
@@ -374,7 +378,12 @@
           "limitMode": "Cihaz limiti dolunca <tag>payment</tag> veya <tag>block</tag>",
           "cors": "Virgülle ayrılmış izin verilen origin'ler — üretimde <tag>*</tag> kullanmayın",
           "maxDocuments": "Namespace başına en fazla doküman ( varsayılan 32, 0 = sınırsız)",
-          "allowedDocIds": "İsteğe bağlı virgülle ayrılmış doküman ID allowlist (örn. primary,settings)"
+          "allowedDocIds": "İsteğe bağlı virgülle ayrılmış doküman ID allowlist (örn. primary,settings)",
+          "appsEnabled": "<tag>ESR_APPS__ENABLED</tag> — uygulama kaydını aç (varsayılan false)",
+          "appsRegistrationMode": "<tag>ESR_APPS__REGISTRATION_MODE</tag> — <tag>operator_managed</tag> veya <tag>self_service</tag>",
+          "appsLocalhost": "<tag>ESR_APPS__ALLOW_LOCALHOST_ORIGINS</tag> — DNS doğrulamasız <tag>http://localhost</tag> (yalnızca dev)",
+          "appsNativeSecret": "<tag>ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET</tag> — kimlik doğrulamasız rotalarda <tag>X-ESR-Client-Secret</tag> zorunlu",
+          "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 karakter; self-service <tag>/developer</tag> portalı için"
         }
       },
       "verify": {
@@ -403,6 +412,7 @@
         "li2": "Rate limit'lerin istemci IP'sini doğru kullanması için <tag>server.trustProxy: true</tag> etkinleştirin",
         "li3": "<tag>ESR_CORS_ORIGINS</tag>'i uygulama domain'lerinizle sınırlayın",
         "li4": "Postgres yedekleri planlayın ve blob biriminin anlık görüntüsünü alın",
+        "li5": "Uygulama kaydı açarken: uygulamaları kaydedin, origin'leri doğrulayın, mevcut namespace'ler için <tag>legacyDefaultAppId</tag> ayarlayın — bkz. <specLink>16-APP-REGISTRY §19</specLink>",
         "operatorTitle": "Açılış kodları",
         "operatorBody": "Manuel ödeme veya destek onayı sonrası CLI ile slot açılış kodu üretin (<tag>ESR_ADMIN_TOKEN</tag> gerekir):"
       },
@@ -439,8 +449,8 @@
         "p1": "Yapay zeka keşfedilebilirliği için iki tamamlayıcı sözleşme yaygınlaştı — doğru kitle için doğru olanı kullanın:",
         "llmsTitle": "llms.txt (site manifesti)",
         "llmsBody": "<tag>llmstxt.org</tag> adresinde önerildi ve dokümantasyon sitelerinde yaygın (Anthropic, Stripe, Cloudflare, Cursor ve diğerleri). Site köküne <tag>/llms.txt</tag> koyun: çıkarım sırasında arama için en iyi dosyalara küratörlü bağlantılar içeren kısa bir Markdown indeksi. İsteğe bağlı <tag>## Optional</tag> bölümü, bağlam daraldığında agent'ların atlayabileceği ikincil bağlantıları işaretler.",
-        "agentsMdTitle": "AGENTS.md (depo onboarding)",
-        "agentsMdBody": "Agentic AI Foundation (Linux Foundation) tarafından yönetilir. Depo kökündeki <tag>AGENTS.md</tag>, kod yazan agent'lara o kod tabanında nasıl derleneceğini, test edileceğini ve kurallara uyulacağını söyler. En yakın dosya kazanır — monorepo'lar için uygun, halka açık ürün dokümantasyonu için değil.",
+        "agentsMdTitle": "AGENTS.md (repo onboarding)",
+        "agentsMdBody": "Agentic AI Foundation (Linux Foundation) tarafından yönetilir. Repo kökündeki <tag>AGENTS.md</tag>, kod yazan agent'lara o kod tabanında nasıl build edileceğini, test edileceğini ve kurallara uyulacağını söyler. En yakın dosya kazanır — monorepo'lar için uygun, halka açık ürün dokümantasyonu için değil.",
         "calloutTitle": "Senkronla ne yayınlıyor",
         "calloutBody": "Bu portal llms.txt ve ayrılmış agent dosyaları sunar: genel bakış (en.md / tr.md), SDK referansı (sdk-en.md / sdk-tr.md), REST API referansı (api-en.md / api-tr.md). ESR dağıtımı insan ESR rehberinde kalır."
       },
@@ -473,7 +483,7 @@
         "steps": {
           "s1": {
             "title": "Cursor / Copilot / Claude Code",
-            "body": "Agent Markdown URL'sini proje dokümantasyonuna ekleyin veya sohbette getirilen dosyayı @ ile anın. Depolar için içeriği <tag>AGENTS.md</tag>'ye symlink veya kopya yapabilirsiniz — ancak depo dışı iş akışları için portal URL'sini kanonik tutun."
+            "body": "Agent Markdown URL'sini proje dokümantasyonuna ekleyin veya sohbette getirilen dosyayı @ ile anın. Repolar için içeriği <tag>AGENTS.md</tag>'ye symlink veya kopya yapabilirsiniz — ancak repo dışı iş akışları için portal URL'sini kanonik tutun."
           },
           "s2": {
             "title": "Özel otomasyon",
@@ -511,6 +521,7 @@
     "title": "İstemci SDK referansı",
     "intro": "Paket: <tag>@senkronla/client</tag>. <tag>EsrSync</tag> sınıfı ana giriş noktanızdır — HTTP, isteğe bağlı <tag>WebSocket</tag> bildirimleri, yerel revision takibi ve kullanıcıya dönük callback'leri sarmalar.",
     "nav": {
+      "integration": "Uygulama kodu vs SDK",
       "quick-start": "Hızlı başlangıç",
       "install": "Kurulum",
       "connect": "Bağlantı seçenekleri",
@@ -537,12 +548,63 @@
       "status": "Durum",
       "meaning": "Anlamı",
       "code": "Kod",
-      "action": "Ne yapmalı"
+      "action": "Ne yapmalı",
+      "appProvide": "Uygulama sağlar",
+      "sdkProvides": "SDK sağlar"
     },
     "sections": {
+      "integration": {
+        "title": "Uygulama kodu vs SDK",
+        "p1": "Senkronla opak JSON anlık görüntüleri saklar — uygulamanın veri modelini, arayüzünü veya faturalandırma ekranlarını içermez. Örneklerde yer tutucu adlar (<tag>appStore</tag>, <tag>appUi</tag>, <tag>appSession</tag>) kullanılır; bunlar <tag>@senkronla/client</tag> parçası değildir. Uygulamanın kendi modülleriyle değiştirin.",
+        "legendTitle": "Kod örneklerini okuma",
+        "legendApp": "<tag>// app:</tag> ile işaretlenen satırlar veya <tag>appStore</tag> / <tag>appUi</tag> gibi adlar — host uygulama.",
+        "legendSdk": "<tag>EsrSync</tag>, <tag>createDocumentAdapter</tag>, <tag>notifyLocalChange</tag> vb. — SDK tarafından sağlanır.",
+        "tableTitle": "Sorumluluk ayrımı",
+        "rowLabels": {
+          "adapter": "Belge adapter'ı",
+          "namespaceId": "Çalışma alanı kimliği",
+          "recoveryUi": "Kurtarma ifadesi UX",
+          "conflictUi": "Çakışma UX",
+          "deviceLimitUi": "Cihaz limiti UX",
+          "statusUi": "Senkron göstergeleri",
+          "changeWiring": "Yerel düzenleme bağlantısı",
+          "pairingUi": "Eşleştirme ekranları",
+          "password": "Senkron parolası",
+          "storage": "Yerel kalıcılık",
+          "relayConfig": "Relay bağlantısı"
+        },
+        "rowApp": {
+          "adapter": "<tag>exportDocument</tag> / <tag>importDocument</tag> — uygulama durumunu JSON olarak serileştirin ve uygulayın",
+          "namespaceId": "Müşteri çalışma alanı başına sabit UUID; <tag>ensureNamespace()</tag> öncesi kalıcı saklayın",
+          "recoveryUi": "<tag>onRecoveryPhrase</tag> — 24 kelimelik ifadeyi kopyalama/kaydetme modalı (zorunlu, bir kez)",
+          "conflictUi": "<tag>onConflict</tag> — kullanıcıya sorun; <tag>remote</tag>, <tag>local</tag> veya <tag>cancel</tag> döndürün (zorunlu)",
+          "deviceLimitUi": "<tag>onDeviceLimit</tag> — slotlar dolunca yükseltme / iptal arayüzü (isteğe bağlı)",
+          "statusUi": "<tag>onStatusChange</tag>, <tag>onDocumentStatusChange</tag> — rozet veya spinner (isteğe bağlı)",
+          "changeWiring": "Yerel düzenlemeden sonra <tag>appStore</tag> dinleyicisinden (veya eşdeğerinden) <tag>notifyLocalChange(documentId?)</tag> çağırın",
+          "pairingUi": "<tag>startPairing()</tag> sonucundaki <tag>code</tag> / <tag>qrPayload</tag> değerlerini gösterin; misafir <tag>joinPairing()</tag> için kodu girer",
+          "password": "<tag>resolvePassword()</tag> veya manuel <tag>buildEnvelope</tag> parolası — <tag>appSession</tag>, keychain veya prompt",
+          "storage": "<tag>EsrStorage</tag> uygulaması veya <tag>createLocalStorageAdapter</tag>; mobilde güvenli depolama",
+          "relayConfig": "Relay operatöründen <tag>relayUrl</tag>, <tag>appId</tag>, native alanlar"
+        },
+        "rowSdk": {
+          "adapter": "Uygulamanın sağladığı fonksiyonları sarar; push/pull sırasında çağırır",
+          "namespaceId": "Kimliği relay'e gönderir; kayıt açıkken namespace'i uygulamaya bağlar",
+          "recoveryUi": "Çalışma alanı oluşturulunca ifade üretir; uygulama callback'ini çağırır",
+          "conflictUi": "Revision uyuşmazlığını algılar; uygulama seçene kadar bekler",
+          "deviceLimitUi": "<tag>DEVICE_LIMIT_*</tag> hatalarını slot paketi ipuçlarıyla iletir",
+          "statusUi": "<tag>idle</tag>, <tag>syncing</tag>, <tag>conflict</tag>, <tag>offline</tag> vb. bildirir",
+          "changeWiring": "Gecikmeli push kuyruğu (varsayılan 2 sn)",
+          "pairingUi": "Eşleştirme token'ı oluşturur; kod, QR yükü, süre döndürür",
+          "password": "Push'ta <tag>ENV-ENC1</tag> zarfı oluşturur; pull'da çözer",
+          "storage": "<tag>deviceToken</tag>, belge revision'ları, isteğe bağlı kurtarma ifadesi saklar",
+          "relayConfig": "Relay'e HTTP + WebSocket istemcisi"
+        }
+      },
       "quickStart": {
         "title": "Hızlı başlangıç",
-        "p1": "Bu şablonu uygulamanıza kopyalayın ve mağaza kancalarını gerçek durum yönetiminizle değiştirin:",
+        "p1": "Aşağıdaki şablonu kopyalayın. <tag>appStore</tag> / <tag>appUi</tag> yer tutucularını uygulamanın modülleriyle değiştirin ve <tag>appId</tag>'yi kayıtlı uygulamanıza ayarlayın:",
+        "appRegistryTitle": "Uygulama kaydı",
+        "appRegistryBody": "<tag>GET /health</tag> çıktısında <tag>apps.enabled: true</tag> ise her relay isteğinde <tag>appId</tag> zorunludur. API'yi çağırmadan önce uygulamayı kaydedin ve origin (web) veya bundle (native) doğrulamasını tamamlayın — bkz. <appRegistryLink>Uygulama kaydı</appRegistryLink>. <tag>appId</tag>'yi yalnızca relay <tag>apps.enabled: false</tag> (v1.2 legacy) iken atlayın.",
         "tipTitle": "Bu dağıtım için relay URL",
         "tipBody": "<tag>relayUrl</tag>'yi {relayUrl} olarak ayarlayın veya kendi yapılandırmanızdan okuyun."
       },
@@ -553,22 +615,23 @@
       },
       "connect": {
         "title": "EsrSync.connect seçenekleri",
-        "p1": "Zorunlu: <tag>relayUrl</tag>, <tag>storage</tag>, <tag>onRecoveryPhrase</tag>, <tag>onConflict</tag> ve <tag>document</tag> veya <tag>documents</tag>. Geri kalanının mantıklı varsayılanları vardır:",
-        "p2": "Genel gösterge için <tag>onStatusChange</tag>, <tag>documents[]</tag> ile <tag>onDocumentStatusChange</tag>, günlük için <tag>onError</tag> kullanın.",
-        "exampleTitle": "Tam connect örneği",
+        "p1": "Zorunlu: <tag>relayUrl</tag>, <tag>storage</tag>, <tag>onRecoveryPhrase</tag>, <tag>onConflict</tag> ve <tag>document</tag> veya <tag>documents</tag>. <tag>apps.enabled</tag> açıkken ayrıca <tag>appId</tag> (native'de gerektiğinde <tag>appPlatform</tag>, <tag>bundleId</tag>, <tag>clientSecret</tag>) geçin. Diğer seçeneklerin mantıklı varsayılanları vardır:",
+        "p2": "Genel gösterge için <tag>onStatusChange</tag>, <tag>documents[]</tag> ile <tag>onDocumentStatusChange</tag>, günlük için <tag>onError</tag> kullanın. Kayıt ve native alanlar için <appRegistryLink>Uygulama kaydı</appRegistryLink> bölümüne bakın.",
+        "exampleTitle": "Tam connect örneği (web SPA)",
         "options": {
           "relayUrl": "<tag>/v1</tag> ile biten temel URL, örn. https://sync.example.com/v1",
           "appId": "Public app id (<tag>esr_app_…</tag>) — relay'de <tag>apps.enabled</tag> açıkken zorunlu",
-          "appPlatform": "Yalnızca native: <tag>ios</tag> veya <tag>android</tag>",
-          "bundleId": "Yalnızca native: uygulama için kayıtlı bundle ID veya paket adı",
-          "clientSecret": "Yalnızca gizli native istemciler — operatör secret gerektiriyorsa",
+          "appPlatform": "Yalnızca native: <tag>ios</tag>, <tag>android</tag> veya <tag>desktop</tag>",
+          "bundleId": "Yalnızca native: kayıtlı bundle ID, paket adı veya masaüstü uygulama kimliği",
+          "clientSecret": "Yalnızca gizli native istemciler — relay <tag>native.requireClientSecret</tag> açıkken; rotate-secret ile atanır, oluşturmada otomatik değil",
+          "clientVersion": "İsteğe bağlı telemetri — <tag>X-ESR-Client-Version</tag> olarak gönderilir",
           "document": "Tek belge kısayolu — ilk slot <tag>primary</tag>",
           "documents": "Çoklu belge: isteğe bağlı <tag>documentId</tag> ve <tag>adapter</tag> içeren slot dizisi (ilk slot varsayılan <tag>primary</tag>)",
           "storage": "<tag>EsrStorage</tag> uygulaması (web için <tag>createLocalStorageAdapter</tag>)",
-          "onRecoveryPhrase": "Zorunlu. Namespace oluşturulduğunda 24 kelimelik ifadeyle bir kez çağrılır.",
-          "onConflict": "Zorunlu. Sürümler ayrıştığında <tag>remote</tag>, <tag>local</tag> veya <tag>cancel</tag> döndürün.",
-          "onDeviceLimit": "İsteğe bağlı. <tag>DEVICE_LIMIT_*</tag> hatalarında çağrılır — faturalandırma arayüzünü açın.",
-          "onDocumentStatusChange": "İsteğe bağlı. <tag>(documentId, status)</tag> — çoklu belge arayüzleri için önerilir.",
+          "onRecoveryPhrase": "Zorunlu — sizin arayüzünüz. Namespace oluşturulduğunda 24 kelimelik ifadeyle bir kez çağrılır.",
+          "onConflict": "Zorunlu — sizin arayüzünüz. Sürümler ayrıştığında <tag>remote</tag>, <tag>local</tag> veya <tag>cancel</tag> döndürün.",
+          "onDeviceLimit": "İsteğe bağlı — faturalandırma/ayarlar arayüzünüz. <tag>DEVICE_LIMIT_*</tag> hatalarında çağrılır.",
+          "onDocumentStatusChange": "İsteğe bağlı — sizin arayüzünüz. Çoklu belge rozetleri için <tag>(documentId, status)</tag>.",
           "pushDebounceMs": "Varsayılan 2000. <tag>notifyLocalChange()</tag> sonrası push gecikmesi.",
           "notificationsEnabled": "Varsayılan true. CLI araçları veya testler için false yapın.",
           "persistRecoveryPhrase": "Varsayılan true. İfadeyi <tag>EsrStorage</tag>'da saklar (güvenlik etkilerini değerlendirin)."
@@ -595,9 +658,17 @@
         },
         "p2": "<tag>appId</tag> (ve native alanları) <tag>EsrSync.connect()</tag>'e verin. SDK her relay isteğinde <tag>X-ESR-App-Id</tag> gönderir; tarayıcılar <tag>Origin</tag>'i otomatik ekler.",
         "webExampleTitle": "Web SPA",
-        "nativeExampleTitle": "Native (iOS / Android)",
+        "nativeExampleTitle": "Native (iOS / Android / masaüstü)",
         "registrationTitle": "Uygulama kaydetme",
-        "registrationP1": "Uygulama kaydı senkron verisinden ayrıdır — mevcut namespace'lere erişim vermez. Web uygulamaları HTTPS origin kaydeder ve DNS TXT veya well-known doğrulamasını tamamlar. Native uygulamalar platform + bundle ID kaydeder. Uygulamaları <operatorLink>/operator</operatorLink> (operatör) veya <developerLink>/developer</developerLink> (self-service) üzerinden yönetin.",
+        "registrationP1": "Uygulama kaydı senkron verisinden ayrıdır — mevcut namespace'lere erişim vermez. Web uygulamaları HTTPS origin kaydeder ve DNS TXT veya well-known doğrulamasını tamamlar. Native uygulamalar platform + bundle ID kaydeder (iOS, Android veya masaüstü). Uygulamaları <operatorLink>/operator</operatorLink> (operatör) veya <developerLink>/developer</developerLink> (self-service) üzerinden yönetin.",
+        "approvalTitle": "API erişimi öncesi onay",
+        "approvalWebP1": "Web: origin ekleyin, ardından DNS TXT veya HTTPS <tag>/.well-known/esr-app-verification</tag> ile doğrulayın. Doğrulama başarılı olunca durum <tag>pending_verification</tag>'dan <tag>active</tag>'e geçer.",
+        "approvalNativeP1": "Native: platform başına bundle ekleyin. <tag>native.requireManualReview: true</tag> (varsayılan) iken operatör <operatorLink>/operator</operatorLink>'da her bundle'ı onaylamalıdır. Portal bunu <tag>Onay bekliyor</tag> olarak gösterir — web origin doğrulamasından farklıdır.",
+        "secretTitle": "Native client secret",
+        "secretP1": "Secret uygulama kaydında otomatik oluşturulmaz. Uygulama <tag>active</tag> ve tüm bundle'lar onaylıyken <tag>POST .../rotate-secret</tag> veya operatör/geliştirici portalından oluşturun.",
+        "secretP2": "<tag>native.requireClientSecret: true</tag> iken kimlik doğrulamasız rotalarda zorunludur. <tag>clientSecret</tag> (<tag>EsrSync.connect</tag>) veya <tag>X-ESR-Client-Secret</tag> kullanın. Relay <tag>GET /health</tag> → <tag>apps.nativeRequireClientSecret</tag> ile kontrol edin. Web build'lerine gömülmemeli.",
+        "pairingTitle": "Pairing kapsamı",
+        "pairingP1": "Host cihaz <tag>startPairing</tag> ile <tag>allowedAppIds</tag> vererek misafir uygulamaları kısıtlayabilir (ör. yalnızca <tag>esr_app_guest</tag>). Listede olmayan <tag>appId</tag> ile redeem → <tag>403 APP_PAIRING_NOT_ALLOWED</tag>.",
         "tipTitle": "Yerel geliştirme",
         "tipBody": "Operatör <tag>allowLocalhostOrigins: true</tag> ayarlar ve <tag>http://localhost:'{port}'</tag> origin'ini kaydeder.",
         "migrationTitle": "v1.2'den geçiş",
@@ -618,7 +689,7 @@
           "namespaceId": "Bu çalışma alanı için sabit UUID v4 — cihazlar arasında eşleşmelidir.",
           "namespaceLabel": "Cihaz listelerinde gösterilen okunabilir ad.",
           "buildDocument": "Async. Geçerli uygulama durumunun JSON dizesini döndürür.",
-          "importDocument": "Async. Uzak JSON dizesini ayrıştırır ve mağazanıza uygular.",
+          "importDocument": "Async. Uzak JSON dizesini ayrıştırır ve store'unuza uygular.",
           "contentType": "Anlık görüntü formatınızı tanımlayan MIME türü."
         }
       },
@@ -649,12 +720,12 @@
       },
       "methods": {
         "title": "EsrSync metodları",
-        "p1": "Bunları uygulama yaşam döngüsü kancalarınızdan çağırın:",
+        "p1": "Bunları uygulama yaşam döngüsü hook'larınızdan çağırın:",
         "examplesTitle": "Metoda göre örnekler",
         "rows": {
           "ensureNamespace": "İlk açılışta çalışma alanı oluşturur veya mevcut token'ı doğrular. created=true iken kurtarma ifadesini gösterir.",
           "sync": "Tam pull/push döngüsü. <tag>documentId</tag> verilmezse tüm slotlar; tek belge için id verin. Başlangıç, yeniden bağlanma; WS <tag>head_changed</tag> ilgili belge için otomatik pull yapar.",
-          "notifyLocalChange": "Yerel veriyi kirli işaretler; isteğe bağlı <tag>documentId</tag> tek slota kapsar.",
+          "notifyLocalChange": "Yerel veriyi dirty olarak işaretler; isteğe bağlı <tag>documentId</tag> tek slota kapsar.",
           "flushPush": "Hemen push; isteğe bağlı <tag>documentId</tag> — çıkış öncesi kullanın.",
           "startPairing": "Ana cihaz: <tag>code</tag>, <tag>qrPayload</tag>, <tag>expiresAt</tag> döndürür.",
           "joinPairing": "Misafir: kodu kullanır, token saklar, <tag>sync()</tag> çalıştırır (tüm belgeler).",
@@ -676,7 +747,7 @@
           },
           "notifyLocalChange": {
             "title": "notifyLocalChange()",
-            "desc": "Yerel düzenlemelerden sonra gecikmeli push kuyruğa alır."
+            "desc": "Yerel düzenlemelerden sonra gecikmeli push kuyruğa alır. Veri değişince store dinleyicinizden çağırmalısınız."
           },
           "flushPush": {
             "title": "flushPush()",
@@ -684,23 +755,23 @@
           },
           "startPairing": {
             "title": "startPairing()",
-            "desc": "Ana cihaz 6 haneli eşleştirme kodu üretir."
+            "desc": "Ana cihaz 6 haneli eşleştirme kodu üretir. Kodu / QR'ı arayüzünüzde gösterin."
           },
           "joinPairing": {
             "title": "joinPairing(code)",
-            "desc": "Misafir cihaz kodu kullanır ve senkronize olur."
+            "desc": "Misafir cihaz kullanıcıdan aldığınız kodu kullanır, ardından senkronize olur."
           },
           "recover": {
             "title": "recover(phrase)",
-            "desc": "24 kelimelik kurtarma ifadesiyle erişimi geri yükler."
+            "desc": "Kurtarma arayüzünüzden gelen 24 kelimelik ifadeyle erişimi geri yükler."
           },
           "listDevices": {
             "title": "listDevices()",
-            "desc": "Ayarlar arayüzü için eşleşmiş cihazları ve slot limitlerini listeler."
+            "desc": "Eşleşmiş cihazları ve slot limitlerini listeler — ayarlar arayüzünüzde gösterin."
           },
           "revokeDevice": {
             "title": "revokeDevice(id)",
-            "desc": "Çalışma alanından başka bir cihazı kaldırır."
+            "desc": "Çalışma alanından başka bir cihazı kaldırır; cihaz listesi arayüzünü yenileyin."
           },
           "redeemUnlockCode": {
             "title": "redeemUnlockCode(code)",
@@ -720,7 +791,7 @@
         "title": "Senkron yaşam döngüsü",
         "p1": "Uygulamanızdaki tipik entegrasyon noktaları:",
         "li1": "Uygulama açılışı → <tag>ensureNamespace()</tag> ardından <tag>sync()</tag> (tüm belgeler)",
-        "li2": "Mağaza değişikliği → <tag>notifyLocalChange(documentId?)</tag>",
+        "li2": "Store değişimi → <tag>notifyLocalChange(documentId?)</tag>",
         "li3": "Pencere odağı / ağ çevrimiçi → <tag>sync()</tag> veya tek belge için <tag>sync(documentId)</tag>",
         "li4": "Çıkış → <tag>flushPush(documentId?)</tag> ardından isteğe bağlı <tag>disable()</tag>"
       },
@@ -734,21 +805,21 @@
       "conflicts": {
         "title": "Çakışmaları yönetme",
         "p1": "Çakışma, gönderilmemiş yerel düzenlemeleriniz varken sunucu revision'ının ilerlediği anlamına gelir. SDK duraklar ve callback'inizi bekler.",
-        "p2": "<tag>ConflictContext</tag> <tag>documentId</tag> ve <tag>remoteMeta</tag> (<tag>writtenAt</tag>, <tag>deviceId</tag>, <tag>contentSha256</tag>) içerir.",
+        "p2": "<tag>ConflictContext</tag> diyalog metni için <tag>documentId</tag> ve <tag>remoteMeta</tag> içerir. <tag>appUi.askKeepLocalOrRemote</tag> (veya eşdeğeri) uygulama tarafında — SDK tarafından sağlanmaz.",
         "manualExample": "Manuel çözüm"
       },
       "notifications": {
         "title": "Canlı bildirimler",
         "p1": "Etkinleştirildiğinde SDK <tag>.../notifications</tag> adresine <tag>WebSocket</tag> açar ve <tag>head_changed</tag> dinler.",
-        "p2": "<tag>WebSocket</tag> başarısız olursa HTTP yoklamasına düşer (<tag>ws_with_poll_fallback</tag> modu). WS yalnızca bildirir — veriyi yine HTTP ile çekersiniz.",
+        "p2": "<tag>WebSocket</tag> başarısız olursa HTTP polling'e düşer (<tag>ws_with_poll_fallback</tag> modu). WS yalnızca bildirir — veriyi yine HTTP ile çekersiniz.",
         "li1": "<tag>head_changed</tag> → ilgili <tag>documentId</tag> için otomatik pull (tam <tag>sync()</tag> değil)",
-        "li2": "<tag>limits_changed</tag> → slot sayısı güncellendi (<tag>onDeviceLimit</tag> veya limit yoklamasında yönetin)",
+        "li2": "<tag>limits_changed</tag> → slot sayısı güncellendi (<tag>onDeviceLimit</tag> veya limit polling'inde yönetin)",
         "li3": "İsteğe bağlı <tag>subscribe</tag> + <tag>documentIds[]</tag> — <tag>auth_ok</tag> sonrası <tag>head_changed</tag> filtresi"
       },
       "status": {
         "title": "Durum değerleri",
-        "p1": "<tag>onStatusChange</tag> ile abone olun veya <tag>getStatus()</tag> ile yoklayın:",
-        "exampleTitle": "Durum yoklama",
+        "p1": "<tag>onStatusChange</tag> ile dinleyin veya <tag>getStatus()</tag> ile poll edin:",
+        "exampleTitle": "Durum polling'i",
         "rows": {
           "idle": "Hazır, devam eden işlem yok",
           "syncing": "Pull veya push çalışıyor",
@@ -839,9 +910,12 @@
         "headers": {
           "web": "Web SPA",
           "webDesc": "<tag>X-ESR-App-Id</tag> ve tarayıcı <tag>Origin</tag> (uygulama için doğrulanmış origin ile eşleşmeli). Tarayıcı build'lerinde client secret yok.",
-          "native": "iOS / Android",
-          "nativeDesc": "<tag>X-ESR-App-Id</tag> + <tag>X-ESR-Platform</tag> (<tag>ios</tag> | <tag>android</tag>) + <tag>X-ESR-Bundle-Id</tag>. Operatör gerektiriyorsa isteğe bağlı <tag>X-ESR-Client-Secret</tag>."
+          "native": "iOS / Android / masaüstü",
+          "nativeDesc": "<tag>X-ESR-App-Id</tag> + <tag>X-ESR-Platform</tag> (<tag>ios</tag> | <tag>android</tag> | <tag>desktop</tag>) + <tag>X-ESR-Bundle-Id</tag>. <tag>native.requireClientSecret: true</tag> iken isteğe bağlı <tag>X-ESR-Client-Secret</tag>."
         },
+        "authLayersTitle": "İki katman — karıştırmayın",
+        "authLayersApp": "Uygulama bağlamı (<tag>X-ESR-App-Id</tag> + origin veya native başlıklar): hangi kayıtlı entegrasyon relay'i kullanabilir.",
+        "authLayersDevice": "Cihaz token'ı (<tag>Authorization: Bearer dvt_…</tag>): hangi eşleşmiş cihaz, hangi namespace. İlk <tag>POST /v1/namespaces</tag>'te yok; yanıtta <tag>deviceToken</tag> döner.",
         "p2": "Açıkken kimlik doğrulamasız create, pair ve recover dahil tüm <tag>/v1</tag> rotalarında zorunlu. İstisnalar: <tag>/health</tag>, <tag>/v1/admin/*</tag> ve <tag>/v1/developer/*</tag>. WebSocket el sıkışmasında tarayıcı <tag>Origin</tag> kullanır.",
         "flow": {
           "s1": {
@@ -849,14 +923,18 @@
             "body": "Operatör YAML seed kullanır veya <operatorLink>/operator</operatorLink>; self-service modda geliştiriciler <developerLink>/developer</developerLink> kullanır."
           },
           "s2": {
-            "title": "Origin veya bundle doğrulayın",
-            "body": "Web: DNS TXT veya HTTPS <tag>/.well-known/esr-app-verification</tag> ekleyin. Native: platform ve bundle ID kaydedin; operatör manuel onaylayabilir."
+            "title": "Origin doğrulayın veya bundle onaylayın",
+            "body": "Web: DNS TXT veya HTTPS <tag>/.well-known/esr-app-verification</tag>. Native: platform + bundle ID kaydedin; <tag>requireManualReview</tag> açıkken operatör onaylar. Sync çağrıları için uygulama <tag>active</tag> olmalıdır."
           },
           "s3": {
-            "title": "Her senkron çağrısında başlık gönderin",
-            "body": "<tag>POST /v1/namespaces</tag>, kimlik doğrulamalı rotalar ve WebSocket upgrade'de <tag>X-ESR-App-Id</tag> (ve web <tag>Origin</tag> veya native platform başlıkları) ekleyin."
+            "title": "Native secret yapılandırın (gerekiyorsa)",
+            "body": "<tag>GET /health</tag> <tag>apps.nativeRequireClientSecret: true</tag> döndürüyorsa, uygulama aktif olduktan sonra rotate-secret ile secret oluşturun. <tag>X-ESR-Client-Secret</tag> veya SDK <tag>clientSecret</tag> ile gönderin."
           },
           "s4": {
+            "title": "Her senkron çağrısında başlık gönderin",
+            "body": "<tag>POST /v1/namespaces</tag>, kimlik doğrulamalı rotalar ve WebSocket upgrade'de <tag>X-ESR-App-Id</tag> (ve web <tag>Origin</tag> veya native başlıklar). <tag>deviceToken</tag> aldıktan sonra <tag>Authorization</tag> ekleyin."
+          },
+          "s5": {
             "title": "Namespace bağlı kalır",
             "body": "Oluşturma yanıtında <tag>appId</tag> olabilir. Farklı uygulama ile sonraki istekler <tag>403 APP_NAMESPACE_MISMATCH</tag> döndürür."
           }
@@ -888,7 +966,8 @@
           "pairingNotAllowed": "Uygulama pairing token <tag>allowedAppIds</tag> listesinde değil",
           "clientSecretInvalid": "Yanlış native client secret",
           "notVerified": "Uygulama doğrulama bekliyor",
-          "nativeIdRequired": "<tag>X-ESR-Platform</tag> veya <tag>X-ESR-Bundle-Id</tag> eksik"
+          "nativeIdRequired": "<tag>X-ESR-Platform</tag> veya <tag>X-ESR-Bundle-Id</tag> eksik",
+          "bundleNotAllowed": "Bundle ID bu uygulama için kayıtlı veya onaylı değil"
         },
         "migrationTitle": "v1.2'den geçiş",
         "migrationP1": "Önce app başlıklı istemcileri yayınlayın, ardından <tag>apps.enabled</tag> açın, uygulamaları kaydedin ve mevcut namespace'ler için <tag>legacyDefaultAppId</tag> ayarlayın. Ayrıntı: <specLink>16-APP-REGISTRY §19</specLink>.",
@@ -915,7 +994,7 @@
             "body": "<tag>PUT .../documents/'{documentId}'</tag> — zarf ile. İlk push: <tag>expectedRevision</tag> yok. Güncellemeler: meta revision ile eşleşmeli."
           },
           "s5": {
-            "title": "Yokla veya abone ol",
+            "title": "Poll et veya subscribe ol",
             "body": "<tag>WebSocket head_changed</tag> veya diğer cihazlarda periyodik <tag>GET head/meta</tag>."
           },
           "s6": {
@@ -1216,6 +1295,7 @@
       "filterAllStatuses": "Tüm durumlar",
       "statusActive": "Aktif",
       "statusPendingVerification": "Doğrulama bekliyor",
+      "statusPendingApproval": "Onay bekliyor",
       "statusPending": "Bekliyor",
       "statusSuspended": "Askıda",
       "statusArchived": "Arşivlendi",
@@ -1236,9 +1316,24 @@
       "removeOrigin": "Kaldır",
       "noOrigins": "Kayıtlı origin yok.",
       "platform": "Platform",
+      "platformIos": "iOS",
+      "platformAndroid": "Android",
+      "platformDesktop": "Masaüstü",
       "bundleId": "Bundle ID",
       "addBundleButton": "Bundle ekle",
       "noBundles": "Kayıtlı bundle yok.",
+      "bundleApproved": "Onaylandı",
+      "bundlePendingApproval": "Onay bekliyor",
+      "clientSecret": "İstemci gizli anahtarı",
+      "clientSecretHint": "Relay gizli native istemci zorunlu kıldığında (<tag>GET /health</tag> → <tag>apps.nativeRequireClientSecret</tag>) native API çağrıları için gereklidir. <tag>X-ESR-Client-Secret</tag> veya <tag>EsrSync.connect()</tag> <tag>clientSecret</tag> ile gönderin. Web derlemelerine gömülmemeli.",
+      "clientSecretWhen": "Yalnızca relay native secret gerektiriyorsa, uygulama aktif ve tüm bundle'lar onaylıyken gösterilir. rotate-secret ile oluşturulur — kayıtta otomatik atanmaz.",
+      "clientSecretValue": "Gizli anahtar (şimdi kopyalayın)",
+      "clientSecretOnce": "Yalnızca bir kez gösterilir. Güvenli saklayın (Keychain, Keystore veya sunucu tarafı ortam değişkeni). Yeni anahtar oluşturduğunuzda önceki anahtar geçersiz olur.",
+      "clientSecretConfigured": "Gizli anahtar kayıtlı. Yeni değeri görmek için yenileyin.",
+      "clientSecretNone": "Henüz gizli anahtar yok. «Gizli anahtar oluştur» ile ekleyin.",
+      "generateSecret": "Gizli anahtar oluştur",
+      "rotateSecret": "Gizli anahtarı yenile",
+      "rotateSecretConfirm": "Mevcut istemci gizli anahtarı anında geçersiz olur. Devam edilsin mi?",
       "approve": "Onayla",
       "suspend": "Askıya al",
       "activate": "Etkinleştir",
@@ -1250,6 +1345,8 @@
       "listCount": "{count, plural, =0 {Geliştirici hesabı yok} one {# geliştirici hesabı} other {# geliştirici hesabı}}",
       "emptyTitle": "Geliştirici hesabı yok",
       "emptyHint": "Self-service kayıt açıkken geliştiriciler kayıt olduğunda burada listelenir.",
+      "prerequisitesTitle": "Self-service önkoşulları",
+      "prerequisitesP1": "Geliştirici portalını açmak için relay'de <tag>apps.enabled: true</tag>, <tag>apps.registrationMode: self_service</tag> ve <tag>ESR_DEVELOPER_JWT_SECRET</tag> (min 32 karakter) ayarlayın. Geliştiriciler <developerLink>/developer</developerLink> üzerinden kayıt olur. Web uygulamaları doğrulanmış HTTPS origin; native uygulamalar <tag>requireManualReview</tag> açıkken bu panelden bundle onayı gerektirir.",
       "closeDetail": "Kapat",
       "email": "E-posta",
       "apps": "Uygulama",
@@ -1292,7 +1389,7 @@
   },
   "developer": {
     "title": "Geliştirici portalı",
-    "intro": "Uygulamanızı kaydedin, domain doğrulayın ve ESR App Registry kayıtlarını yönetin.",
+    "intro": "Operatör self-service modu açtığında uygulamanızı kaydedin, domain veya native bundle doğrulayın ve ESR App Registry kayıtlarını yönetin.",
     "loginIntro": "Kayıtlı geliştirici hesabınızla giriş yapın.",
     "registerIntro": "Yeni bir geliştirici hesabı oluşturun.",
     "authModeLabel": "İşlem",

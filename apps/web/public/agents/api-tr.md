@@ -53,8 +53,12 @@ Tüm `/v1` uçlarında zorunlu (`/health`, `/v1/admin/*`, `/v1/developer/*` hari
 
 | İstemci | Header'lar |
 |---------|------------|
-| Web SPA | `X-ESR-App-Id` + tarayıcı `Origin` |
-| iOS / Android | `X-ESR-App-Id` + `X-ESR-Platform` + `X-ESR-Bundle-Id` |
+| Web SPA | `X-ESR-App-Id` + tarayıcı `Origin` (doğrulanmış origin ile eşleşmeli) |
+| iOS / Android / desktop | `X-ESR-App-Id` + `X-ESR-Platform` + `X-ESR-Bundle-Id` (+ isteğe bağlı `X-ESR-Client-Secret`) |
+
+**İki katman:** App başlıkları hangi entegrasyonun relay'i kullanabileceğini; `Authorization: Bearer {deviceToken}` hangi eşleşmiş cihazın hangi namespace'e eriştiğini belirler. İlk `POST /v1/namespaces`'te device token yok — yanıtta döner.
+
+**Native secret:** Uygulama kaydında otomatik oluşmaz. `native.requireClientSecret: true` iken kimlik doğrulamasız uçlarda zorunlu. `rotate-secret` ile oluşturulur. `/health` → `apps.nativeRequireClientSecret`.
 
 Namespace oluşturma yanıtında `appId` döner. Yanlış app → `403 APP_NAMESPACE_MISMATCH`.
 
@@ -377,13 +381,16 @@ Authorization: Bearer dvt_...
 | `ENVELOPE_INVALID` | 422 | Zarf şeması |
 | `RATE_LIMIT_EXCEEDED` | 429 | `Retry-After`, `RateLimit-*` |
 | `APP_ID_REQUIRED` | 400 | `X-ESR-App-Id` gönderin |
-| `APP_ORIGIN_NOT_ALLOWED` | 403 | Origin kayıtlı değil |
+| `APP_ORIGIN_REQUIRED` | 400 | Web istemcide `Origin` eksik |
+| `APP_ORIGIN_NOT_ALLOWED` | 403 | Origin kayıtlı veya doğrulanmış değil |
 | `APP_NAMESPACE_MISMATCH` | 403 | Namespace başka app'e ait |
+| `APP_NOT_FOUND` | 403 | Bilinmeyen `appId` |
 | `APP_SUSPENDED` | 403 | Operatör app'i askıya aldı |
 | `APP_PAIRING_NOT_ALLOWED` | 403 | App, pairing token `allowedAppIds` listesinde değil |
 | `APP_CLIENT_SECRET_INVALID` | 401 | Yanlış native client secret |
-| `APP_NOT_VERIFIED` | 403 | App doğrulama bekliyor |
+| `APP_NOT_VERIFIED` | 403 | App doğrulama/onay bekliyor |
 | `APP_NATIVE_ID_REQUIRED` | 400 | Platform/bundle başlıkları eksik |
+| `APP_BUNDLE_NOT_ALLOWED` | 403 | Bundle kayıtlı veya onaylı değil |
 
 Bkz. [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md).
 

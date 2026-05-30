@@ -58,6 +58,12 @@ export {
   type EnvRaw1Inner,
 } from './inner-payload.js'
 export {
+  NATIVE_PLATFORMS,
+  isNativePlatform,
+  type AppPlatform,
+  type NativePlatform,
+} from './native-platform.js'
+export {
   WS_SUBPROTOCOL,
   WsClientMessageSchema,
   WsHeadChangedSchema,

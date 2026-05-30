@@ -174,9 +174,17 @@ ${d4}"windowSeconds": ${windowSeconds}
 ${d3}}`
 }
 
+/** Shown at the top of multi-step SDK samples in docs and agent files. */
+export const SDK_SAMPLE_LEGEND = `// Code sample legend
+//   // app:     APP code — not part of @senkronla/client
+//   appStore, appUi, appSession — placeholder names; wire to the app's state/UI/auth
+//   EsrSync, createDocumentAdapter, … — SDK (@senkronla/client)`
+
 export function createGuideSnippets(relayUrl: string) {
   return {
-    minimalSetup: `import {
+    minimalSetup: `${SDK_SAMPLE_LEGEND}
+
+import {
   EsrSync,
   createDocumentAdapter,
   createLocalStorageAdapter,
@@ -184,44 +192,50 @@ export function createGuideSnippets(relayUrl: string) {
 } from '@senkronla/client'
 
 const namespaceId = generateNamespaceId()
-// Persist before ensureNamespace — same id across reinstalls (or use your workspace UUID)
+// app: persist before ensureNamespace — same id across reinstalls
 
 const document = createDocumentAdapter({
   namespaceId,
   namespaceLabel: '${SAMPLE.namespaceLabel}',
   contentType: 'application/vnd.myapp+json',
+  // app: serialize / restore app state as JSON
   exportDocument: () => appStore.exportJson(),
-  importDocument: (data) => appStore.importJson(data),
+  importDocument: (json) => appStore.importJson(json),
 })
 
 const sync = await EsrSync.connect({
   relayUrl: '${relayUrl}',
+  appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
   document,
   storage: createLocalStorageAdapter('myapp'),
+  // app: required — show once; user must save offline
   onRecoveryPhrase: async ({ phrase }) => {
-    await ui.showRecoveryModal(phrase)
+    await appUi.showRecoveryModal(phrase)
   },
+  // app: required — return 'remote' | 'local' | 'cancel'
   onConflict: async (ctx) => {
-    return ui.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
-    // 'remote' | 'local' | 'cancel'
+    return appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
   },
 })
+// Native: add appPlatform, bundleId; clientSecret when GET /health → apps.nativeRequireClientSecret
 
 await sync.ensureNamespace()
-await sync.sync() // all documents on startup
+await sync.sync()
+// app: call after every local edit (Redux, DB hook, etc.)
 appStore.onChange(() => sync.notifyLocalChange('primary'))`,
 
     multiDocumentSync: `const sync = await EsrSync.connect({
   relayUrl: '${relayUrl}',
+  appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
   storage: createLocalStorageAdapter('myapp'),
   documents: [
     { adapter: mainDocumentAdapter },
     { documentId: 'settings', adapter: settingsDocumentAdapter },
   ],
-  onRecoveryPhrase: async ({ phrase }) => ui.showRecoveryModal(phrase),
+  // app: required callbacks — replace with app UI
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
   onConflict: async (ctx) => {
-    console.log('Conflict on', ctx.documentId)
-    return 'remote'
+    return appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
   },
 })
 
@@ -263,9 +277,9 @@ switch (result.status) {
     break
 }`,
 
-    notifyLocalChange: `// Call after every local edit — debounced push (default 2s)
+    notifyLocalChange: `// app: subscribe to appStore — call after every local edit
 appStore.onChange(() => sync.notifyLocalChange('primary'))
-settingsStore.onChange(() => sync.notifyLocalChange('settings'))
+appSettingsStore.onChange(() => sync.notifyLocalChange('settings'))
 
 // getStatus() becomes 'pending_push' until push completes`,
 
@@ -277,22 +291,17 @@ await sync.flushPush('settings') // one document
 
     startPairing: `const { code, qrPayload, expiresAt } = await sync.startPairing()
 
-ui.showPairingScreen({
-  code,           // "482913" — 6 digits
-  qrPayload,      // esr://pair/v1/...?code=482913&exp=...
-  expiresAt,      // ISO timestamp
-})`,
+// app: display code / QR in app pairing UI
+appUi.showPairingScreen({ code, qrPayload, expiresAt })`,
 
-    joinPairing: `// Guest device — same namespaceId in the document adapter
-await sync.joinPairing('482913')
+    joinPairing: `// app: read 6-digit code from user input (QR scan or manual entry)
+await sync.joinPairing(codeFromUser)
 
 // Stores device token, then runs sync() (all documents)
 // Pulls remote snapshots via importDocument() per slot`,
 
-    recover: `// All devices lost — user enters 24-word phrase
-await sync.recover(
-  'abandon ability able about above absent absorb abstract absurd abuse access accident'
-)
+    recover: `// app: read 24-word phrase from user input
+await sync.recover(phraseFromUser)
 
 // Issues new device token; revokes every previously paired device
 // Then runs sync() to pull latest remote snapshots (all documents)`,
@@ -304,10 +313,8 @@ for (const device of devices) {
 }
 // limits.maxDevices, limits.activeDevices, limits.canAddDevice`,
 
-    revokeDevice: `// Remove another device from the workspace (not the last one)
-await sync.revokeDevice('${SAMPLE.guestDeviceId}')
-
-// Server returns 204 — refresh device list in your settings UI`,
+    revokeDevice: `await sync.revokeDevice('${SAMPLE.guestDeviceId}')
+// app: refresh device list in app settings UI`,
 
     redeemUnlockCode: `// Operator-generated unlock code for extra device slots
 await sync.redeemUnlockCode('${SAMPLE.unlockCode}')
@@ -331,80 +338,86 @@ if (lastError) {
   appId: 'esr_app_mynotes',
   document,
   storage: createLocalStorageAdapter('myapp'),
-  onRecoveryPhrase: async ({ phrase }) => { /* required */ },
-  onConflict: async () => 'remote',
+  // app: implement — placeholders shown; see integration section
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
+  onConflict: async () => appUi.askKeepLocalOrRemote(),
 })`,
 
     connectWithAppNative: `const sync = await EsrSync.connect({
   relayUrl: '${relayUrl}',
   appId: 'esr_app_mynotes_mobile',
-  appPlatform: 'ios',
+  appPlatform: 'ios', // ios | android | desktop
   bundleId: 'com.example.mynotes',
+  // app: when GET /health → apps.nativeRequireClientSecret is true
+  // clientSecret: process.env.ESR_CLIENT_SECRET,
   document,
-  storage: createSecureStorageAdapter(),
-  onRecoveryPhrase: async ({ phrase }) => { /* required */ },
-  onConflict: async () => 'remote',
+  storage: createSecureStorageAdapter(), // app: Keychain / secure EsrStorage
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
+  onConflict: async () => appUi.askKeepLocalOrRemote(),
+})`,
+
+    pairingHostScoped: `const { code, qrPayload, expiresAt } = await sync.startPairing({
+  allowedAppIds: ['esr_app_mynotes_mobile'],
 })`,
 
     connectOptions: `const sync = await EsrSync.connect({
   relayUrl: '${relayUrl}',
+  appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
   document,
   storage: createLocalStorageAdapter('myapp'),
   deviceLabel: 'Alice laptop',
-  onRecoveryPhrase: async ({ phrase }) => { /* required */ },
-  onConflict: async (ctx) => {
-    console.log('Conflict on', ctx.documentId)
-    return 'remote'
-  },
-  onDocumentStatusChange: (documentId, status) => ui.setDocBadge(documentId, status),
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
+  onConflict: async (ctx) => appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt),
+  // app: optional UI hooks
+  onDocumentStatusChange: (documentId, status) => appUi.setDocBadge(documentId, status),
   onDeviceLimit: async (ctx) => {
     if (ctx.code === 'DEVICE_LIMIT_PAYMENT_REQUIRED') {
-      ui.showUpgrade(ctx.slotPackages)
+      appUi.showUpgrade(ctx.slotPackages)
     }
   },
-  onStatusChange: (status) => ui.setSyncIndicator(status),
-  onError: (error) => logger.warn(error.code),
+  onStatusChange: (status) => appUi.setSyncIndicator(status),
+  onError: (error) => appLogger.warn(error.code),
   pushDebounceMs: 2000,
   notificationsEnabled: true,
   persistRecoveryPhrase: true,
-})`,
+})
+// Native: add appPlatform, bundleId; clientSecret when GET /health → apps.nativeRequireClientSecret`,
 
     pairingHost: `const { code, qrPayload, expiresAt } = await sync.startPairing()
-ui.showPairingScreen({ code, qrPayload, expiresAt })`,
+
+// app: display code / QR in app pairing UI
+appUi.showPairingScreen({ code, qrPayload, expiresAt })`,
 
     pairingGuest: `await sync.joinPairing(codeFromUser)`,
 
     recovery: `await sync.recover(phraseFromUser)`,
 
     encryptedDocumentAdapter: `const document = createDocumentAdapter({
-  namespaceId: workspace.id,
-  namespaceLabel: workspace.name,
+  namespaceId: appWorkspace.id,
+  namespaceLabel: appWorkspace.name,
   contentType: 'application/vnd.myapp+json',
   encrypt: true,
-  resolvePassword: async () => {
-    // Your app supplies this — the SDK never generates a sync password.
-    // Session unlock, OS keychain, or a user prompt are typical sources.
-    return session.getSyncPassword()
-  },
-  exportDocument: () => store.exportSnapshot(),
-  importDocument: (data) => store.importSnapshot(data),
+  // app: sync password — SDK never generates it
+  resolvePassword: async () => appSession.getSyncPassword(),
+  exportDocument: () => appStore.exportSnapshot(),
+  importDocument: (json) => appStore.importSnapshot(json),
 })`,
 
     buildEncryptedEnvelope: `import { buildEnvelope, extractDocument } from '@senkronla/client'
 
-const password = await session.getSyncPassword()
+// app: same password source as resolvePassword()
+const password = await appSession.getSyncPassword()
 
 const envelope = await buildEnvelope({
-  namespaceId: workspace.id,
-  namespaceLabel: workspace.name,
-  documentJson: JSON.stringify(await store.exportSnapshot()),
+  namespaceId: appWorkspace.id,
+  namespaceLabel: appWorkspace.name,
+  documentJson: JSON.stringify(await appStore.exportSnapshot()),
   deviceId: clientDeviceId,
   contentType: 'application/vnd.myapp+json',
   encrypt: true,
   password,
 })
 
-// Pull path — same password required to decrypt ENV-ENC1
 const json = await extractDocument(remoteEnvelope, password)`,
   }
 }
@@ -438,9 +451,12 @@ Origin: https://app.example.com
 }`,
 
     appHeadersNative: `GET ${v1}/namespaces/${ns}
-${auth}X-ESR-App-Id: esr_app_mynotes_mobile
+X-ESR-App-Id: esr_app_mynotes_mobile
 X-ESR-Platform: ios
-X-ESR-Bundle-Id: com.example.mynotes`,
+X-ESR-Bundle-Id: com.example.mynotes
+Authorization: Bearer dvt_...
+# Optional when native.requireClientSecret: true (unauthenticated routes too):
+# X-ESR-Client-Secret: {client_secret}`,
 
     health: {
       request: `GET ${origin}/health`,

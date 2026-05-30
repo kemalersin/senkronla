@@ -9,6 +9,12 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.6]
+
+### Added
+
+- `appPlatform: 'desktop'` for native desktop clients (Electron, Tauri, etc.)
+
 ## [0.1.4]
 
 ### Added

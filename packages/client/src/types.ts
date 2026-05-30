@@ -1,4 +1,4 @@
-import type { EsrDocEnvelope, RecoveryKeyProof } from '@senkronla/protocol'
+import type { AppPlatform, EsrDocEnvelope, RecoveryKeyProof } from '@senkronla/protocol'
 
 export interface NamespaceLimits {
   freeDeviceLimit: number
@@ -167,7 +167,7 @@ export interface EsrSyncConnectOptions {
   relayUrl: string
   /** Required when relay has `apps.enabled` (v1.3 app registry). */
   appId?: string
-  appPlatform?: 'web' | 'ios' | 'android'
+  appPlatform?: AppPlatform
   bundleId?: string
   clientSecret?: string
   clientVersion?: string

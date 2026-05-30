@@ -21,6 +21,9 @@ export interface HealthCheckResult {
   developerPortal: {
     enabled: boolean
   }
+  apps: {
+    nativeRequireClientSecret: boolean
+  }
 }
 
 export async function runHealthChecks(
@@ -67,6 +70,9 @@ export async function runHealthChecks(
     websocket: config.websocket.enabled,
     developerPortal: {
       enabled: isDeveloperPortalEnabled(config),
+    },
+    apps: {
+      nativeRequireClientSecret: config.apps.native.requireClientSecret,
     },
   }
 }

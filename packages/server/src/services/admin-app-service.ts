@@ -1,3 +1,4 @@
+import type { NativePlatform } from '@senkronla/protocol'
 import { createHash } from 'node:crypto'
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
@@ -49,7 +50,7 @@ export interface OriginVerificationInstructions {
 
 export interface AdminAppBundle {
   id: string
-  platform: 'ios' | 'android'
+  platform: NativePlatform
   bundleId: string
   verifiedAt: string | null
   createdAt: string
@@ -82,6 +83,7 @@ export interface CreateAdminAppInput {
   bundleIds?: {
     ios?: string
     android?: string
+    desktop?: string
   }
   clientSecret?: string
 }
@@ -97,7 +99,7 @@ export interface AddAdminAppOriginInput {
 }
 
 export interface AddAdminAppBundleInput {
-  platform: 'ios' | 'android'
+  platform: NativePlatform
   bundleId: string
   verified?: boolean
 }
@@ -331,6 +333,14 @@ export async function createAdminApp(
         `INSERT INTO app_bundles (app_uuid, platform, bundle_id, verified_at)
          VALUES ($1, 'android', $2, now())`,
         [app.id, input.bundleIds.android],
+      )
+    }
+
+    if (input.bundleIds?.desktop) {
+      await client.query(
+        `INSERT INTO app_bundles (app_uuid, platform, bundle_id, verified_at)
+         VALUES ($1, 'desktop', $2, now())`,
+        [app.id, input.bundleIds.desktop],
       )
     }
 

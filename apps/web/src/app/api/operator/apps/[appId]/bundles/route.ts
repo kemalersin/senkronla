@@ -1,5 +1,6 @@
 import { handleOperatorRelay } from '@/lib/operator-api-response'
 import { relayAdminJson } from '@/lib/operator-relay'
+import { isNativePlatform, type NativePlatform } from '@/lib/native-platform'
 
 interface RouteContext {
   params: Promise<{ appId: string }>
@@ -8,11 +9,11 @@ interface RouteContext {
 export async function POST(request: Request, context: RouteContext) {
   const { appId } = await context.params
 
-  let body: { platform?: 'ios' | 'android'; bundleId?: string; verified?: boolean }
+  let body: { platform?: NativePlatform; bundleId?: string; verified?: boolean }
 
   try {
     body = (await request.json()) as {
-      platform?: 'ios' | 'android'
+      platform?: NativePlatform
       bundleId?: string
       verified?: boolean
     }
@@ -29,6 +30,13 @@ export async function POST(request: Request, context: RouteContext) {
   if (!platform || !bundleId) {
     return Response.json(
       { error: { code: 'VALIDATION_ERROR', message: 'platform and bundleId are required' } },
+      { status: 400 },
+    )
+  }
+
+  if (!isNativePlatform(platform)) {
+    return Response.json(
+      { error: { code: 'VALIDATION_ERROR', message: 'platform must be ios, android, or desktop' } },
       { status: 400 },
     )
   }

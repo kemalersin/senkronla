@@ -9,11 +9,23 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.6]
+
+### Added
+
+- `/health` includes `apps.nativeRequireClientSecret` for portal UI gating
+- Native bundle platform `desktop` (Electron, Tauri, etc.) — migration `009_native_desktop_platform.sql`
+
+### Changed
+
+- Developer app create no longer assigns a client secret; secret is set only via rotate-secret
 
 ## [0.1.5]
+
 ### Changed
 
 - OpenAPI contract tests — dynamic path parameter coverage
+
 ## [0.1.4]
 
 ### Added

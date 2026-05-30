@@ -9,6 +9,12 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.6]
+
+### Added
+
+- `NATIVE_PLATFORMS`, `NativePlatform`, `AppPlatform`, and `isNativePlatform()` for app registry headers and bundle registration
+
 ## [0.1.2]
 
 ### Added

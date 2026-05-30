@@ -11,12 +11,34 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.6]
+
+### Added
+
+- **web:** developer portal — generate or rotate native client secret in app drawer
+- **protocol:** shared `NativePlatform` type including `desktop`
+- **server:** native bundle platform `desktop` for Electron/Tauri clients
+- **client:** `appPlatform: 'desktop'` connect option
+- **web:** operator and developer portals — register desktop bundle IDs
+- **docs:** app registry spec — approval flows, client secret lifecycle, auth layer split (§7.2–12.3)
+
+### Changed
+
+- **server:** developer app create no longer assigns client secret until explicit rotate-secret
+- **server:** `/health` exposes `apps.nativeRequireClientSecret`
+- **web:** developer portal hides client secret UI when relay does not require native secrets
+- **web:** developer portal shows client secret UI only when the app has a registered bundle
+- **web:** developer portal hides client secret until app is active and bundles are approved
+- **docs:** SDK/API/guides/agents — clearer app registration, approval, and clientSecret documentation
+- **web:** integration checklist and ESR guide document `ESR_APPS__*` and v1.3 migration
 
 ## [0.1.5]
+
 ### Changed
 
 - **server:** OpenAPI contract tests — dynamic path parameter coverage
 - **web:** Postman environment files updated
+
 ## [0.1.4]
 
 ### Added

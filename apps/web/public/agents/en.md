@@ -124,13 +124,17 @@ Origin: https://app.example.com
 
 Browser sends `Origin` automatically. No client secret in web builds.
 
-**Native (iOS / Android):**
+**Native (iOS / Android / desktop):**
 
 ```http
 X-ESR-App-Id: esr_app_mynotes_mobile
 X-ESR-Platform: ios
 X-ESR-Bundle-Id: com.example.mynotes
 ```
+
+When `native.requireClientSecret: true`, also send `X-ESR-Client-Secret` (or SDK `clientSecret`). Secrets are **not** auto-created on app registration — use `rotate-secret` after the app is `active` and bundles are approved. Check `GET /health` → `apps.nativeRequireClientSecret`.
+
+**Device token** (`Authorization: Bearer dvt_...`) is separate — paired device identity, not app registry. Omit on first `POST /v1/namespaces`.
 
 **SDK:** pass `appId` (and native fields) to `EsrSync.connect()` — see [sdk-en.md](sdk-en.md).
 

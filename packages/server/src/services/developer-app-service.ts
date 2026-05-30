@@ -1,3 +1,4 @@
+import type { NativePlatform } from '@senkronla/protocol'
 import { createHash, randomBytes } from 'node:crypto'
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
@@ -29,7 +30,7 @@ export interface AddDeveloperAppOriginInput {
 }
 
 export interface AddDeveloperAppBundleInput {
-  platform: 'ios' | 'android'
+  platform: NativePlatform
   bundleId: string
 }
 
@@ -175,16 +176,11 @@ export async function createDeveloperApp(
     appId = generatePublicAppId()
   }
 
-  const clientSecretHash =
-    input.type === 'native' && config.apps.native.requireClientSecret
-      ? hashClientSecret(randomBytes(24).toString('hex'))
-      : null
-
   const result = await pool.query<AppRow>(
     `INSERT INTO apps (app_id, developer_uuid, name, type, status, client_secret_hash)
-     VALUES ($1, $2, $3, $4, 'pending', $5)
+     VALUES ($1, $2, $3, $4, 'pending', NULL)
      RETURNING id, app_id, developer_uuid, name, type, status, client_secret_hash, created_at, updated_at`,
-    [appId, developerUuid, input.name, input.type, clientSecretHash],
+    [appId, developerUuid, input.name, input.type],
   )
 
   const app = result.rows[0]

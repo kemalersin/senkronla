@@ -54,7 +54,7 @@ Required on **all** `/v1` routes except `/health`, `/v1/admin/*`, and `/v1/devel
 | Client type | Headers |
 |-------------|---------|
 | Web SPA | `X-ESR-App-Id` + browser `Origin` (must match registered origin) |
-| iOS / Android | `X-ESR-App-Id` + `X-ESR-Platform` + `X-ESR-Bundle-Id` (+ optional `X-ESR-Client-Secret`) |
+| iOS / Android / desktop | `X-ESR-App-Id` + `X-ESR-Platform` + `X-ESR-Bundle-Id` (+ optional `X-ESR-Client-Secret`) |
 
 ```http
 X-ESR-App-Id: esr_app_mynotes

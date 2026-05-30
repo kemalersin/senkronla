@@ -35,7 +35,18 @@ export default async function EsrGuidePage({ params }: PageProps) {
   const exampleOrigin = getExampleRelayOrigin(localeKey)
   const relayUrl = getExampleRelayApiBaseUrl(localeKey)
   const snippets = createEsrGuideSnippets(exampleOrigin)
-  const rich = withDocRich({ relayUrl })
+  const specHref =
+    locale === 'tr'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md'
+  const rich = withDocRich({
+    relayUrl,
+    specLink: (chunks) => (
+      <a href={specHref} target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
+  })
 
   const nav = sectionKeys.map((key) => ({
     id: key,
@@ -52,6 +63,11 @@ export default async function EsrGuidePage({ params }: PageProps) {
     ['ESR_CORS_ORIGINS', t.rich('sections.config.rows.cors', rich)],
     ['ESR_MAX_DOCUMENTS_PER_NAMESPACE', t('sections.config.rows.maxDocuments')],
     ['ESR_ALLOWED_DOCUMENT_IDS', t('sections.config.rows.allowedDocIds')],
+    ['ESR_APPS__ENABLED', t('sections.config.rows.appsEnabled')],
+    ['ESR_APPS__REGISTRATION_MODE', t.rich('sections.config.rows.appsRegistrationMode', rich)],
+    ['ESR_APPS__ALLOW_LOCALHOST_ORIGINS', t.rich('sections.config.rows.appsLocalhost', rich)],
+    ['ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET', t.rich('sections.config.rows.appsNativeSecret', rich)],
+    ['ESR_DEVELOPER_JWT_SECRET', t.rich('sections.config.rows.developerJwt', rich)],
   ]
 
   const dockerSteps = [1, 2, 3].map((n) => ({
@@ -132,6 +148,7 @@ export default async function EsrGuidePage({ params }: PageProps) {
           <li>{t.rich('sections.production.li2', rich)}</li>
           <li>{t.rich('sections.production.li3', rich)}</li>
           <li>{t.rich('sections.production.li4', rich)}</li>
+          <li>{t.rich('sections.production.li5', rich)}</li>
         </ul>
         <p className="doc-subheading">{t('sections.production.operatorTitle')}</p>
         <p>{t.rich('sections.production.operatorBody', rich)}</p>

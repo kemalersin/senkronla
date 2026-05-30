@@ -94,7 +94,18 @@ Guest redeem with a non-listed `X-ESR-App-Id` → `403 APP_PAIRING_NOT_ALLOWED`.
 
 YAML `apps.seed` still merges at startup (Faz 8a). Admin API manages runtime registry without DB access.
 
-**Operator portal (web):** `/operator` → **Apps** tab lists registered applications, supports create/suspend/archive, origin verification instructions, and native bundle approval (proxied via BFF to the admin API above). **Developers** tab lists self-service accounts — verify email, disable, or re-enable (BFF → admin developer API below).
+**Operator portal (web):** `/operator` → **Apps** tab lists registered applications, supports create/suspend/archive, origin verification instructions, native bundle approval, and client secret generate/rotate when `apps.nativeRequireClientSecret` is true (app must be `active` with all bundles approved). Proxied via BFF to the admin API above. **Developers** tab lists self-service accounts — verify email, disable, or re-enable (BFF → admin developer API below).
+
+#### Native client secret (operator / developer portals)
+
+| Condition | Behaviour |
+|-----------|-----------|
+| App create | No secret assigned (`client_secret_hash` is null) |
+| Relay `native.requireClientSecret: true` | Unauthenticated API routes require `X-ESR-Client-Secret` |
+| Portal **Generate secret** | Calls rotate-secret; plaintext shown once |
+| UI visibility | `/health` → `apps.nativeRequireClientSecret: true`, app `active`, ≥1 bundle, all bundles approved |
+
+Developers use the same flow in `/developer` when self-service is enabled. See [16-APP-REGISTRY §12.3 (EN)](envelope-sync-relay/en/16-APP-REGISTRY.md#123-approval-flows-and-client-secret) · [§12.3 (TR)](envelope-sync-relay/tr/16-APP-REGISTRY.md#123-onay-akışları-ve-client-secret).
 
 ### Admin developer API (v1.3)
 

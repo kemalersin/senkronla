@@ -137,6 +137,7 @@ export default async function ApiPage({ params }: PageProps) {
     ['APP_CLIENT_SECRET_INVALID', '401', t.rich('sections.appRegistry.errors.clientSecretInvalid', withDocRich())],
     ['APP_NOT_VERIFIED', '403', t.rich('sections.appRegistry.errors.notVerified', withDocRich())],
     ['APP_NATIVE_ID_REQUIRED', '400', t.rich('sections.appRegistry.errors.nativeIdRequired', withDocRich())],
+    ['APP_BUNDLE_NOT_ALLOWED', '403', t.rich('sections.appRegistry.errors.bundleNotAllowed', withDocRich())],
   ]
 
   const exampleProps = {
@@ -216,8 +217,13 @@ export default async function ApiPage({ params }: PageProps) {
           rows={appHeaderRows}
         />
         <p>{t.rich('sections.appRegistry.p2', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.appRegistry.authLayersTitle')}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.appRegistry.authLayersApp', withDocRich())}</li>
+          <li>{t.rich('sections.appRegistry.authLayersDevice', withDocRich())}</li>
+        </ul>
         <DocStepList
-          steps={[1, 2, 3, 4].map((n) => ({
+          steps={[1, 2, 3, 4, 5].map((n) => ({
             title: t(`sections.appRegistry.flow.s${n}.title`),
             body: t.rich(`sections.appRegistry.flow.s${n}.body`, appRegistryRich),
           }))}

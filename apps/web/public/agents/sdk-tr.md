@@ -10,17 +10,18 @@ JS/TS yığınları için varsayılan yol: **`EsrSync`** facade. SDK çalıştı
 ## İçindekiler
 
 1. [Kurulum](#kurulum)
-2. [Minimal kurulum](#minimal-kurulum)
-3. [Çoklu belge](#çoklu-belge)
-4. [EsrSync.connect seçenekleri](#esrsyncconnect-seçenekleri)
-5. [Belge adapter'ı](#belge-adapterı)
-6. [Zarf şifrelemesi (ENV-ENC1)](#zarf-şifrelemesi-env-enc1)
-7. [Yerel depolama (EsrStorage)](#yerel-depolama-esrstorage)
-8. [EsrSync metotları](#esrsync-metotları)
-9. [Sync yaşam döngüsü](#sync-yaşam-döngüsü)
-10. [Durum değerleri](#durum-değerleri-esrsyncstatus)
-11. [SDK hata kodları](#sdk-istemci-hata-kodları)
-12. [Düşük seviye RelayClient](#düşük-seviye-relayclient)
+2. [Uygulama kodu vs SDK](#uygulama-kodu-vs-sdk)
+3. [Minimal kurulum](#minimal-kurulum)
+4. [Çoklu belge](#çoklu-belge)
+5. [EsrSync.connect seçenekleri](#esrsyncconnect-seçenekleri)
+6. [Belge adapter'ı](#belge-adapterı)
+7. [Zarf şifrelemesi (ENV-ENC1)](#zarf-şifrelemesi-env-enc1)
+8. [Yerel depolama (EsrStorage)](#yerel-depolama-esrstorage)
+9. [EsrSync metotları](#esrsync-metotları)
+10. [Sync yaşam döngüsü](#sync-yaşam-döngüsü)
+11. [Durum değerleri](#durum-değerleri-esrsyncstatus)
+12. [SDK hata kodları](#sdk-istemci-hata-kodları)
+13. [Düşük seviye RelayClient](#düşük-seviye-relayclient)
 
 ---
 
@@ -38,9 +39,39 @@ Node 18+ veya `fetch` ve Web Crypto destekleyen modern tarayıcı gerekir.
 
 ---
 
+## Uygulama kodu vs SDK
+
+Senkronla opak JSON anlık görüntüleri saklar. Uygulamanın veri modelini, arayüzünü, faturalandırma ekranlarını veya store katmanını **içermez**. Örneklerde yer tutucu adlar kullanılır — `@senkronla/client` parçası **değildir**:
+
+```typescript
+// Kod örneği açıklaması
+//   // app:     UYGULAMA kodu — @senkronla/client parçası değil
+//   appStore, appUi, appSession — yer tutucu; uygulamanın state/UI/auth katmanına bağlayın
+//   EsrSync, createDocumentAdapter, … — SDK (@senkronla/client)
+```
+
+| Alan | Uygulama sağlar | SDK sağlar |
+|------|-----------------|------------|
+| Belge adapter'ı | `exportDocument` / `importDocument` — uygulama durumunu JSON olarak serileştirin ve uygulayın | Uygulamanın sağladığı fonksiyonları sarar; push/pull sırasında çağırır |
+| Çalışma alanı kimliği | Müşteri başına sabit UUID; `ensureNamespace()` öncesi kalıcı saklayın | Kimliği relay'e gönderir; kayıt açıkken namespace'i uygulamaya bağlar |
+| Kurtarma ifadesi UX | `onRecoveryPhrase` — 24 kelimelik ifadeyi kopyalama/kaydetme modalı (zorunlu, bir kez) | Çalışma alanı oluşturulunca ifade üretir; uygulama callback'ini çağırır |
+| Çakışma UX | `onConflict` — kullanıcıya sorun; `remote`, `local` veya `cancel` döndürün (zorunlu) | Revision uyuşmazlığını algılar; uygulama seçene kadar bekler |
+| Cihaz limiti UX | `onDeviceLimit` — slotlar dolunca yükseltme / iptal arayüzü (isteğe bağlı) | `DEVICE_LIMIT_*` hatalarını slot paketi ipuçlarıyla iletir |
+| Senkron göstergeleri | `onStatusChange`, `onDocumentStatusChange` — rozet veya spinner (isteğe bağlı) | `idle`, `syncing`, `conflict`, `offline` vb. bildirir |
+| Yerel düzenleme bağlantısı | Yerel düzenlemeden sonra `appStore` dinleyicisinden (veya eşdeğerinden) `notifyLocalChange(documentId?)` çağırın | Gecikmeli push kuyruğu (varsayılan 2 sn) |
+| Eşleştirme ekranları | `startPairing()` sonucundaki `code` / `qrPayload` değerlerini gösterin; misafir `joinPairing()` için kodu girer | Eşleştirme token'ı oluşturur; kod, QR yükü, süre döndürür |
+| Senkron parolası | `resolvePassword()` veya manuel `buildEnvelope` parolası — `appSession`, keychain veya prompt | Push'ta `ENV-ENC1` zarfı oluşturur; pull'da çözer |
+| Yerel kalıcılık | `EsrStorage` uygulaması veya `createLocalStorageAdapter`; mobilde güvenli depolama | `deviceToken`, belge revision'ları, isteğe bağlı kurtarma ifadesi saklar |
+| Relay bağlantısı | Relay operatöründen `relayUrl`, `appId`, native alanlar | Relay'e HTTP + WebSocket istemcisi |
+
+İnsan dokümantasyonu: [/tr/sdk#integration](/tr/sdk#integration)
+
+---
+
 ## Minimal kurulum
 
 ```typescript
+// Kod örneği açıklaması — yukarıdaki "Uygulama kodu vs SDK" bölümüne bakın
 import {
   EsrSync,
   createDocumentAdapter,
@@ -49,33 +80,39 @@ import {
 } from '@senkronla/client'
 
 const namespaceId = generateNamespaceId()
-// ensureNamespace öncesi kalıcı saklayın — yeniden kurulumda aynı id
+// app: ensureNamespace öncesi kalıcı saklayın — yeniden kurulumda aynı id
 
 const document = createDocumentAdapter({
   namespaceId,
   namespaceLabel: 'Müşteri çalışma alanı',
   contentType: 'application/vnd.myapp+json',
   encrypt: true,
-  resolvePassword: async () => session.getSyncPassword(), // uygulama sağlar — SDK üretmez
+  // app: senkron parolası — SDK üretmez
+  resolvePassword: async () => appSession.getSyncPassword(),
+  // app: uygulama durumunu JSON olarak serileştirin / geri yükleyin
   exportDocument: () => appStore.exportJson(),
-  importDocument: (data) => appStore.importJson(data),
+  importDocument: (json) => appStore.importJson(json),
 })
 
 const sync = await EsrSync.connect({
   relayUrl: 'https://sync.ornek.com/v1',
+  appId: 'esr_app_mynotes', // GET /health → apps.enabled true iken zorunlu
   document,
-  storage: createLocalStorageAdapter(),
-  onRecoveryPhrase: async ({ phrase, namespaceId }) => {
-    await ui.showRecoveryModal(phrase) // ZORUNLU — bir kez
+  storage: createLocalStorageAdapter('myapp'),
+  // app: zorunlu — bir kez gösterin; kullanıcı çevrimdışı kaydetmeli
+  onRecoveryPhrase: async ({ phrase }) => {
+    await appUi.showRecoveryModal(phrase)
   },
+  // app: zorunlu — 'remote' | 'local' | 'cancel' döndürün
   onConflict: async (ctx) => {
-    // ctx.documentId hangi slot'ta çakışma olduğunu gösterir
-    return ui.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
+    return appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
   },
 })
+// Native: appPlatform, bundleId; GET /health → apps.nativeRequireClientSecret iken clientSecret
 
 await sync.ensureNamespace()
 await sync.sync()
+// app: her yerel düzenlemeden sonra çağırın
 appStore.onChange(() => sync.notifyLocalChange('primary'))
 ```
 
@@ -97,6 +134,7 @@ let settings = { theme: 'light' as const }
 
 const sync = await EsrSync.connect({
   relayUrl: 'https://sync.ornek.com/v1',
+  appId: 'esr_app_mynotes', // GET /health → apps.enabled true iken zorunlu
   storage: createMemoryStorageAdapter(),
   documents: [
     {
@@ -105,7 +143,7 @@ const sync = await EsrSync.connect({
         namespaceLabel: 'Müşteri çalışma alanı',
         contentType: 'application/vnd.myapp+json',
         encrypt: true,
-        resolvePassword: async () => session.getSyncPassword(),
+        resolvePassword: async () => appSession.getSyncPassword(),
         exportDocument: async () => appState,
         importDocument: async (json) => {
           appState = json as typeof appState
@@ -119,7 +157,7 @@ const sync = await EsrSync.connect({
         namespaceLabel: 'Müşteri çalışma alanı',
         contentType: 'application/vnd.example.settings+json',
         encrypt: true,
-        resolvePassword: async () => session.getSyncPassword(),
+        resolvePassword: async () => appSession.getSyncPassword(),
         exportDocument: async () => settings,
         importDocument: async (json) => {
           settings = json as typeof settings
@@ -127,12 +165,12 @@ const sync = await EsrSync.connect({
       }),
     },
   ],
-  onRecoveryPhrase: async ({ phrase }) => ui.showRecoveryModal(phrase),
+  // app: zorunlu callback'ler — appUi ile değiştirin
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
   onConflict: async (ctx) => {
-    console.log('Çakışma:', ctx.documentId)
-    return 'remote'
+    return appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
   },
-  onDocumentStatusChange: (documentId, status) => ui.setDocBadge(documentId, status),
+  onDocumentStatusChange: (documentId, status) => appUi.setDocBadge(documentId, status),
 })
 
 console.log(sync.documentIds) // ['primary', 'settings']
@@ -153,9 +191,9 @@ const listed = await sync.relay.listDocuments(namespaceId)
 |---------|---------|------------|----------|
 | `relayUrl` | evet | — | `/v1` ile biten temel URL |
 | `appId` | relay gerektiriyorsa | — | Public app id (`esr_app_…`) — `apps.enabled` iken |
-| `appPlatform` | native | — | `ios` veya `android` |
-| `bundleId` | native | — | Bundle ID veya package name |
-| `clientSecret` | native confidential | — | Operatör zorunlu kıldığında |
+| `appPlatform` | native | — | `ios`, `android` veya `desktop` |
+| `bundleId` | native | — | Bundle ID, paket adı veya masaüstü uygulama kimliği |
+| `clientSecret` | native confidential | — | `native.requireClientSecret: true` iken; rotate-secret ile, kayıtta otomatik değil |
 | `clientVersion` | hayır | — | `X-ESR-Client-Version` telemetri |
 | `document` | birinden* | — | Tek belge (`primary`) |
 | `documents` | birinden* | — | Çoklu slot (`documentId?` + `adapter`) |
@@ -179,6 +217,70 @@ const listed = await sync.relay.listDocuments(namespaceId)
 | `fetch` | hayır | `globalThis.fetch` | Test veya özel runtime için |
 
 \* `document` veya `documents` — tam olarak biri.
+
+### Tam connect örneği (web SPA)
+
+```typescript
+const sync = await EsrSync.connect({
+  relayUrl: 'https://sync.ornek.com/v1',
+  appId: 'esr_app_mynotes', // GET /health → apps.enabled true iken zorunlu
+  document,
+  storage: createLocalStorageAdapter('myapp'),
+  deviceLabel: 'Alice laptop',
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
+  onConflict: async (ctx) => appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt),
+  onDocumentStatusChange: (documentId, status) => appUi.setDocBadge(documentId, status),
+  onDeviceLimit: async (ctx) => {
+    if (ctx.code === 'DEVICE_LIMIT_PAYMENT_REQUIRED') appUi.showUpgrade(ctx.slotPackages)
+  },
+  onStatusChange: (status) => appUi.setSyncIndicator(status),
+  onError: (error) => appLogger.warn(error.code),
+  pushDebounceMs: 2000,
+  notificationsEnabled: true,
+  persistRecoveryPhrase: true,
+})
+// Native: appPlatform, bundleId; GET /health → apps.nativeRequireClientSecret iken clientSecret
+```
+
+`appId`'yi yalnızca relay `apps.enabled: false` (v1.2 legacy) iken atlayın. Kayıt, native alanlar ve client secret için [Uygulama kaydı](#uygulama-kaydı-v13) bölümüne bakın.
+
+---
+
+## Uygulama kaydı (v1.3)
+
+Relay'de `apps.enabled: true` iken her entegrasyon kayıtlı `appId` ile kendini tanıtmalıdır. Namespace'ler onu oluşturan uygulamaya bağlıdır.
+
+### İki kimlik katmanı
+
+| Katman | Mekanizma | Soru |
+|--------|-----------|------|
+| Uygulama | `appId` + `Origin` (web) veya platform/bundle başlıkları (native) | Hangi entegrasyon relay'i kullanabilir? |
+| Cihaz | `Authorization: Bearer {deviceToken}` | Hangi eşleşmiş cihaz, hangi namespace? |
+
+App başlıkları tüm `/v1` rotalarında zorunlu (create/pair/recover dahil). İlk `POST /v1/namespaces`'te cihaz token'ı yok — yanıtta döner.
+
+### Kayıt modları
+
+| Config | Kim kaydeder |
+|--------|--------------|
+| `apps.enabled: false` | App başlığı yok — v1.2 |
+| `operator_managed` | Operatör (YAML veya `/operator`) |
+| `self_service` | Geliştiriciler `/developer` |
+
+### Onay
+
+- **Web:** HTTPS origin → DNS TXT veya well-known → `active`
+- **Native:** bundle ekle → `requireManualReview` açıksa operatör onaylar → tüm bundle'lar onaylı → `active`
+
+### Native client secret
+
+- Kayıtta otomatik atanmaz
+- `native.requireClientSecret: true` iken kimlik doğrulamasız rotalarda zorunlu
+- `POST .../rotate-secret` veya portal
+- `EsrSync.connect({ clientSecret })` veya `X-ESR-Client-Secret`
+- Web build'lerine gömülmemeli
+
+Tam spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md). İnsan dokümantasyonu: `/sdk#app-registry`, `/api#app-registry`.
 
 ---
 
@@ -228,16 +330,14 @@ Tipik kaynaklar: oturum açılışında sorulan master password, OS keychain / s
 
 ```typescript
 const document = createDocumentAdapter({
-  namespaceId: workspace.id,
-  namespaceLabel: workspace.name,
+  namespaceId: appWorkspace.id,
+  namespaceLabel: appWorkspace.name,
   contentType: 'application/vnd.myapp+json',
   encrypt: true,
-  resolvePassword: async () => {
-    // Uygulama sağlar — SDK senkron parolası üretmez.
-    return session.getSyncPassword()
-  },
-  exportDocument: () => store.exportSnapshot(),
-  importDocument: (data) => store.importSnapshot(data),
+  // app: senkron parolası — SDK üretmez
+  resolvePassword: async () => appSession.getSyncPassword(),
+  exportDocument: () => appStore.exportSnapshot(),
+  importDocument: (json) => appStore.importSnapshot(json),
 })
 ```
 
@@ -246,12 +346,13 @@ const document = createDocumentAdapter({
 ```typescript
 import { buildEnvelope, extractDocument } from '@senkronla/client'
 
-const password = await session.getSyncPassword()
+// app: resolvePassword() ile aynı kaynak
+const password = await appSession.getSyncPassword()
 
 const envelope = await buildEnvelope({
-  namespaceId: workspace.id,
-  namespaceLabel: workspace.name,
-  documentJson: JSON.stringify(await store.exportSnapshot()),
+  namespaceId: appWorkspace.id,
+  namespaceLabel: appWorkspace.name,
+  documentJson: JSON.stringify(await appStore.exportSnapshot()),
   deviceId: clientDeviceId,
   contentType: 'application/vnd.myapp+json',
   encrypt: true,
@@ -318,9 +419,10 @@ await sync.startPairing({
 #### Çakışmalar
 
 ```typescript
+// app: uygulama tarafında uygulayın — @senkronla/client sağlamaz
 onConflict: async (ctx) => {
   // ctx: { namespaceId, documentId, knownRevision, remoteRevision, remoteMeta }
-  return ui.askUser()
+  return appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt) // 'remote' | 'local' | 'cancel'
 }
 
 await sync.resolveConflict('remote', 'settings')

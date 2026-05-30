@@ -10,17 +10,18 @@ Default path for JS/TS stacks: **`EsrSync`** facade. Use [REST](api-en.md) only 
 ## Table of contents
 
 1. [Install](#install)
-2. [Minimal setup](#minimal-setup)
-3. [Multi-document](#multi-document)
-4. [EsrSync.connect options](#esrsyncconnect-options)
-5. [Document adapter](#document-adapter)
-6. [Envelope encryption (ENV-ENC1)](#envelope-encryption-env-enc1)
-7. [Local storage (EsrStorage)](#local-storage-esrstorage)
-8. [EsrSync methods](#esrsync-methods)
-9. [Sync lifecycle](#sync-lifecycle)
-10. [Status values](#status-values-esrsyncstatus)
-11. [SDK error codes](#sdk-client-error-codes)
-12. [Low-level RelayClient](#low-level-relayclient)
+2. [App code vs the SDK](#app-code-vs-the-sdk)
+3. [Minimal setup](#minimal-setup)
+4. [Multi-document](#multi-document)
+5. [EsrSync.connect options](#esrsyncconnect-options)
+6. [Document adapter](#document-adapter)
+7. [Envelope encryption (ENV-ENC1)](#envelope-encryption-env-enc1)
+8. [Local storage (EsrStorage)](#local-storage-esrstorage)
+9. [EsrSync methods](#esrsync-methods)
+10. [Sync lifecycle](#sync-lifecycle)
+11. [Status values](#status-values-esrsyncstatus)
+12. [SDK error codes](#sdk-client-error-codes)
+13. [Low-level RelayClient](#low-level-relayclient)
 
 ---
 
@@ -38,9 +39,39 @@ Runnable example: `examples/multi-document-sync.ts` (`pnpm example:multi-documen
 
 ---
 
+## App code vs the SDK
+
+Senkronla stores opaque JSON snapshots. It does **not** ship the app's data model, UI, billing screens, or store layer. Samples use placeholder names — **not** part of `@senkronla/client`:
+
+```typescript
+// Code sample legend
+//   // app:     APP code — not part of @senkronla/client
+//   appStore, appUi, appSession — placeholder names; wire to the app's state/UI/auth
+//   EsrSync, createDocumentAdapter, … — SDK (@senkronla/client)
+```
+
+| Area | App provides | SDK provides |
+|------|--------------|--------------|
+| Document adapter | `exportDocument` / `importDocument` — serialize and apply app state as JSON | Wraps app-provided functions; calls them on push/pull |
+| Workspace id | Stable UUID per customer workspace; persist before `ensureNamespace()` | Sends id to relay; binds namespace to app when registry enabled |
+| Recovery phrase UX | `onRecoveryPhrase` — modal to copy/save the 24-word phrase (required, once) | Generates phrase at workspace creation; invokes the app callback |
+| Conflict UX | `onConflict` — ask user; return `remote`, `local`, or `cancel` (required) | Detects revision mismatch; pauses until the app chooses |
+| Device limit UX | `onDeviceLimit` — open upgrade / revoke UI when slots are full (optional) | Surfaces `DEVICE_LIMIT_*` errors with slot package hints |
+| Sync indicators | `onStatusChange`, `onDocumentStatusChange` — badges or spinners (optional) | Reports `idle`, `syncing`, `conflict`, `offline`, … |
+| Local edit wiring | After local edits, call `notifyLocalChange(documentId?)` from `appStore` (or equivalent listener) | Debounced push queue (default 2s) |
+| Pairing screens | Show `code` / `qrPayload` from `startPairing()`; guest enters code for `joinPairing()` | Creates pairing token; returns code, QR payload, expiry |
+| Sync password | `resolvePassword()` or manual `buildEnvelope` password — `appSession`, keychain, or prompt | Builds `ENV-ENC1` envelopes on push; decrypts on pull |
+| Local persistence | `EsrStorage` implementation or `createLocalStorageAdapter`; secure storage on mobile | Persists `deviceToken`, per-document revisions, optional recovery phrase |
+| Relay connection | `relayUrl`, `appId`, native fields from the relay operator | HTTP + WebSocket client to the relay |
+
+Human docs: [/sdk#integration](/sdk#integration)
+
+---
+
 ## Minimal setup
 
 ```typescript
+// Code sample legend — see "App code vs the SDK" above
 import {
   EsrSync,
   createDocumentAdapter,
@@ -49,33 +80,39 @@ import {
 } from '@senkronla/client'
 
 const namespaceId = generateNamespaceId()
-// Persist before ensureNamespace — same id across reinstalls (or use your workspace UUID)
+// app: persist before ensureNamespace — same id across reinstalls
 
 const document = createDocumentAdapter({
   namespaceId,
   namespaceLabel: 'Acme Corp workspace',
   contentType: 'application/vnd.myapp+json',
   encrypt: true,
-  resolvePassword: async () => session.getSyncPassword(), // your app provides — SDK never generates
+  // app: sync password — SDK never generates it
+  resolvePassword: async () => appSession.getSyncPassword(),
+  // app: serialize / restore app state as JSON
   exportDocument: () => appStore.exportJson(),
-  importDocument: (data) => appStore.importJson(data),
+  importDocument: (json) => appStore.importJson(json),
 })
 
 const sync = await EsrSync.connect({
   relayUrl: 'https://sync.example.com/v1',
+  appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
   document,
-  storage: createLocalStorageAdapter(),
-  onRecoveryPhrase: async ({ phrase, namespaceId }) => {
-    await ui.showRecoveryModal(phrase) // REQUIRED — once
+  storage: createLocalStorageAdapter('myapp'),
+  // app: required — show once; user must save offline
+  onRecoveryPhrase: async ({ phrase }) => {
+    await appUi.showRecoveryModal(phrase)
   },
+  // app: required — return 'remote' | 'local' | 'cancel'
   onConflict: async (ctx) => {
-    // ctx.documentId identifies which slot conflicted
-    return ui.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt) // 'local' | 'remote' | 'cancel'
+    return appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
   },
 })
+// Native: add appPlatform, bundleId; clientSecret when GET /health → apps.nativeRequireClientSecret
 
 await sync.ensureNamespace()
-await sync.sync() // all documents
+await sync.sync()
+// app: call after every local edit
 appStore.onChange(() => sync.notifyLocalChange('primary'))
 ```
 
@@ -97,6 +134,7 @@ let settings = { theme: 'light' as const }
 
 const sync = await EsrSync.connect({
   relayUrl: 'https://sync.example.com/v1',
+  appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
   storage: createMemoryStorageAdapter(),
   documents: [
     {
@@ -105,7 +143,7 @@ const sync = await EsrSync.connect({
         namespaceLabel: 'Acme Corp workspace',
         contentType: 'application/vnd.myapp+json',
         encrypt: true,
-        resolvePassword: async () => session.getSyncPassword(),
+        resolvePassword: async () => appSession.getSyncPassword(),
         exportDocument: async () => appState,
         importDocument: async (json) => {
           appState = json as typeof appState
@@ -119,7 +157,7 @@ const sync = await EsrSync.connect({
         namespaceLabel: 'Acme Corp workspace',
         contentType: 'application/vnd.example.settings+json',
         encrypt: true,
-        resolvePassword: async () => session.getSyncPassword(),
+        resolvePassword: async () => appSession.getSyncPassword(),
         exportDocument: async () => settings,
         importDocument: async (json) => {
           settings = json as typeof settings
@@ -127,12 +165,12 @@ const sync = await EsrSync.connect({
       }),
     },
   ],
-  onRecoveryPhrase: async ({ phrase }) => ui.showRecoveryModal(phrase),
+  // app: required callbacks — replace with app UI
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
   onConflict: async (ctx) => {
-    console.log('Conflict on', ctx.documentId)
-    return 'remote'
+    return appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt)
   },
-  onDocumentStatusChange: (documentId, status) => ui.setDocBadge(documentId, status),
+  onDocumentStatusChange: (documentId, status) => appUi.setDocBadge(documentId, status),
 })
 
 console.log(sync.documentIds) // ['primary', 'settings']
@@ -154,9 +192,9 @@ Non-`primary` ids use envelope `schemaVersion: 2` (SDK handles this automaticall
 |--------|----------|---------|-------------|
 | `relayUrl` | yes | — | Base URL ending in `/v1` |
 | `appId` | when relay requires | — | Public app id (`esr_app_…`) when `apps.enabled` |
-| `appPlatform` | native | — | `ios` or `android` |
-| `bundleId` | native | — | Bundle ID or package name |
-| `clientSecret` | native confidential | — | Only when operator requires native secret |
+| `appPlatform` | native | — | `ios`, `android`, or `desktop` |
+| `bundleId` | native | — | Bundle ID, package name, or desktop app ID |
+| `clientSecret` | native confidential | — | When `native.requireClientSecret: true`; set via rotate-secret, not on app create |
 | `clientVersion` | no | — | Telemetry header `X-ESR-Client-Version` |
 | `document` | one of* | — | Single-document shorthand (`primary`) |
 | `documents` | one of* | — | Multi-document slots (`documentId?` + `adapter`) |
@@ -180,6 +218,100 @@ Non-`primary` ids use envelope `schemaVersion: 2` (SDK handles this automaticall
 | `fetch` | no | `globalThis.fetch` | Override for tests or custom runtimes |
 
 \* Provide exactly one of `document` or `documents`.
+
+### Full connect example (web SPA)
+
+```typescript
+const sync = await EsrSync.connect({
+  relayUrl: 'https://sync.example.com/v1',
+  appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
+  document,
+  storage: createLocalStorageAdapter('myapp'),
+  deviceLabel: 'Alice laptop',
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
+  onConflict: async (ctx) => appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt),
+  onDocumentStatusChange: (documentId, status) => appUi.setDocBadge(documentId, status),
+  onDeviceLimit: async (ctx) => {
+    if (ctx.code === 'DEVICE_LIMIT_PAYMENT_REQUIRED') appUi.showUpgrade(ctx.slotPackages)
+  },
+  onStatusChange: (status) => appUi.setSyncIndicator(status),
+  onError: (error) => appLogger.warn(error.code),
+  pushDebounceMs: 2000,
+  notificationsEnabled: true,
+  persistRecoveryPhrase: true,
+})
+// Native: add appPlatform, bundleId; clientSecret when GET /health → apps.nativeRequireClientSecret
+```
+
+Omit `appId` only when the relay keeps `apps.enabled: false` (v1.2 legacy). See [Application registry](#application-registry-v13) for registration, native fields, and client secret.
+
+---
+
+## Application registry (v1.3)
+
+When the relay has `apps.enabled: true`, every integration must identify itself with a registered `appId`. Namespaces belong to the app that created them.
+
+### Two auth layers
+
+| Layer | Mechanism | Question |
+|-------|-----------|----------|
+| App | `appId` + `Origin` (web) or platform/bundle headers (native) | Which integration may call this relay? |
+| Device | `Authorization: Bearer {deviceToken}` | Which paired device in which namespace? |
+
+App headers are required on all `/v1` routes (including unauthenticated create/pair/recover). Device token is omitted on first `POST /v1/namespaces` — returned in the response.
+
+### Registration modes
+
+| Config | Who registers |
+|--------|---------------|
+| `apps.enabled: false` | No app headers — v1.2 behaviour |
+| `operator_managed` | Operator via YAML seed or `/operator` |
+| `self_service` | Developers at `/developer` |
+
+### Approval before API access
+
+- **Web:** register HTTPS origin → DNS TXT or `/.well-known/esr-app-verification` → status `active`
+- **Native:** register bundle per platform → operator approves when `requireManualReview: true` → all bundles approved → `active`
+
+### Native client secret
+
+- Not assigned on app create
+- Required when `native.requireClientSecret: true` on unauthenticated routes
+- Create/rotate via `POST .../rotate-secret` or operator/developer portal
+- Pass to `EsrSync.connect({ clientSecret })` or `X-ESR-Client-Secret`
+- Never embed in web builds
+
+### SDK examples
+
+```typescript
+// Web SPA
+await EsrSync.connect({
+  relayUrl: 'https://sync.example.com/v1',
+  appId: 'esr_app_mynotes',
+  document,
+  storage,
+  onRecoveryPhrase,
+  onConflict,
+})
+
+// Native / desktop
+await EsrSync.connect({
+  relayUrl: 'https://sync.example.com/v1',
+  appId: 'esr_app_mynotes_mobile',
+  appPlatform: 'desktop',
+  bundleId: 'com.example.mynotes',
+  clientSecret: process.env.ESR_CLIENT_SECRET, // when required
+  document,
+  storage,
+  onRecoveryPhrase,
+  onConflict,
+})
+
+// Restrict guest apps at pairing time
+await sync.startPairing({ allowedAppIds: ['esr_app_mynotes_mobile'] })
+```
+
+Full spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md). Human docs: `/sdk#app-registry`, `/api#app-registry`.
 
 ---
 
@@ -229,16 +361,14 @@ Typical sources: master password at login, OS keychain / secure enclave, workspa
 
 ```typescript
 const document = createDocumentAdapter({
-  namespaceId: workspace.id,
-  namespaceLabel: workspace.name,
+  namespaceId: appWorkspace.id,
+  namespaceLabel: appWorkspace.name,
   contentType: 'application/vnd.myapp+json',
   encrypt: true,
-  resolvePassword: async () => {
-    // Your app supplies this — the SDK never generates a sync password.
-    return session.getSyncPassword()
-  },
-  exportDocument: () => store.exportSnapshot(),
-  importDocument: (data) => store.importSnapshot(data),
+  // app: sync password — SDK never generates it
+  resolvePassword: async () => appSession.getSyncPassword(),
+  exportDocument: () => appStore.exportSnapshot(),
+  importDocument: (json) => appStore.importSnapshot(json),
 })
 ```
 
@@ -247,12 +377,13 @@ const document = createDocumentAdapter({
 ```typescript
 import { buildEnvelope, extractDocument } from '@senkronla/client'
 
-const password = await session.getSyncPassword()
+// app: same password source as resolvePassword()
+const password = await appSession.getSyncPassword()
 
 const envelope = await buildEnvelope({
-  namespaceId: workspace.id,
-  namespaceLabel: workspace.name,
-  documentJson: JSON.stringify(await store.exportSnapshot()),
+  namespaceId: appWorkspace.id,
+  namespaceLabel: appWorkspace.name,
+  documentJson: JSON.stringify(await appStore.exportSnapshot()),
   deviceId: clientDeviceId,
   contentType: 'application/vnd.myapp+json',
   encrypt: true,
@@ -341,6 +472,7 @@ Call on app launch (after `ensureNamespace`), network reconnect, window focus. W
 #### notifyLocalChange / flushPush
 
 ```typescript
+// app: subscribe to appStore — call after every local edit
 appStore.onChange(() => sync.notifyLocalChange('primary'))
 await sync.flushPush('settings') // skip debounce — before logout
 ```
@@ -369,9 +501,10 @@ await sync.recover('word1 word2 ... word24')
 #### Conflicts
 
 ```typescript
+// app: implement — not provided by @senkronla/client
 onConflict: async (ctx) => {
   // ctx: { namespaceId, documentId, knownRevision, remoteRevision, remoteMeta }
-  return ui.askUser() // 'remote' | 'local' | 'cancel'
+  return appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt) // 'remote' | 'local' | 'cancel'
 }
 
 await sync.resolveConflict('remote', 'settings')

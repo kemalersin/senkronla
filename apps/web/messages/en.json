@@ -164,6 +164,10 @@
           "s6": {
             "title": "Wire the sync loop",
             "body": "<tag>ensureNamespace()</tag> → <tag>sync()</tag> on startup (all documents) → <tag>notifyLocalChange(documentId?)</tag> after edits → <tag>flushPush(documentId?)</tag> before logout."
+          },
+          "s7": {
+            "title": "Register your app (when relay requires it)",
+            "body": "If the operator enabled <tag>apps.enabled</tag>, obtain an <tag>appId</tag>, complete origin or bundle approval, and pass app fields to <tag>EsrSync.connect()</tag>. See <sdkAppLink>SDK — Application registry</sdkAppLink>."
           }
         }
       },
@@ -374,7 +378,12 @@
           "limitMode": "<tag>payment</tag> or <tag>block</tag> when the device limit is reached",
           "cors": "Comma-separated allowed origins — avoid <tag>*</tag> in production",
           "maxDocuments": "Max documents per namespace ( default 32, 0 = unlimited)",
-          "allowedDocIds": "Optional comma-separated document ID allowlist (e.g. primary,settings)"
+          "allowedDocIds": "Optional comma-separated document ID allowlist (e.g. primary,settings)",
+          "appsEnabled": "<tag>ESR_APPS__ENABLED</tag> — enable app registry (default false)",
+          "appsRegistrationMode": "<tag>ESR_APPS__REGISTRATION_MODE</tag> — <tag>operator_managed</tag> or <tag>self_service</tag>",
+          "appsLocalhost": "<tag>ESR_APPS__ALLOW_LOCALHOST_ORIGINS</tag> — allow <tag>http://localhost</tag> without DNS verify (dev only)",
+          "appsNativeSecret": "<tag>ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET</tag> — require <tag>X-ESR-Client-Secret</tag> on unauthenticated routes",
+          "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 chars; required for <tag>/developer</tag> portal when self-service"
         }
       },
       "verify": {
@@ -403,6 +412,7 @@
         "li2": "Enable <tag>server.trustProxy: true</tag> (or equivalent) so rate limits use the client IP",
         "li3": "Restrict <tag>ESR_CORS_ORIGINS</tag> to your app domains",
         "li4": "Schedule Postgres backups and snapshot the blob volume",
+        "li5": "When enabling app registry: register apps, verify origins, set <tag>legacyDefaultAppId</tag> for existing namespaces — see <specLink>16-APP-REGISTRY §19</specLink>",
         "operatorTitle": "Unlock codes",
         "operatorBody": "After manual payment or support verification, generate slot unlock codes with the CLI (requires <tag>ESR_ADMIN_TOKEN</tag>):"
       },
@@ -511,6 +521,7 @@
     "title": "Client SDK reference",
     "intro": "Package: <tag>@senkronla/client</tag>. The <tag>EsrSync</tag> class is your main entry point — it wraps HTTP, optional <tag>WebSocket</tag> notifications, local revision tracking, and user-facing callbacks.",
     "nav": {
+      "integration": "App code vs SDK",
       "quick-start": "Quick start",
       "install": "Install",
       "connect": "Connect options",
@@ -537,12 +548,63 @@
       "status": "Status",
       "meaning": "Meaning",
       "code": "Code",
-      "action": "What to do"
+      "action": "What to do",
+      "appProvide": "App provides",
+      "sdkProvides": "SDK provides"
     },
     "sections": {
+      "integration": {
+        "title": "App code vs the SDK",
+        "p1": "Senkronla stores opaque JSON snapshots — it does not ship the app's data model, UI, or billing screens. Samples use placeholder names (<tag>appStore</tag>, <tag>appUi</tag>, <tag>appSession</tag>); they are not part of <tag>@senkronla/client</tag>. Replace them with the app's modules.",
+        "legendTitle": "Reading code samples",
+        "legendApp": "Lines marked <tag>// app:</tag> or names like <tag>appStore</tag> / <tag>appUi</tag> — the host application.",
+        "legendSdk": "<tag>EsrSync</tag>, <tag>createDocumentAdapter</tag>, <tag>notifyLocalChange</tag>, etc. — provided by the SDK.",
+        "tableTitle": "Responsibility split",
+        "rowLabels": {
+          "adapter": "Document adapter",
+          "namespaceId": "Workspace id",
+          "recoveryUi": "Recovery phrase UX",
+          "conflictUi": "Conflict UX",
+          "deviceLimitUi": "Device limit UX",
+          "statusUi": "Sync indicators",
+          "changeWiring": "Local edit wiring",
+          "pairingUi": "Pairing screens",
+          "password": "Sync password",
+          "storage": "Local persistence",
+          "relayConfig": "Relay connection"
+        },
+        "rowApp": {
+          "adapter": "<tag>exportDocument</tag> / <tag>importDocument</tag> — serialize and apply app state as JSON",
+          "namespaceId": "Stable UUID per customer workspace; persist before <tag>ensureNamespace()</tag>",
+          "recoveryUi": "<tag>onRecoveryPhrase</tag> — modal to copy/save the 24-word phrase (required, once)",
+          "conflictUi": "<tag>onConflict</tag> — ask user; return <tag>remote</tag>, <tag>local</tag>, or <tag>cancel</tag> (required)",
+          "deviceLimitUi": "<tag>onDeviceLimit</tag> — open upgrade / revoke UI when slots are full (optional)",
+          "statusUi": "<tag>onStatusChange</tag>, <tag>onDocumentStatusChange</tag> — badges or spinners (optional)",
+          "changeWiring": "After local edits, call <tag>notifyLocalChange(documentId?)</tag> from <tag>appStore</tag> (or equivalent listener)",
+          "pairingUi": "Show <tag>code</tag> / <tag>qrPayload</tag> from <tag>startPairing()</tag>; guest enters code for <tag>joinPairing()</tag>",
+          "password": "<tag>resolvePassword()</tag> or manual <tag>buildEnvelope</tag> password — <tag>appSession</tag>, keychain, or prompt",
+          "storage": "<tag>EsrStorage</tag> implementation or <tag>createLocalStorageAdapter</tag>; secure storage on mobile",
+          "relayConfig": "<tag>relayUrl</tag>, <tag>appId</tag>, native fields from the relay operator"
+        },
+        "rowSdk": {
+          "adapter": "Wraps app-provided functions; calls them on push/pull",
+          "namespaceId": "Sends id to relay; binds namespace to app when registry enabled",
+          "recoveryUi": "Generates phrase at workspace creation; invokes the app callback",
+          "conflictUi": "Detects revision mismatch; pauses until the app chooses",
+          "deviceLimitUi": "Surfaces <tag>DEVICE_LIMIT_*</tag> errors with slot package hints",
+          "statusUi": "Reports <tag>idle</tag>, <tag>syncing</tag>, <tag>conflict</tag>, <tag>offline</tag>, …",
+          "changeWiring": "Debounced push queue (default 2s)",
+          "pairingUi": "Creates pairing token; returns code, QR payload, expiry",
+          "password": "Builds <tag>ENV-ENC1</tag> envelopes on push; decrypts on pull",
+          "storage": "Persists <tag>deviceToken</tag>, per-document revisions, optional recovery phrase",
+          "relayConfig": "HTTP + WebSocket client to the relay"
+        }
+      },
       "quickStart": {
         "title": "Quick start",
-        "p1": "Copy this template into your app and replace the store hooks with your real state management:",
+        "p1": "Copy the template below. Replace <tag>appStore</tag> / <tag>appUi</tag> with the app's modules and set <tag>appId</tag> to your registered app:",
+        "appRegistryTitle": "Application registry",
+        "appRegistryBody": "When <tag>GET /health</tag> reports <tag>apps.enabled: true</tag>, <tag>appId</tag> is required on every relay request. Register the app and verify origin (web) or bundle (native) before calling the API — see <appRegistryLink>Application registry</appRegistryLink>. Omit <tag>appId</tag> only when the relay keeps <tag>apps.enabled: false</tag> (v1.2 legacy).",
         "tipTitle": "Relay URL for this deployment",
         "tipBody": "Set <tag>relayUrl</tag> to {relayUrl} or read it from your own config."
       },
@@ -553,22 +615,23 @@
       },
       "connect": {
         "title": "EsrSync.connect options",
-        "p1": "Required: <tag>relayUrl</tag>, <tag>storage</tag>, <tag>onRecoveryPhrase</tag>, <tag>onConflict</tag>, and either <tag>document</tag> or <tag>documents</tag>. Everything else has sensible defaults:",
-        "p2": "Use <tag>onStatusChange</tag> for a global indicator, <tag>onDocumentStatusChange</tag> per document when using <tag>documents[]</tag>, and <tag>onError</tag> for logging.",
-        "exampleTitle": "Full connect example",
+        "p1": "Required: <tag>relayUrl</tag>, <tag>storage</tag>, <tag>onRecoveryPhrase</tag>, <tag>onConflict</tag>, and either <tag>document</tag> or <tag>documents</tag>. When <tag>apps.enabled</tag> is true, also pass <tag>appId</tag> (plus <tag>appPlatform</tag>, <tag>bundleId</tag>, and <tag>clientSecret</tag> on native when applicable). Other options have sensible defaults:",
+        "p2": "Use <tag>onStatusChange</tag> for a global indicator, <tag>onDocumentStatusChange</tag> per document when using <tag>documents[]</tag>, and <tag>onError</tag> for logging. See <appRegistryLink>Application registry</appRegistryLink> for registration and native fields.",
+        "exampleTitle": "Full connect example (web SPA)",
         "options": {
           "relayUrl": "Base URL ending in <tag>/v1</tag>, e.g. https://sync.example.com/v1",
           "appId": "Public app id (<tag>esr_app_…</tag>) — required when relay has <tag>apps.enabled</tag>",
-          "appPlatform": "Native only: <tag>ios</tag> or <tag>android</tag>",
-          "bundleId": "Native only: bundle ID or package name registered for the app",
-          "clientSecret": "Native confidential clients only — when operator requires a secret",
+          "appPlatform": "Native only: <tag>ios</tag>, <tag>android</tag>, or <tag>desktop</tag>",
+          "bundleId": "Native only: bundle ID, package name, or desktop application ID registered for the app",
+          "clientSecret": "Native confidential clients only — when relay <tag>native.requireClientSecret</tag> is true; set via rotate-secret, never auto-assigned on app create",
+          "clientVersion": "Optional telemetry — sent as <tag>X-ESR-Client-Version</tag>",
           "document": "Single-document shorthand — first slot is <tag>primary</tag>",
           "documents": "Multi-document: array of slots with optional <tag>documentId</tag> and <tag>adapter</tag> (first slot defaults to <tag>primary</tag>)",
           "storage": "<tag>EsrStorage</tag> implementation (<tag>createLocalStorageAdapter</tag> for web)",
-          "onRecoveryPhrase": "Required. Called once with the 24-word phrase when namespace is created.",
-          "onConflict": "Required. Return <tag>remote</tag>, <tag>local</tag>, or <tag>cancel</tag> when versions diverge.",
-          "onDeviceLimit": "Optional. Called on <tag>DEVICE_LIMIT_*</tag> errors — open billing UI.",
-          "onDocumentStatusChange": "Optional. <tag>(documentId, status)</tag> — recommended for multi-document UIs.",
+          "onRecoveryPhrase": "Required — your UI. Called once with the 24-word phrase when the namespace is created.",
+          "onConflict": "Required — your UI. Return <tag>remote</tag>, <tag>local</tag>, or <tag>cancel</tag> when versions diverge.",
+          "onDeviceLimit": "Optional — your billing/settings UI. Called on <tag>DEVICE_LIMIT_*</tag> errors.",
+          "onDocumentStatusChange": "Optional — your UI. <tag>(documentId, status)</tag> for multi-document badges.",
           "pushDebounceMs": "Default 2000. Delay before pushing after <tag>notifyLocalChange()</tag>.",
           "notificationsEnabled": "Default true. Set false for CLI tools or tests.",
           "persistRecoveryPhrase": "Default true. Stores phrase in <tag>EsrStorage</tag> (consider security implications)."
@@ -595,9 +658,17 @@
         },
         "p2": "Pass <tag>appId</tag> (and native fields) to <tag>EsrSync.connect()</tag>. The SDK sends <tag>X-ESR-App-Id</tag> on every relay request; browsers also send <tag>Origin</tag> automatically.",
         "webExampleTitle": "Web SPA",
-        "nativeExampleTitle": "Native (iOS / Android)",
+        "nativeExampleTitle": "Native (iOS / Android / desktop)",
         "registrationTitle": "Registering an app",
-        "registrationP1": "App registration is separate from sync data — it does not grant access to existing namespaces. Web apps register an HTTPS origin and complete DNS TXT or well-known verification. Native apps register platform + bundle ID. Manage apps in <operatorLink>/operator</operatorLink> (operator) or <developerLink>/developer</developerLink> (self-service).",
+        "registrationP1": "App registration is separate from sync data — it does not grant access to existing namespaces. Web apps register an HTTPS origin and complete DNS TXT or well-known verification. Native apps register platform + bundle ID (iOS, Android, or desktop). Manage apps in <operatorLink>/operator</operatorLink> (operator) or <developerLink>/developer</developerLink> (self-service).",
+        "approvalTitle": "Approval before API access",
+        "approvalWebP1": "Web: add an origin, then verify DNS TXT or HTTPS <tag>/.well-known/esr-app-verification</tag>. Status moves from <tag>pending_verification</tag> to <tag>active</tag> when verification succeeds.",
+        "approvalNativeP1": "Native: add a bundle per platform. With <tag>native.requireManualReview: true</tag> (default), an operator must approve each bundle in <operatorLink>/operator</operatorLink> before the app becomes <tag>active</tag>. Portal labels this <tag>Pending approval</tag> — not the same as web origin verification.",
+        "secretTitle": "Native client secret",
+        "secretP1": "Secrets are not created when you register an app. Generate one with <tag>POST .../rotate-secret</tag> or the operator/developer portal after the app is <tag>active</tag> and all bundles are approved.",
+        "secretP2": "Required on unauthenticated routes when <tag>native.requireClientSecret: true</tag>. Pass <tag>clientSecret</tag> to <tag>EsrSync.connect()</tag> or <tag>X-ESR-Client-Secret</tag>. Check relay <tag>GET /health</tag> → <tag>apps.nativeRequireClientSecret</tag> before showing secret UI. Never embed in web builds.",
+        "pairingTitle": "Pairing scope",
+        "pairingP1": "Host devices may pass <tag>allowedAppIds</tag> to <tag>startPairing</tag> to restrict guest apps (e.g. only <tag>esr_app_guest</tag>). Redeem with an unlisted <tag>appId</tag> → <tag>403 APP_PAIRING_NOT_ALLOWED</tag>.",
         "tipTitle": "Local development",
         "tipBody": "Operator sets <tag>allowLocalhostOrigins: true</tag> and registers <tag>http://localhost:'{port}'</tag> as an origin.",
         "migrationTitle": "Migrating from v1.2",
@@ -676,7 +747,7 @@
           },
           "notifyLocalChange": {
             "title": "notifyLocalChange()",
-            "desc": "Queue a debounced push after local edits."
+            "desc": "Queue a debounced push after local edits. You must call this from your store subscription when data changes."
           },
           "flushPush": {
             "title": "flushPush()",
@@ -684,23 +755,23 @@
           },
           "startPairing": {
             "title": "startPairing()",
-            "desc": "Host device generates a 6-digit pairing code."
+            "desc": "Host device generates a 6-digit pairing code. You display code / QR in your UI."
           },
           "joinPairing": {
             "title": "joinPairing(code)",
-            "desc": "Guest device redeems the code and syncs."
+            "desc": "Guest device redeems the code you collect from the user, then syncs."
           },
           "recover": {
             "title": "recover(phrase)",
-            "desc": "Restore access with the 24-word recovery phrase."
+            "desc": "Restore access with the 24-word phrase from your recovery UI."
           },
           "listDevices": {
             "title": "listDevices()",
-            "desc": "List paired devices and slot limits for settings UI."
+            "desc": "List paired devices and slot limits — render in your settings UI."
           },
           "revokeDevice": {
             "title": "revokeDevice(id)",
-            "desc": "Remove another device from the workspace."
+            "desc": "Remove another device from the workspace; refresh your device list UI."
           },
           "redeemUnlockCode": {
             "title": "redeemUnlockCode(code)",
@@ -734,7 +805,7 @@
       "conflicts": {
         "title": "Handling conflicts",
         "p1": "A conflict means the server revision advanced while you had unpushed local edits. The SDK pauses and waits for your callback.",
-        "p2": "<tag>ConflictContext</tag> includes <tag>documentId</tag> plus <tag>remoteMeta</tag> (<tag>writtenAt</tag>, <tag>deviceId</tag>, <tag>contentSha256</tag>) for UI copy.",
+        "p2": "<tag>ConflictContext</tag> includes <tag>documentId</tag> plus <tag>remoteMeta</tag> for dialog copy. Implement <tag>appUi.askKeepLocalOrRemote</tag> (or equivalent) — not provided by the SDK.",
         "manualExample": "Manual resolution"
       },
       "notifications": {
@@ -839,9 +910,12 @@
         "headers": {
           "web": "Web SPA",
           "webDesc": "<tag>X-ESR-App-Id</tag> plus browser <tag>Origin</tag> (must match a verified origin for that app). No client secret in browser builds.",
-          "native": "iOS / Android",
-          "nativeDesc": "<tag>X-ESR-App-Id</tag> + <tag>X-ESR-Platform</tag> (<tag>ios</tag> | <tag>android</tag>) + <tag>X-ESR-Bundle-Id</tag>. Optional <tag>X-ESR-Client-Secret</tag> when operator requires it."
+          "native": "iOS / Android / desktop",
+          "nativeDesc": "<tag>X-ESR-App-Id</tag> + <tag>X-ESR-Platform</tag> (<tag>ios</tag> | <tag>android</tag> | <tag>desktop</tag>) + <tag>X-ESR-Bundle-Id</tag>. Optional <tag>X-ESR-Client-Secret</tag> when <tag>native.requireClientSecret</tag> is true."
         },
+        "authLayersTitle": "Two layers — do not confuse them",
+        "authLayersApp": "App context (<tag>X-ESR-App-Id</tag> + origin or native headers): which registered integration may call this relay.",
+        "authLayersDevice": "Device token (<tag>Authorization: Bearer dvt_…</tag>): which paired device in which namespace. Omitted on first <tag>POST /v1/namespaces</tag>; returned in the response as <tag>deviceToken</tag>.",
         "p2": "Required on all <tag>/v1</tag> routes when enabled — including unauthenticated create, pair, and recover. Exceptions: <tag>/health</tag>, <tag>/v1/admin/*</tag>, and <tag>/v1/developer/*</tag>. WebSocket uses browser <tag>Origin</tag> at handshake time.",
         "flow": {
           "s1": {
@@ -849,14 +923,18 @@
             "body": "Operator seeds YAML or uses <operatorLink>/operator</operatorLink>; in self-service mode developers use <developerLink>/developer</developerLink>."
           },
           "s2": {
-            "title": "Verify origin or bundle",
-            "body": "Web: add DNS TXT or HTTPS <tag>/.well-known/esr-app-verification</tag>. Native: register platform and bundle ID; operator may approve manually."
+            "title": "Verify origin or approve bundle",
+            "body": "Web: DNS TXT or HTTPS <tag>/.well-known/esr-app-verification</tag>. Native: register platform + bundle ID; operator approves when <tag>requireManualReview</tag> is on. App must reach <tag>active</tag> before sync calls succeed."
           },
           "s3": {
-            "title": "Send headers on every sync call",
-            "body": "Include <tag>X-ESR-App-Id</tag> (and web <tag>Origin</tag> or native platform headers) on <tag>POST /v1/namespaces</tag>, authenticated routes, and WebSocket upgrade."
+            "title": "Configure native secret (if required)",
+            "body": "When <tag>GET /health</tag> reports <tag>apps.nativeRequireClientSecret: true</tag>, generate a secret via rotate-secret after the app is active. Send as <tag>X-ESR-Client-Secret</tag> or SDK <tag>clientSecret</tag>."
           },
           "s4": {
+            "title": "Send headers on every sync call",
+            "body": "Include <tag>X-ESR-App-Id</tag> (and web <tag>Origin</tag> or native platform headers) on <tag>POST /v1/namespaces</tag>, authenticated routes, and WebSocket upgrade. Add <tag>Authorization</tag> after you have a <tag>deviceToken</tag>."
+          },
+          "s5": {
             "title": "Namespace stays bound",
             "body": "Create response may include <tag>appId</tag>. Later requests with a different app return <tag>403 APP_NAMESPACE_MISMATCH</tag>."
           }
@@ -888,7 +966,8 @@
           "pairingNotAllowed": "App not in pairing token <tag>allowedAppIds</tag>",
           "clientSecretInvalid": "Wrong native client secret",
           "notVerified": "App pending verification",
-          "nativeIdRequired": "Missing <tag>X-ESR-Platform</tag> or <tag>X-ESR-Bundle-Id</tag>"
+          "nativeIdRequired": "Missing <tag>X-ESR-Platform</tag> or <tag>X-ESR-Bundle-Id</tag>",
+          "bundleNotAllowed": "Bundle ID not registered or not approved for this app"
         },
         "migrationTitle": "Migrating from v1.2",
         "migrationP1": "Ship clients with app headers first, then enable <tag>apps.enabled</tag>, register apps, and set <tag>legacyDefaultAppId</tag> for existing namespaces. Details: <specLink>16-APP-REGISTRY §19</specLink>.",
@@ -1215,6 +1294,7 @@
       "filterAllStatuses": "All statuses",
       "statusActive": "Active",
       "statusPendingVerification": "Pending verification",
+      "statusPendingApproval": "Pending approval",
       "statusPending": "Pending",
       "statusSuspended": "Suspended",
       "statusArchived": "Archived",
@@ -1235,9 +1315,24 @@
       "removeOrigin": "Remove",
       "noOrigins": "No origins registered.",
       "platform": "Platform",
+      "platformIos": "iOS",
+      "platformAndroid": "Android",
+      "platformDesktop": "Desktop",
       "bundleId": "Bundle ID",
       "addBundleButton": "Add bundle",
       "noBundles": "No bundles registered.",
+      "bundleApproved": "Approved",
+      "bundlePendingApproval": "Pending approval",
+      "clientSecret": "Client secret",
+      "clientSecretHint": "Required for native API calls when the relay enforces confidential clients (<tag>GET /health</tag> → <tag>apps.nativeRequireClientSecret</tag>). Pass as <tag>X-ESR-Client-Secret</tag> or the <tag>clientSecret</tag> option in <tag>EsrSync.connect()</tag>. Never embed in web builds.",
+      "clientSecretWhen": "Shown only when the relay requires native secrets, the app is active, and every bundle is approved. Generate via rotate-secret — not assigned on app create.",
+      "clientSecretValue": "Secret (copy now)",
+      "clientSecretOnce": "Shown once. Store it securely (Keychain, Keystore, or server-side env). Rotating invalidates the previous secret.",
+      "clientSecretConfigured": "A client secret is on file. Rotate to reveal a new value.",
+      "clientSecretNone": "No client secret yet. Use Generate secret to create one.",
+      "generateSecret": "Generate secret",
+      "rotateSecret": "Rotate secret",
+      "rotateSecretConfirm": "This invalidates the current client secret immediately. Continue?",
       "approve": "Approve",
       "suspend": "Suspend",
       "activate": "Activate",
@@ -1249,6 +1344,8 @@
       "listCount": "{count, plural, =0 {No developer accounts} one {# developer account} other {# developer accounts}}",
       "emptyTitle": "No developer accounts",
       "emptyHint": "Accounts appear here when self-service registration is enabled and developers sign up.",
+      "prerequisitesTitle": "Self-service prerequisites",
+      "prerequisitesP1": "Enable the developer portal with relay <tag>apps.enabled: true</tag>, <tag>apps.registrationMode: self_service</tag>, and <tag>ESR_DEVELOPER_JWT_SECRET</tag> (min 32 chars). Developers register at <developerLink>/developer</developerLink>. Web apps need a verified HTTPS origin; native apps need bundle approval in this panel when <tag>requireManualReview</tag> is enabled.",
       "closeDetail": "Close",
       "email": "Email",
       "apps": "Apps",
@@ -1291,7 +1388,7 @@
   },
   "developer": {
     "title": "Developer portal",
-    "intro": "Register your application, verify domains, and manage ESR App Registry entries.",
+    "intro": "Register your application, verify domains or native bundles, and manage ESR App Registry entries when the operator enables self-service mode.",
     "loginIntro": "Sign in with your developer account.",
     "registerIntro": "Create a new developer account.",
     "authModeLabel": "Action",

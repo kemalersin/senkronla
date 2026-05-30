@@ -15,13 +15,13 @@ import type {
   RedeemPairingResult,
   RedeemUnlockResult,
 } from './types.js'
-import type { EsrDocEnvelope } from '@senkronla/protocol'
+import type { AppPlatform, EsrDocEnvelope } from '@senkronla/protocol'
 
 export interface RelayClientOptions {
   baseUrl: string
   clientDeviceId: string
   appId?: string
-  appPlatform?: 'web' | 'ios' | 'android'
+  appPlatform?: AppPlatform
   bundleId?: string
   clientSecret?: string
   clientVersion?: string

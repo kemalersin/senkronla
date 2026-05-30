@@ -6,7 +6,7 @@ import { DocSection } from '@/components/doc-section'
 import { DocsLayout } from '@/components/docs-layout'
 import { DocsTable } from '@/components/docs-table'
 import { Link } from '@/i18n/navigation'
-import { createGuideSnippets } from '@/lib/doc-snippets'
+import { createGuideSnippets, SDK_SAMPLE_LEGEND } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
 import { getRelayApiBaseUrl } from '@/lib/public-api-url'
 
@@ -15,6 +15,7 @@ interface PageProps {
 }
 
 const sectionKeys = [
+  'integration',
   'quick-start',
   'install',
   'connect',
@@ -30,6 +31,20 @@ const sectionKeys = [
   'notifications',
   'status',
   'errors',
+] as const
+
+const integrationRowKeys = [
+  'adapter',
+  'namespaceId',
+  'recoveryUi',
+  'conflictUi',
+  'deviceLimitUi',
+  'statusUi',
+  'changeWiring',
+  'pairingUi',
+  'password',
+  'storage',
+  'relayConfig',
 ] as const
 
 const methodExampleKeys = [
@@ -79,6 +94,10 @@ export default async function SdkPage({ params }: PageProps) {
       ? 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md'
       : 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md'
   const rich = withDocRich({ relayUrl })
+  const sdkRich = withDocRich({
+    relayUrl,
+    appRegistryLink: (chunks) => <a href="#app-registry">{chunks}</a>,
+  })
   const encryptionRich = withDocRich({
     relayUrl,
     apiLink: (chunks) => <Link href="/api#encryption">{chunks}</Link>,
@@ -130,6 +149,7 @@ export default async function SdkPage({ params }: PageProps) {
     ['appPlatform', t.rich('sections.connect.options.appPlatform', withDocRich())],
     ['bundleId', t.rich('sections.connect.options.bundleId', withDocRich())],
     ['clientSecret', t.rich('sections.connect.options.clientSecret', withDocRich())],
+    ['clientVersion', t.rich('sections.connect.options.clientVersion', withDocRich())],
     ['document', t.rich('sections.connect.options.document', withDocRich())],
     ['documents', t.rich('sections.connect.options.documents', withDocRich())],
     ['storage', t.rich('sections.connect.options.storage', withDocRich())],
@@ -167,6 +187,12 @@ export default async function SdkPage({ params }: PageProps) {
     ['DEVICE_LIMIT_*', t.rich('sections.errors.client.deviceLimit', withDocRich())],
   ]
 
+  const integrationRows = integrationRowKeys.map((key) => [
+    t(`sections.integration.rowLabels.${key}`),
+    t.rich(`sections.integration.rowApp.${key}`, withDocRich()),
+    t.rich(`sections.integration.rowSdk.${key}`, withDocRich()),
+  ])
+
   return (
     <DocsLayout title={t('title')} intro={t.rich('intro', withDocRich())} nav={nav}>
       <DocCallout variant="info" title={tGuides('agentsCalloutTitle')}>
@@ -176,8 +202,26 @@ export default async function SdkPage({ params }: PageProps) {
         </p>
       </DocCallout>
 
+      <DocSection id="integration" title={t('sections.integration.title')}>
+        <p>{t.rich('sections.integration.p1', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.integration.legendTitle')}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.integration.legendApp', withDocRich())}</li>
+          <li>{t.rich('sections.integration.legendSdk', withDocRich())}</li>
+        </ul>
+        <CodeBlock code={SDK_SAMPLE_LEGEND} language="typescript" />
+        <p className="doc-subheading">{t('sections.integration.tableTitle')}</p>
+        <DocsTable
+          headers={[t('table.field'), t('table.appProvide'), t('table.sdkProvides')]}
+          rows={integrationRows}
+        />
+      </DocSection>
+
       <DocSection id="quick-start" title={t('sections.quickStart.title')}>
-        <p>{t('sections.quickStart.p1')}</p>
+        <p>{t.rich('sections.quickStart.p1', withDocRich())}</p>
+        <DocCallout variant="info" title={t('sections.quickStart.appRegistryTitle')}>
+          <p>{t.rich('sections.quickStart.appRegistryBody', sdkRich)}</p>
+        </DocCallout>
         <DocCallout variant="tip" title={t('sections.quickStart.tipTitle')}>
           <p>{t.rich('sections.quickStart.tipBody', rich)}</p>
         </DocCallout>
@@ -193,7 +237,7 @@ export default async function SdkPage({ params }: PageProps) {
       <DocSection id="connect" title={t('sections.connect.title')}>
         <p>{t.rich('sections.connect.p1', withDocRich())}</p>
         <DocsTable headers={[t('table.option'), t('table.description')]} rows={optionRows} />
-        <p>{t.rich('sections.connect.p2', withDocRich())}</p>
+        <p>{t.rich('sections.connect.p2', sdkRich)}</p>
         <p className="doc-subheading">{t('sections.connect.exampleTitle')}</p>
         <CodeBlock code={snippets.connectOptions} language="typescript" />
       </DocSection>
@@ -217,6 +261,14 @@ export default async function SdkPage({ params }: PageProps) {
         <CodeBlock code={snippets.connectWithAppNative} language="typescript" />
         <p className="doc-subheading">{t('sections.appRegistry.registrationTitle')}</p>
         <p>{t.rich('sections.appRegistry.registrationP1', appRegistryRich)}</p>
+        <p className="doc-subheading">{t('sections.appRegistry.approvalTitle')}</p>
+        <p>{t.rich('sections.appRegistry.approvalWebP1', withDocRich())}</p>
+        <p>{t.rich('sections.appRegistry.approvalNativeP1', appRegistryRich)}</p>
+        <p className="doc-subheading">{t('sections.appRegistry.secretTitle')}</p>
+        <p>{t.rich('sections.appRegistry.secretP1', withDocRich())}</p>
+        <p>{t.rich('sections.appRegistry.secretP2', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.appRegistry.pairingTitle')}</p>
+        <p>{t.rich('sections.appRegistry.pairingP1', withDocRich())}</p>
         <DocCallout variant="tip" title={t('sections.appRegistry.tipTitle')}>
           <p>{t.rich('sections.appRegistry.tipBody', withDocRich())}</p>
         </DocCallout>
@@ -249,11 +301,12 @@ export default async function SdkPage({ params }: PageProps) {
         <p>{t.rich('sections.adapter.p2', encryptionRich)}</p>
         <CodeBlock
           code={`const document = createDocumentAdapter({
-  namespaceId: workspace.id,
-  namespaceLabel: workspace.name,
+  namespaceId: appWorkspace.id,
+  namespaceLabel: appWorkspace.name,
   contentType: 'application/vnd.yourapp+json',
-  exportDocument: () => store.exportSnapshot(),
-  importDocument: (data) => store.importSnapshot(data),
+  // app: serialize / restore app state as JSON
+  exportDocument: () => appStore.exportSnapshot(),
+  importDocument: (json) => appStore.importSnapshot(json),
 })`}
           language="typescript"
         />
@@ -319,8 +372,9 @@ export default async function SdkPage({ params }: PageProps) {
           code={`await sync.ensureNamespace()
 await sync.sync() // all documents
 
-store.onChange(() => sync.notifyLocalChange('primary'))
-settings.onChange(() => sync.notifyLocalChange('settings'))
+// app: call after every local edit (Redux, DB hook, etc.)
+appStore.onChange(() => sync.notifyLocalChange('primary'))
+appSettingsStore.onChange(() => sync.notifyLocalChange('settings'))
 await sync.sync('settings') // optional: one document only
 window.addEventListener('focus', () => void sync.sync())
 await sync.flushPush() // all pending; or flushPush('primary')`}
@@ -341,11 +395,13 @@ await sync.flushPush() // all pending; or flushPush('primary')`}
         <p>{t.rich('sections.conflicts.p1', withDocRich())}</p>
         <p>{t.rich('sections.conflicts.p2', withDocRich())}</p>
         <CodeBlock
-          code={`onConflict: async (ctx) => {
-  const keepRemote = await ui.confirm(
-    \`Replace \${ctx.documentId} with version from \${ctx.remoteMeta.writtenAt}?\`
-  )
-  return keepRemote ? 'remote' : 'local'
+          code={`// app: implement — not provided by @senkronla/client
+onConflict: async (ctx) => {
+  return appUi.askKeepLocalOrRemote({
+    documentId: ctx.documentId,
+    remoteWrittenAt: ctx.remoteMeta.writtenAt,
+  })
+  // return 'remote' | 'local' | 'cancel'
 }`}
           language="typescript"
         />

@@ -148,6 +148,7 @@ export const serverConfigSchema = z.object({
               .object({
                 ios: z.string().min(1).optional(),
                 android: z.string().min(1).optional(),
+                desktop: z.string().min(1).optional(),
               })
               .optional(),
             clientSecretHash: z.string().nullable().optional(),

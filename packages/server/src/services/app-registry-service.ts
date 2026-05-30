@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
+import { isNativePlatform, type NativePlatform } from '@senkronla/protocol'
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
@@ -67,7 +68,7 @@ async function isOriginRegistered(pool: DbPool, appUuid: string, origin: string)
 async function isBundleRegistered(
   pool: DbPool,
   appUuid: string,
-  platform: 'ios' | 'android',
+  platform: NativePlatform,
   bundleId: string,
 ): Promise<boolean> {
   const result = await pool.query<Pick<AppBundleRow, 'id'>>(
@@ -214,8 +215,8 @@ export async function validateAppContext(
       throw new AppError(400, 'APP_NATIVE_ID_REQUIRED', 'X-ESR-Platform and X-ESR-Bundle-Id headers are required')
     }
 
-    if (platform !== 'ios' && platform !== 'android') {
-      throw new AppError(400, 'APP_NATIVE_ID_REQUIRED', 'X-ESR-Platform must be ios or android')
+    if (!isNativePlatform(platform)) {
+      throw new AppError(400, 'APP_NATIVE_ID_REQUIRED', 'X-ESR-Platform must be ios, android, or desktop')
     }
 
     const bundleAllowed = await isBundleRegistered(pool, app.id, platform, bundleId)
@@ -322,6 +323,16 @@ export async function seedAppsFromConfig(pool: DbPool, config: ServerConfig): Pr
            ON CONFLICT (app_uuid, platform, bundle_id) DO UPDATE
              SET verified_at = COALESCE(app_bundles.verified_at, now())`,
           [app.id, entry.bundleIds.android],
+        )
+      }
+
+      if (entry.bundleIds?.desktop) {
+        await client.query(
+          `INSERT INTO app_bundles (app_uuid, platform, bundle_id, verified_at)
+           VALUES ($1, 'desktop', $2, now())
+           ON CONFLICT (app_uuid, platform, bundle_id) DO UPDATE
+             SET verified_at = COALESCE(app_bundles.verified_at, now())`,
+          [app.id, entry.bundleIds.desktop],
         )
       }
 

@@ -1,5 +1,6 @@
 import { handleDeveloperRelay } from '@/lib/developer-api-response'
 import { relayDeveloperJson } from '@/lib/developer-relay'
+import { isNativePlatform, type NativePlatform } from '@/lib/native-platform'
 
 interface RouteContext {
   params: Promise<{ appId: string }>
@@ -8,10 +9,10 @@ interface RouteContext {
 export async function POST(request: Request, context: RouteContext) {
   const { appId } = await context.params
 
-  let body: { platform?: 'ios' | 'android'; bundleId?: string }
+  let body: { platform?: NativePlatform; bundleId?: string }
 
   try {
-    body = (await request.json()) as { platform?: 'ios' | 'android'; bundleId?: string }
+    body = (await request.json()) as { platform?: NativePlatform; bundleId?: string }
   } catch {
     return Response.json(
       { error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON body' } },
@@ -25,6 +26,13 @@ export async function POST(request: Request, context: RouteContext) {
   if (!platform || !bundleId) {
     return Response.json(
       { error: { code: 'VALIDATION_ERROR', message: 'platform and bundleId are required' } },
+      { status: 400 },
+    )
+  }
+
+  if (!isNativePlatform(platform)) {
+    return Response.json(
+      { error: { code: 'VALIDATION_ERROR', message: 'platform must be ios, android, or desktop' } },
       { status: 400 },
     )
   }

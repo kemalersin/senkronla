@@ -49,9 +49,11 @@ function formatAuthError(
 export function DeveloperPortal({
   initialAuthMode = 'login',
   hasSessionCookie = false,
+  nativeRequireClientSecret = false,
 }: {
   initialAuthMode?: 'login' | 'register'
   hasSessionCookie?: boolean
+  nativeRequireClientSecret?: boolean
 }) {
   const t = useTranslations('developer')
   const router = useRouter()
@@ -258,6 +260,7 @@ export function DeveloperPortal({
         authState={authState}
         page={page}
         mode="developer"
+        nativeRequireClientSecret={nativeRequireClientSecret}
         onUnauthorized={() => setAuthState('guest')}
         onPageChange={setPage}
       />

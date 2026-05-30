@@ -13,6 +13,8 @@ import { OperatorSegmentedField } from '@/components/operator-segmented-field'
 import { OperatorSpinner } from '@/components/operator-spinner'
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
 import { isValidAppId, normalizeAppId } from '@/lib/app-id'
+import { type NativePlatform } from '@/lib/native-platform'
+import { withDocRich } from '@/lib/doc-rich-text'
 
 interface Paginated<T> {
   items: T[]
@@ -37,7 +39,7 @@ interface AppOriginRow {
 
 interface AppBundleRow {
   id: string
-  platform: 'ios' | 'android'
+  platform: NativePlatform
   bundleId: string
   verifiedAt: string | null
   createdAt: string
@@ -122,12 +124,18 @@ async function readJson<T>(response: Response): Promise<T & ApiErrorBody> {
   return (await response.json()) as T & ApiErrorBody
 }
 
-function appStatusLabel(status: string, t: ReturnType<typeof useTranslations<'operator'>>) {
+function appStatusLabel(
+  status: string,
+  t: ReturnType<typeof useTranslations<'operator'>>,
+  type?: AppSummaryRow['type'],
+) {
   switch (status) {
     case 'active':
       return t('apps.statusActive')
     case 'pending_verification':
-      return t('apps.statusPendingVerification')
+      return type === 'native'
+        ? t('apps.statusPendingApproval')
+        : t('apps.statusPendingVerification')
     case 'pending':
       return t('apps.statusPending')
     case 'suspended':
@@ -172,6 +180,7 @@ interface OperatorAppsPanelProps {
   authState: 'loading' | 'guest' | 'authenticated'
   page: number
   mode?: 'operator' | 'developer'
+  nativeRequireClientSecret?: boolean
   onUnauthorized: () => void
   onPageChange: (page: number) => void
 }
@@ -180,6 +189,7 @@ export function OperatorAppsPanel({
   authState,
   page,
   mode = 'operator',
+  nativeRequireClientSecret = false,
   onUnauthorized,
   onPageChange,
 }: OperatorAppsPanelProps) {
@@ -208,8 +218,9 @@ export function OperatorAppsPanel({
   const [createError, setCreateError] = useState<string | null>(null)
 
   const [addOrigin, setAddOrigin] = useState('')
-  const [addBundlePlatform, setAddBundlePlatform] = useState<'ios' | 'android'>('ios')
+  const [addBundlePlatform, setAddBundlePlatform] = useState<NativePlatform>('ios')
   const [addBundleId, setAddBundleId] = useState('')
+  const [revealedClientSecret, setRevealedClientSecret] = useState<string | null>(null)
   const [verifyingOriginId, setVerifyingOriginId] = useState<string | null>(null)
   const [originVerifyErrors, setOriginVerifyErrors] = useState<Record<string, OriginVerifyErrorState>>({})
   const loadAppsRequestId = useRef(0)
@@ -324,6 +335,7 @@ export function OperatorAppsPanel({
     setSelectedApp(null)
     setDetailError(null)
     setActionError(null)
+    setRevealedClientSecret(null)
   }
 
   useEffect(() => {
@@ -574,6 +586,48 @@ export function OperatorAppsPanel({
     }
   }
 
+  async function handleRotateSecret() {
+    if (!selectedAppId || mode !== 'developer') return
+
+    if (
+      (selectedApp?.hasClientSecret || revealedClientSecret) &&
+      !window.confirm(t('apps.rotateSecretConfirm'))
+    ) {
+      return
+    }
+
+    setActionLoading(true)
+    setActionError(null)
+
+    try {
+      const response = await fetch(
+        `${apiBase}/apps/${encodeURIComponent(selectedAppId)}/rotate-secret`,
+        { method: 'POST' },
+      )
+
+      const body = await readJson<{ clientSecret?: string; app?: AppDetail }>(response)
+
+      if (!response.ok) {
+        setActionError(body.error?.message ?? t('requestFailed'))
+        return
+      }
+
+      if (body.clientSecret) {
+        setRevealedClientSecret(body.clientSecret)
+      }
+
+      if (body.app) {
+        setSelectedApp(body.app)
+      }
+
+      await loadApps()
+    } catch {
+      setActionError(t('requestFailed'))
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   async function handleApproveBundle(bundleId: string) {
     if (!selectedAppId) return
 
@@ -674,6 +728,7 @@ export function OperatorAppsPanel({
     setDetailError(null)
     setVerifyingOriginId(null)
     setOriginVerifyErrors({})
+    setRevealedClientSecret(null)
   }
 
   const drawerOpen = showCreate || Boolean(selectedApp)
@@ -811,6 +866,14 @@ export function OperatorAppsPanel({
       return null
     }
 
+    const showNativeClientSecret =
+      mode === 'developer' &&
+      nativeRequireClientSecret &&
+      selectedApp.type === 'native' &&
+      selectedApp.status === 'active' &&
+      selectedApp.bundles.length > 0 &&
+      selectedApp.bundles.every((bundle) => bundle.verifiedAt)
+
     return (
       <>
         <button
@@ -834,7 +897,7 @@ export function OperatorAppsPanel({
               <h3 id="operator-apps-drawer-title">{selectedApp.name}</h3>
               <div className="operator-apps-drawer-badges">
                 <span className={statusPillClass(selectedApp.status)}>
-                  {appStatusLabel(selectedApp.status, t)}
+                  {appStatusLabel(selectedApp.status, t, selectedApp.type)}
                 </span>
                 <span className="operator-pill">
                   {selectedApp.type === 'web' ? t('apps.typeWeb') : t('apps.typeNative')}
@@ -995,59 +1058,107 @@ export function OperatorAppsPanel({
                 )}
 
                 {selectedApp.type === 'native' && (
-                  <div className="operator-apps-subsection">
-                    <h4>{t('apps.bundles')}</h4>
-                    {selectedApp.bundles.length === 0 ? (
-                      <p className="operator-muted">{t('apps.noBundles')}</p>
-                    ) : (
-                      <ul className="operator-apps-bundle-list">
-                        {selectedApp.bundles.map((bundle) => (
-                          <li key={bundle.id} className="operator-apps-bundle-row">
-                            <code>{bundle.platform}: {bundle.bundleId}</code>
-                            <span className={bundle.verifiedAt ? 'operator-pill operator-pill-ok' : 'operator-pill'}>
-                              {bundle.verifiedAt ? t('apps.verified') : t('apps.unverified')}
-                            </span>
-                            {!bundle.verifiedAt && mode === 'operator' && (
-                              <button
-                                type="button"
-                                className="btn btn-secondary"
-                                disabled={actionLoading}
-                                onClick={() => void handleApproveBundle(bundle.id)}
-                              >
-                                {t('apps.approve')}
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                  <>
+                    <div className="operator-apps-subsection">
+                      <h4>{t('apps.bundles')}</h4>
+                      {selectedApp.bundles.length === 0 ? (
+                        <p className="operator-muted">{t('apps.noBundles')}</p>
+                      ) : (
+                        <ul className="operator-apps-bundle-list">
+                          {selectedApp.bundles.map((bundle) => (
+                            <li key={bundle.id} className="operator-apps-bundle-row">
+                              <code>{bundle.platform}: {bundle.bundleId}</code>
+                              <span className={bundle.verifiedAt ? 'operator-pill operator-pill-ok' : 'operator-pill'}>
+                                {bundle.verifiedAt
+                                  ? t('apps.bundleApproved')
+                                  : t('apps.bundlePendingApproval')}
+                              </span>
+                              {!bundle.verifiedAt && mode === 'operator' && (
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  disabled={actionLoading}
+                                  onClick={() => void handleApproveBundle(bundle.id)}
+                                >
+                                  {t('apps.approve')}
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
 
-                    <form className="operator-apps-drawer-form" onSubmit={handleAddBundle}>
-                      <OperatorSegmentedField
-                        label={t('apps.platform')}
-                        value={addBundlePlatform}
-                        compact
-                        options={[
-                          { value: 'ios', label: 'iOS' },
-                          { value: 'android', label: 'Android' },
-                        ]}
-                        onChange={setAddBundlePlatform}
-                      />
-                      <div className="form-field">
-                        <label htmlFor="add-bundle-id">{t('apps.bundleId')}</label>
-                        <input
-                          id="add-bundle-id"
-                          value={addBundleId}
-                          onChange={(event) => setAddBundleId(event.target.value)}
-                          placeholder="com.example.app"
-                          required
+                      <form className="operator-apps-drawer-form" onSubmit={handleAddBundle}>
+                        <OperatorSegmentedField
+                          label={t('apps.platform')}
+                          value={addBundlePlatform}
+                          compact
+                          options={[
+                            { value: 'ios', label: t('apps.platformIos') },
+                            { value: 'android', label: t('apps.platformAndroid') },
+                            { value: 'desktop', label: t('apps.platformDesktop') },
+                          ]}
+                          onChange={setAddBundlePlatform}
                         />
+                        <div className="form-field">
+                          <label htmlFor="add-bundle-id">{t('apps.bundleId')}</label>
+                          <input
+                            id="add-bundle-id"
+                            value={addBundleId}
+                            onChange={(event) => setAddBundleId(event.target.value)}
+                            placeholder="com.example.app"
+                            required
+                          />
+                        </div>
+                        <button type="submit" className="btn btn-primary" disabled={actionLoading}>
+                          {t('apps.addBundleButton')}
+                        </button>
+                      </form>
+                    </div>
+
+                    {showNativeClientSecret && (
+                      <div className="operator-apps-subsection operator-apps-client-secret">
+                        <div className="operator-apps-client-secret-header">
+                          <h4>{t('apps.clientSecret')}</h4>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={actionLoading}
+                            onClick={() => void handleRotateSecret()}
+                          >
+                            {selectedApp.hasClientSecret || revealedClientSecret
+                              ? t('apps.rotateSecret')
+                              : t('apps.generateSecret')}
+                          </button>
+                        </div>
+                        <div className="operator-apps-client-secret-panel">
+                          <p className="operator-apps-client-secret-when">{t('apps.clientSecretWhen')}</p>
+                          <p className="operator-apps-client-secret-hint">
+                            {t.rich('apps.clientSecretHint', withDocRich())}
+                          </p>
+                          {revealedClientSecret ? (
+                            <>
+                              <OperatorCopyField
+                                label={t('apps.clientSecretValue')}
+                                value={revealedClientSecret}
+                              />
+                              <p className="operator-apps-client-secret-notice" role="note">
+                                {t('apps.clientSecretOnce')}
+                              </p>
+                            </>
+                          ) : selectedApp.hasClientSecret ? (
+                            <p className="operator-apps-client-secret-status">
+                              {t('apps.clientSecretConfigured')}
+                            </p>
+                          ) : (
+                            <p className="operator-apps-client-secret-status">
+                              {t('apps.clientSecretNone')}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <button type="submit" className="btn btn-primary" disabled={actionLoading}>
-                        {t('apps.addBundleButton')}
-                      </button>
-                    </form>
-                  </div>
+                    )}
+                  </>
                 )}
             </>
 
@@ -1145,7 +1256,7 @@ export function OperatorAppsPanel({
                       <td>{row.type === 'web' ? t('apps.typeWeb') : t('apps.typeNative')}</td>
                       <td className="operator-table-col-status">
                         <span className={statusPillClass(row.status)}>
-                          {appStatusLabel(row.status, t)}
+                          {appStatusLabel(row.status, t, row.type)}
                         </span>
                       </td>
                       <td className="operator-table-col-numeric">{row.originCount}</td>

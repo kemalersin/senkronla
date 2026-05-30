@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| Status | **Spec v1.3 — planned** |
+| Status | **Spec v1.3 — implemented** (Phases 8a–8e; operator and developer portals) |
 | Target spec version | **1.3.0** |
 | Builds on | REST MVP (v1.0), WebSocket (v1.1), multi-document (v1.2) |
 | API prefix | `/v1` (unchanged; additive endpoints) |
@@ -195,16 +195,18 @@ When `enabled: true` and `requireRegistration: true`:
 | type | Identity signal | Verification |
 |------|-----------------|--------------|
 | `web` | `Origin` header (exact match) | DNS TXT or HTTPS well-known |
-| `native` | `X-ESR-Bundle-Id` + `X-ESR-Platform: ios\|android` | Manual review and/or client secret; future attestation |
+| `native` | `X-ESR-Bundle-Id` + `X-ESR-Platform: ios\|android\|desktop` | Manual review and/or client secret; future attestation |
 
 ### 6.2 Public identifiers
 
 | Field | Format | Secret? |
 |-------|--------|---------|
 | `appId` | `esr_app_` + 12 char base32 | **No** — embedded in SDK |
-| `clientSecret` | random 32+ bytes | **Yes** — native confidential only; stored hashed |
+| `clientSecret` | random 32+ bytes | **Yes** — native confidential only; stored hashed; **not assigned on app create** — only via `rotate-secret` |
 
 Web SPAs must **not** use client secrets (extractable from bundle/HTML).
+
+When `native.requireClientSecret: true`, unauthenticated endpoints (`POST /v1/namespaces`, pairing redeem, recover) require `X-ESR-Client-Secret` or the SDK `clientSecret` option. Relay `/health` exposes `apps.nativeRequireClientSecret` so portals can gate the secret UI.
 
 ### 6.3 App status state machine
 
@@ -220,13 +222,13 @@ stateDiagram-v2
   archived --> [*]
 ```
 
-| status | API access |
-|--------|------------|
-| `pending` | No — registration incomplete |
-| `pending_verification` | No — awaiting DNS/HTTPS/manual review |
-| `active` | Yes |
-| `suspended` | No — `403 APP_SUSPENDED` |
-| `archived` | No — soft delete |
+| status | API access | Typical cause |
+|--------|------------|---------------|
+| `pending` | No — registration incomplete | App created; no origin/bundle yet |
+| `pending_verification` | No — awaiting verification or approval | Web: origin not verified. Native: bundle pending operator approval (`requireManualReview`) |
+| `active` | Yes | Web: at least one verified origin. Native: all bundles approved |
+| `suspended` | No — `403 APP_SUSPENDED` | Operator suspended the app |
+| `archived` | No — soft delete | Developer or operator archived |
 
 ---
 
@@ -238,10 +240,10 @@ stateDiagram-v2
 |--------|----------|-------------|
 | `X-ESR-App-Id` | Always | Public app identifier |
 | `Origin` | Web clients | Browser-sent; must match registered origin |
-| `X-ESR-Platform` | Native | `ios` or `android` |
-| `X-ESR-Bundle-Id` | Native | Bundle ID (iOS) or package name (Android) |
+| `X-ESR-Platform` | Native | `ios`, `android`, or `desktop` |
+| `X-ESR-Bundle-Id` | Native | Bundle ID (iOS), package name (Android), or application ID (desktop) |
 | `X-ESR-Client-Secret` | Native confidential | When `native.requireClientSecret: true` |
-| `Authorization` | Device endpoints | Existing `Bearer {device_token}` |
+| `Authorization` | Device endpoints | Existing `Bearer {device_token}` — **not app registry**; identifies the paired device (§7.3) |
 
 Optional telemetry (not security):
 
@@ -249,7 +251,18 @@ Optional telemetry (not security):
 |--------|---------|
 | `X-ESR-Client-Version` | `mynotes-web/1.2.0` |
 
-### 7.2 Validation algorithm
+### 7.2 Two auth layers
+
+App registry and device tokens answer **different** questions:
+
+| Layer | Headers | Question |
+|-------|---------|----------|
+| **Application** | `X-ESR-App-Id` + (`Origin` or native platform/bundle) [+ optional `X-ESR-Client-Secret`] | Which registered integration may use this relay? |
+| **Device** | `Authorization: Bearer {device_token}` | Which paired device in which namespace? |
+
+`POST /v1/namespaces` (first device) has no `device_token` yet — no `Authorization` header. The response includes `deviceToken`. Subsequent push/pull, pairing host routes, etc. require the device token — app headers remain mandatory when `apps.enabled` is true.
+
+### 7.3 Validation algorithm
 
 ```
 function validateAppContext(request):
@@ -286,7 +299,7 @@ function validateAppContext(request):
   return OK
 ```
 
-### 7.3 Device token cross-check
+### 7.4 Device token cross-check
 
 After device auth middleware:
 
@@ -297,7 +310,7 @@ if config.apps.enabled:
     reject 403 APP_NAMESPACE_MISMATCH
 ```
 
-### 7.4 Endpoint matrix
+### 7.5 Endpoint matrix
 
 | Endpoint | App context | Device token | Notes |
 |----------|-------------|--------------|-------|
@@ -311,7 +324,7 @@ if config.apps.enabled:
 | Admin `/v1/admin/*` | No | Admin token | |
 | Developer `/v1/developer/*` | Developer JWT | — | self_service only |
 
-### 7.5 Pairing scope (optional)
+### 7.6 Pairing scope (optional)
 
 Host may restrict which apps can redeem a code:
 
@@ -385,11 +398,27 @@ Requests without `Origin` from non-native clients are rejected when app registry
 
 ---
 
-## 9. Native applications (iOS / Android)
+## 9. Native applications (iOS / Android / desktop)
 
 Native HTTP clients do not send a trustworthy `Origin`. Use `type: native` app registration.
 
 ### 9.1 Headers
+
+**Application context** (native — app registry layer):
+
+```http
+X-ESR-App-Id: esr_app_mynotes_mobile
+X-ESR-Platform: ios
+X-ESR-Bundle-Id: com.example.mynotes
+```
+
+When `native.requireClientSecret: true`, also send:
+
+```http
+X-ESR-Client-Secret: {client_secret}
+```
+
+**Authenticated sync request** (application + paired device):
 
 ```http
 X-ESR-App-Id: esr_app_mynotes_mobile
@@ -398,7 +427,11 @@ X-ESR-Bundle-Id: com.example.mynotes
 Authorization: Bearer dvt_...
 ```
 
+`Authorization` is **not** app registry — it is the device token from §7.2. Omit it on the first `POST /v1/namespaces` call.
+
 Android: `X-ESR-Platform: android`, package name in `X-ESR-Bundle-Id`.
+
+Desktop (Electron, Tauri, etc.): `X-ESR-Platform: desktop`, application ID (e.g. `com.example.mynotes`) in `X-ESR-Bundle-Id`.
 
 ### 9.2 Verification tiers
 
@@ -413,7 +446,7 @@ Tier A sufficient for self-hosted private relays. Tier B recommended for public 
 ### 9.3 Self-service native flow
 
 1. Developer creates `type: native` app.
-2. Adds iOS bundle ID and/or Android package name.
+2. Adds iOS bundle ID, Android package name, and/or desktop application ID.
 3. Status `pending_verification` until:
    - Operator manual approve (`requireManualReview: true`), or
    - Automated attestation (future).
@@ -526,11 +559,44 @@ Base: `/v1/developer`
 | POST | `/apps/:appId/origins` | JWT | Add web origin → challenge token |
 | POST | `/apps/:appId/origins/:originId/verify` | JWT | Trigger DNS/HTTPS check |
 | DELETE | `/apps/:appId/origins/:originId` | JWT | Remove origin |
-| POST | `/apps/:appId/bundles` | JWT | Add iOS/Android bundle |
+| POST | `/apps/:appId/bundles` | JWT | Add iOS/Android/desktop bundle |
 | DELETE | `/apps/:appId` | JWT | Archive app |
-| POST | `/apps/:appId/rotate-secret` | JWT | Native confidential only |
+| POST | `/apps/:appId/rotate-secret` | JWT | Create or rotate native secret (plaintext only in response) |
 
 Admin API (`/v1/admin/apps`) remains for suspend, quota override, manual native approve.
+
+### 12.3 Approval flows and client secret
+
+#### Web applications
+
+1. Developer or operator creates `type: web` app → `pending`
+2. Adds HTTPS origin → `pending_verification`
+3. DNS TXT or `/.well-known/esr-app-verification` verification → origin `verified_at` set
+4. Service transitions to `active` → sync API accepts requests
+
+Portal: developer `/developer` or operator `/operator` → Apps → verify origin.
+
+#### Native applications (iOS / Android / desktop)
+
+1. Create `type: native` app → `pending`
+2. Add platform + bundle ID (`ios`, `android`, `desktop`) → `pending_verification`
+3. When `native.requireManualReview: true` (default), operator approves bundle (`POST .../bundles/:id/approve` or portal **Approve**)
+4. All bundles approved → `active`
+
+Portal shows `pending_verification` for native apps as **Pending approval** (distinct from web origin verification wording).
+
+#### Client secret lifecycle
+
+| Step | Behaviour |
+|------|-----------|
+| App create | `client_secret_hash` is **NULL** — no automatic secret |
+| Relay config | `native.requireClientSecret: true` → secret required on unauthenticated endpoints |
+| Create / rotate | `POST /v1/developer/apps/:appId/rotate-secret` or operator portal **Generate secret** |
+| SDK | `EsrSync.connect({ clientSecret })` or `X-ESR-Client-Secret` header |
+| Portal UI | Shown only when `/health` → `apps.nativeRequireClientSecret: true`, app `active`, at least one bundle, **all bundles approved** |
+| Security | Never embed in web builds; use Keychain / Keystore / server env |
+
+Rotating invalidates the previous hash immediately.
 
 ---
 
@@ -640,7 +706,7 @@ CREATE TABLE app_origins (
 CREATE TABLE app_bundles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   app_uuid UUID NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
-  platform TEXT NOT NULL CHECK (platform IN ('ios', 'android')),
+  platform TEXT NOT NULL CHECK (platform IN ('ios', 'android', 'desktop')),
   bundle_id TEXT NOT NULL,
   verified_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -736,7 +802,7 @@ Full list merged into [12-ERROR-CODES.md](./12-ERROR-CODES.md).
 interface EsrSyncOptions {
   relayUrl: string
   appId?: string                    // required when relay has apps.enabled
-  appPlatform?: 'web' | 'ios' | 'android'
+  appPlatform?: 'web' | 'ios' | 'android' | 'desktop'
   bundleId?: string
   clientSecret?: string
   clientVersion?: string

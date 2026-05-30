@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import { NATIVE_PLATFORMS } from '@senkronla/protocol'
 import { z } from 'zod'
 import { APP_ID_PATTERN, APP_ID_VALIDATION_MESSAGE, normalizeAppId } from '../lib/app-id.js'
 import { createRequireAdminAuth } from '../middleware/auth-admin.js'
@@ -46,6 +47,7 @@ const createAppBodySchema = z.object({
     .object({
       ios: z.string().min(1).optional(),
       android: z.string().min(1).optional(),
+      desktop: z.string().min(1).optional(),
     })
     .optional(),
   clientSecret: z.string().min(16).optional(),
@@ -68,7 +70,7 @@ const addOriginBodySchema = z.object({
 })
 
 const addBundleBodySchema = z.object({
-  platform: z.enum(['ios', 'android']),
+  platform: z.enum(NATIVE_PLATFORMS),
   bundleId: z.string().min(1).max(256),
   verified: z.boolean().optional(),
 })

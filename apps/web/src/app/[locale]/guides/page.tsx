@@ -33,7 +33,10 @@ export default async function GuidesPage({ params }: PageProps) {
   const t = await getTranslations('guides')
   const relayUrl = getRelayApiBaseUrl()
   const snippets = createGuideSnippets(relayUrl)
-  const rich = withDocRich({ relayUrl })
+  const rich = withDocRich({
+    relayUrl,
+    sdkAppLink: (chunks) => <Link href="/sdk#app-registry">{chunks}</Link>,
+  })
 
   const nav = sectionKeys.map((key) => ({
     id: key,
@@ -52,7 +55,7 @@ export default async function GuidesPage({ params }: PageProps) {
     ['pairing code', t.rich('sections.concepts.rows.pairingCode', withDocRich())],
   ]
 
-  const checklistSteps = [1, 2, 3, 4, 5, 6].map((n) => ({
+  const checklistSteps = [1, 2, 3, 4, 5, 6, 7].map((n) => ({
     title: t(`sections.checklist.steps.s${n}.title`),
     body: t.rich(`sections.checklist.steps.s${n}.body`, rich),
   }))

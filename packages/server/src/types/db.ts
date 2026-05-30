@@ -1,3 +1,5 @@
+import type { NativePlatform } from '@senkronla/protocol'
+
 export interface NamespaceRow {
   id: string
   namespace_id: string
@@ -35,7 +37,7 @@ export interface AppOriginRow {
 export interface AppBundleRow {
   id: string
   app_uuid: string
-  platform: 'ios' | 'android'
+  platform: NativePlatform
   bundle_id: string
   verified_at: Date | null
   created_at: Date

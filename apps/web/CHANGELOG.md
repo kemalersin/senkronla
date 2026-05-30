@@ -9,12 +9,40 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.6]
+
+### Added
+
+- Developer portal — generate or rotate native client secret in app drawer (BFF `/api/developer/apps/:appId/rotate-secret`)
+- Hide native client secret UI when relay `apps.nativeRequireClientSecret` is false (`/health`)
+- Show native client secret UI only after at least one bundle is registered
+- Native bundle status labels use approval wording (not origin verification)
+- Hide client secret until app is active and all bundles are approved
+- Native app list/detail status shows approval wording for pending_verification
+- Native bundle platform selector includes desktop
+- SDK and API app registry sections — approval steps, auth layers, client secret lifecycle, pairing scope
+- Integration checklist step for app registration when relay requires it
+- ESR setup guide — `ESR_APPS__*` environment variables and production migration note
+- Developer portal prerequisites callout; operator secret panel visibility hint
+- Operator Developers tab — self-service prerequisites callout (relay config, JWT secret, `/developer` link)
+- SDK reference — "App code vs SDK" section with responsibility table and sample legend (`appStore`, `appUi`, `// app:`)
+- SDK quick start and connect examples include `appId` when application registry is enabled
+
+### Changed
+
+- SDK docs and agent markdown — `appStore` / `appUi` / `appSession` placeholders and `// app:` comments clarify app-owned UI, store, and password wiring
+- Turkish SDK/docs copy — fix literal translations (store, repo, poll, hooks, dirty)
+- Agent SDK/API markdown aligned with human docs (TR/EN)
+- SDK quick start and EsrSync.connect examples — include `appId` and app-registry callouts
+- Self-service setup hints moved from developer portal to operator Developers tab
 
 ## [0.1.5]
+
 ### Changed
 
 - Doc sidebar — ESR/Agents links only on guides index
 - Postman environment files updated
+
 ## [0.1.4]
 
 ### Added

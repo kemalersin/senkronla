@@ -2,7 +2,7 @@
 
 | Alan | Değer |
 |------|--------|
-| Durum | **Spec v1.3 — planlandı** |
+| Durum | **Spec v1.3 — uygulandı** (Faz 8a–8e; operatör ve geliştirici portalları) |
 | Hedef spec sürümü | **1.3.0** |
 | Üzerine inşa | REST MVP (v1.0), WebSocket (v1.1), çoklu belge (v1.2) |
 | API prefix | `/v1` (değişmedi; ek uçlar) |
@@ -193,16 +193,18 @@ ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
 | type | Kimlik sinyali | Doğrulama |
 |------|----------------|-----------|
 | `web` | `Origin` header (tam eşleşme) | DNS TXT veya HTTPS well-known |
-| `native` | `X-ESR-Bundle-Id` + `X-ESR-Platform: ios\|android` | Manuel inceleme ve/veya client secret; gelecekte attestation |
+| `native` | `X-ESR-Bundle-Id` + `X-ESR-Platform: ios\|android\|desktop` | Manuel inceleme ve/veya client secret; gelecekte attestation |
 
 ### 6.2 Public tanımlayıcılar
 
 | Alan | Format | Gizli mi? |
 |------|--------|-----------|
 | `appId` | `esr_app_` + 12 char base32 | **Hayır** — SDK'da gömülü |
-| `clientSecret` | rastgele 32+ byte | **Evet** — yalnızca native confidential; hash saklanır |
+| `clientSecret` | rastgele 32+ byte | **Evet** — yalnızca native confidential; hash saklanır; **oluşturma sırasında atanmaz** — yalnızca `rotate-secret` ile |
 
 Web SPA **client secret kullanmamalı** (HTML/bundle'dan çıkarılabilir).
+
+`native.requireClientSecret: true` iken auth gerektirmeyen uçlarda (`POST /v1/namespaces`, pairing redeem, recover) `X-ESR-Client-Secret` veya SDK `clientSecret` seçeneği zorunludur. Relay `/health` yanıtında `apps.nativeRequireClientSecret` alanı portal UI'nin secret bölümünü gösterip göstermeyeceğini belirler.
 
 ### 6.3 App durum makinesi
 
@@ -218,13 +220,13 @@ stateDiagram-v2
   archived --> [*]
 ```
 
-| status | API erişimi |
-|--------|-------------|
-| `pending` | Hayır — kayıt tamamlanmadı |
-| `pending_verification` | Hayır — DNS/HTTPS/manuel inceleme bekliyor |
-| `active` | Evet |
-| `suspended` | Hayır — `403 APP_SUSPENDED` |
-| `archived` | Hayır — soft delete |
+| status | API erişimi | Tipik neden |
+|--------|-------------|-------------|
+| `pending` | Hayır — kayıt tamamlanmadı | App oluşturuldu; henüz origin/bundle yok |
+| `pending_verification` | Hayır — doğrulama veya onay bekliyor | Web: origin doğrulanmadı. Native: bundle operatör onayı bekliyor (`requireManualReview`) |
+| `active` | Evet | Web: en az bir doğrulanmış origin. Native: tüm bundle'lar onaylı |
+| `suspended` | Hayır — `403 APP_SUSPENDED` | Operatör askıya aldı |
+| `archived` | Hayır — soft delete | Geliştirici veya operatör arşivledi |
 
 ---
 
@@ -236,12 +238,29 @@ stateDiagram-v2
 |--------|---------|----------|
 | `X-ESR-App-Id` | Her zaman | Public app tanımlayıcı |
 | `Origin` | Web | Tarayıcı gönderir; kayıtlı origin ile eşleşmeli |
-| `X-ESR-Platform` | Native | `ios` veya `android` |
-| `X-ESR-Bundle-Id` | Native | Bundle ID (iOS) veya package name (Android) |
+| `X-ESR-Platform` | Native | `ios`, `android` veya `desktop` |
+| `X-ESR-Bundle-Id` | Native | Bundle ID (iOS), package name (Android) veya uygulama kimliği (masaüstü) |
 | `X-ESR-Client-Secret` | Native confidential | `native.requireClientSecret: true` iken |
-| `Authorization` | Cihaz uçları | Mevcut `Bearer {device_token}` |
+| `Authorization` | Cihaz uçları | Mevcut `Bearer {device_token}` — **uygulama kaydı değil**; eşleşmiş cihaz kimliği (§7.3) |
 
-### 7.2 Doğrulama algoritması
+İsteğe bağlı telemetri (güvenlik değil):
+
+| Header | Örnek |
+|--------|-------|
+| `X-ESR-Client-Version` | `mynotes-ios/1.2.0` |
+
+### 7.2 İki kimlik katmanı
+
+App registry ve cihaz token'ı **ayrı** sorulara cevap verir:
+
+| Katman | Header'lar | Soru |
+|--------|------------|------|
+| **Uygulama** | `X-ESR-App-Id` + (`Origin` veya native platform/bundle) [+ isteğe bağlı `X-ESR-Client-Secret`] | Bu relay'i hangi kayıtlı entegrasyon kullanabilir? |
+| **Cihaz** | `Authorization: Bearer {device_token}` | Bu istek hangi eşleşmiş cihazdan, hangi namespace için? |
+
+`POST /v1/namespaces` (ilk cihaz) henüz `device_token` üretmediği için `Authorization` gönderilmez; yanıtta `deviceToken` döner. Sonraki push/pull, pairing host uçları vb. cihaz token'ı gerektirir — app başlıkları yine zorunludur (`apps.enabled` açıkken).
+
+### 7.3 Doğrulama algoritması
 
 ```
 function validateAppContext(request):
@@ -278,7 +297,7 @@ function validateAppContext(request):
   return OK
 ```
 
-### 7.3 Cihaz token çapraz kontrolü
+### 7.4 Cihaz token çapraz kontrolü
 
 Cihaz auth middleware sonrası:
 
@@ -289,7 +308,7 @@ if config.apps.enabled:
     reject 403 APP_NAMESPACE_MISMATCH
 ```
 
-### 7.4 Endpoint matrisi
+### 7.5 Endpoint matrisi
 
 | Endpoint | App bağlamı | Cihaz token | Not |
 |----------|-------------|-------------|-----|
@@ -303,7 +322,7 @@ if config.apps.enabled:
 | Admin `/v1/admin/*` | Hayır | Admin token | |
 | Developer `/v1/developer/*` | Developer JWT | — | yalnızca self_service |
 
-### 7.5 Pairing kapsamı (opsiyonel)
+### 7.6 Pairing kapsamı (opsiyonel)
 
 Host hangi app'lerin kodu kullanabileceğini kısıtlayabilir:
 
@@ -370,11 +389,27 @@ App registry açıkken Origin olmayan non-native istekler reddedilir. Statik `fi
 
 ---
 
-## 9. Native uygulamalar (iOS / Android)
+## 9. Native uygulamalar (iOS / Android / masaüstü)
 
 Native HTTP istemcileri güvenilir `Origin` göndermez. `type: native` kayıt kullanın.
 
 ### 9.1 Header'lar
+
+**Uygulama bağlamı** (native — app registry katmanı):
+
+```http
+X-ESR-App-Id: esr_app_mynotes_mobile
+X-ESR-Platform: ios
+X-ESR-Bundle-Id: com.example.mynotes
+```
+
+`native.requireClientSecret: true` iken aynı isteklere ekleyin:
+
+```http
+X-ESR-Client-Secret: {client_secret}
+```
+
+**Kimlik doğrulamalı sync isteği** (uygulama + eşleşmiş cihaz):
 
 ```http
 X-ESR-App-Id: esr_app_mynotes_mobile
@@ -382,6 +417,12 @@ X-ESR-Platform: ios
 X-ESR-Bundle-Id: com.example.mynotes
 Authorization: Bearer dvt_...
 ```
+
+`Authorization` uygulama kaydı için değildir — §7.2'deki cihaz token'ıdır. İlk `POST /v1/namespaces` çağrısında henüz yoktur.
+
+Android: `X-ESR-Platform: android`, paket adı `X-ESR-Bundle-Id` içinde.
+
+Masaüstü (Electron, Tauri vb.): `X-ESR-Platform: desktop`, uygulama kimliği (ör. `com.example.mynotes`) `X-ESR-Bundle-Id` içinde.
 
 ### 9.2 Doğrulama katmanları
 
@@ -396,7 +437,7 @@ Katman A private self-hosted için yeterli. Public hosted relay için Katman B �
 ### 9.3 Self-service native akışı
 
 1. Geliştirici `type: native` app oluşturur.
-2. iOS bundle ID ve/veya Android package ekler.
+2. iOS bundle ID, Android paket adı ve/veya masaüstü uygulama kimliği ekler.
 3. `requireManualReview: true` ise operatör onayına kadar `pending_verification`.
 4. `active` → native header'lar kabul edilir.
 
@@ -459,6 +500,21 @@ Recovery, namespace'in app'i ile eşleşen app bağlamı gerektirir. Yanlış ap
 
 `apps.enabled: true` iken statik `cors.allowedOrigins` yalnızca fallback:
 
+```typescript
+cors.origin = (origin, callback) => {
+  if (!config.apps.enabled) {
+    return staticList(origin)
+  }
+  if (!origin) return callback(null, false)  // non-browser
+  if (config.apps.allowLocalhostOrigins && isLocalhost(origin)) {
+    return callback(null, true)
+  }
+  const app = appRegistry.findActiveByOrigin(origin)
+  if (app) return callback(null, origin)  // echo exact origin
+  return callback(null, false)
+}
+```
+
 - Doğrulanmış origin'lerden dinamik allow list
 - WebSocket handshake aynı Origin kuralı
 
@@ -493,9 +549,42 @@ Base: `/v1/developer`
 | DELETE | `/apps/:appId/origins/:originId` | JWT | Origin kaldır |
 | POST | `/apps/:appId/bundles` | JWT | Bundle ekle |
 | DELETE | `/apps/:appId` | JWT | App arşivle |
-| POST | `/apps/:appId/rotate-secret` | JWT | Native secret rotate |
+| POST | `/apps/:appId/rotate-secret` | JWT | Native secret oluştur/yenile (plaintext yalnızca yanıtta) |
 
-Admin API (`/v1/admin/apps`): suspend, kota override, native manuel onay.
+Admin API (`/v1/admin/apps`): suspend, kota override, native bundle manuel onay.
+
+### 12.3 Onay akışları ve client secret
+
+#### Web uygulamaları
+
+1. Geliştirici veya operatör `type: web` app oluşturur → `pending`
+2. HTTPS origin ekler → `pending_verification`
+3. DNS TXT veya `/.well-known/esr-app-verification` doğrulaması → origin `verified_at` set
+4. Koşullar sağlanınca servis `active` yapar → sync API kabul eder
+
+Portal: geliştirici `/developer` veya operatör `/operator` → Apps → origin doğrula.
+
+#### Native uygulamalar (iOS / Android / masaüstü)
+
+1. `type: native` app oluştur → `pending`
+2. Platform + bundle ID ekle (`ios`, `android`, `desktop`) → `pending_verification`
+3. `native.requireManualReview: true` (varsayılan) ise operatör bundle onaylar (`POST .../bundles/:id/approve` veya portal **Onayla**)
+4. Tüm bundle'lar onaylı → `active`
+
+Native listede `pending_verification` durumu portalda **Onay bekliyor** olarak gösterilir (origin doğrulamasından farklı terminoloji).
+
+#### Client secret yaşam döngüsü
+
+| Adım | Davranış |
+|------|----------|
+| App oluşturma | `client_secret_hash` **NULL** — otomatik secret yok |
+| Relay config | `native.requireClientSecret: true` → auth'suz uçlarda secret zorunlu |
+| Oluşturma / yenileme | `POST /v1/developer/apps/:appId/rotate-secret` veya operatör portal **Gizli anahtar oluştur** |
+| SDK | `EsrSync.connect({ clientSecret })` veya `X-ESR-Client-Secret` başlığı |
+| Portal UI | Yalnızca `/health` → `apps.nativeRequireClientSecret: true`, app `active`, en az bir bundle, **tüm bundle'lar onaylı** iken gösterilir |
+| Güvenlik | Web build'lerine gömülmemeli; Keychain / Keystore / sunucu env |
+
+Secret rotate edildiğinde önceki hash anında geçersiz olur.
 
 ---
 
@@ -503,7 +592,21 @@ Admin API (`/v1/admin/apps`): suspend, kota override, native manuel onay.
 
 Base: `/v1/admin/apps` — `admin_api_token` gerekir.
 
-CRUD, doğrudan origin ekleme, native bundle onayı, arşivleme.
+| Method | Path | Açıklama |
+|--------|------|----------|
+| POST | `/apps` | App oluştur (portal atla) |
+| GET | `/apps` | Tümünü listele |
+| GET | `/apps/:appId` | Detay (origin + bundle) |
+| PATCH | `/apps/:appId` | `name`, `status` (askıya al / geri al) |
+| DELETE | `/apps/:appId` | Arşivle |
+| POST | `/apps/:appId/origins` | Origin ekle (`verified: true` ile doğrudan veya challenge) |
+| POST | `/apps/:appId/origins/:originId/verify` | DNS/HTTPS doğrula |
+| DELETE | `/apps/:appId/origins/:originId` | Origin kaldır |
+| POST | `/apps/:appId/bundles` | Native bundle ekle |
+| POST | `/apps/:appId/bundles/:bundleId/approve` | Bekleyen bundle onayla |
+| POST | `/apps/:appId/rotate-secret` | Native client secret oluştur/yenile |
+
+Web portal `/operator` → **Apps** sekmesi bu API'yi BFF üzerinden kullanır. **Developers** sekmesi self-service hesap yönetimi (`/v1/admin/developers`).
 
 ---
 
@@ -588,7 +691,7 @@ Tam liste: [12-ERROR-CODES.md](./12-ERROR-CODES.md).
 interface EsrSyncOptions {
   relayUrl: string
   appId?: string
-  appPlatform?: 'web' | 'ios' | 'android'
+  appPlatform?: 'web' | 'ios' | 'android' | 'desktop'
   bundleId?: string
   clientSecret?: string
   clientVersion?: string

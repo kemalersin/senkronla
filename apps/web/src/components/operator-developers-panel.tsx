@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 
+import { DocCallout } from '@/components/doc-callout'
 import { OperatorSpinner } from '@/components/operator-spinner'
+import { Link } from '@/i18n/navigation'
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
+import { withDocRich } from '@/lib/doc-rich-text'
 
 interface Paginated<T> {
   items: T[]
@@ -454,6 +457,15 @@ export function OperatorDevelopersPanel({
 
   return (
     <div className={`operator-apps-panel${selectedDeveloper ? ' has-drawer' : ''}`}>
+      <DocCallout variant="info" title={t('developers.prerequisitesTitle')}>
+        <p>
+          {t.rich('developers.prerequisitesP1', {
+            ...withDocRich(),
+            developerLink: (chunks) => <Link href="/developer">{chunks}</Link>,
+          })}
+        </p>
+      </DocCallout>
+
       <div className="operator-list-toolbar">
         <div className="form-field operator-search-field">
           <label htmlFor="operator-developers-search">{t('searchLabel')}</label>
