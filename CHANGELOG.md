@@ -11,6 +11,12 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.8]
+
+### Changed
+
+- **web:** SDK install docs — clarify `@senkronla/client` vs `@senkronla/protocol`; fix `{documentId}` path placeholder rendering
+
 ## [0.1.7]
 
 ### Added

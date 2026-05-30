@@ -9,6 +9,12 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.8]
+
+### Changed
+
+- SDK install section — `@senkronla/client` vs `@senkronla/protocol`; REST path placeholder renders `{documentId}` correctly
+
 ## [0.1.7]
 
 ### Changed
