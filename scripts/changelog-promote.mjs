@@ -27,9 +27,9 @@ export function promoteUnreleasedChangelog(source, version) {
     return { content: source, promoted: false, body: '' }
   }
 
-  const before = source.slice(0, headerEnd)
-  const after = afterHeader.slice(nextSectionIndex)
-  const content = `${before}\n\n## [${version}]\n${trimmedBody}\n${after}`
+  const before = source.slice(0, headerEnd).replace(/\n+$/, '')
+  const after = afterHeader.slice(nextSectionIndex).replace(/^\n+/, '')
+  const content = `${before}\n\n## [${version}]\n\n${trimmedBody}\n\n${after}`
 
   return { content, promoted: true, body: trimmedBody }
 }

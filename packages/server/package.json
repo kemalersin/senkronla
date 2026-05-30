@@ -1,6 +1,6 @@
 {
   "name": "@senkronla/server",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Senkronla Envelope Sync Relay — Fastify REST API and WebSocket hub",
   "license": "MIT",
   "type": "module",

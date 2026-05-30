@@ -30,6 +30,7 @@ Skip changelog only for trivial chores with no behavioral or release impact (typ
 - Use sections: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`.
 - Imperative, user-facing wording; no commit hashes or file lists.
 - Root entries may prefix scope: `**server:**`, `**web:**`, `**client:**`, `**docs:**`.
+- Spacing: one blank line after each `## […]` heading, one blank line between release sections.
 
 ```markdown
 ## [Unreleased]
