@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "ca271a4c-56c9-4d08-8ef4-7482497a1ef0",
+    "_postman_id": "0db8503c-11cd-47fe-9006-2b895a068146",
     "name": "Senkronla Relay API v1",
-    "description": "Runnable Postman collection for the Senkronla Envelope Sync Relay REST API (`/v1`).\n\n**Setup**\n1. Import `senkronla-relay-local.postman_environment.json` (or the production template).\n2. Set `relayOrigin` to your relay host (default: `http://localhost:8080`).\n3. Run **Quick start** folder in order, or use the pre-filled sample variables for read-only requests.\n\nCollection auth uses `{{deviceToken}}`. Unauthenticated routes override auth per request.\n\n**App registry (v1.3, optional):** When the relay has `apps.enabled: true`, set `esrAppId` in the environment and add `X-ESR-App-Id` to namespace/pairing requests. See agent API docs for native bundle headers.\n\nDocs: https://senkronla.dev/api",
+    "description": "Runnable Postman collection for the Senkronla Envelope Sync Relay REST API (`/v1`).\n\n**Setup**\n1. Import `senkronla-relay-local.postman_environment.json` (or the production template).\n2. Set `relayOrigin` to your relay host (default: `http://localhost:8080`).\n3. Pick **Web client** or **Native client** (run numbered requests in order when `apps.enabled` is true).\n\nCollection auth uses `{{deviceToken}}`. Unauthenticated routes override auth per request.\n\n**App registry:** Set `esrAppId`, `webOrigin` (web), or `bundleId` / `nativePlatform` / `clientSecret` (native). Portal folders need `adminToken` or developer credentials.\n\nDocs: https://senkronla.dev/api",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -18,7 +18,7 @@
   "item": [
     {
       "name": "Quick start (run in order)",
-      "description": "Minimal happy-path flow: health → create namespace → list → push → poll → pull.",
+      "description": "Web client happy path when app registry is enabled: health → namespace → sync. For native, use the **Native client** folder instead.",
       "item": [
         {
           "name": "1. Health check",
@@ -39,7 +39,10 @@
                 "exec": [
                   "pm.test('Relay is healthy', function () {",
                   "    pm.response.to.have.status(200);",
-                  "    pm.expect(pm.response.json().status).to.eql('ok');",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('ok');",
+                  "    pm.expect(json.developerPortal).to.have.property('enabled');",
+                  "    pm.expect(json.apps).to.have.property('nativeRequireClientSecret');",
                   "});"
                 ]
               }
@@ -55,10 +58,20 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-ESR-App-Id",
+                "value": "{{esrAppId}}",
+                "description": "Public app id — required when apps.enabled and requireRegistration"
+              },
+              {
+                "key": "Origin",
+                "value": "{{webOrigin}}",
+                "description": "Browser origin — must match a verified origin for web apps"
               }
             ],
             "url": "{{relayBaseUrl}}/namespaces",
-            "description": "Creates a workspace and returns the first device token. Run this before authenticated requests, or use the pre-filled sample token in the environment.",
+            "description": "Creates a workspace and returns the first device token. When app registration is enforced, `X-ESR-App-Id` and `Origin` must match a registered web app.",
             "auth": {
               "type": "noauth"
             },
@@ -90,7 +103,7 @@
               }
             }
           ],
-          "description": "Creates a workspace and returns the first device token. Run this before authenticated requests, or use the pre-filled sample token in the environment."
+          "description": "Creates a workspace and returns the first device token. When app registration is enforced, `X-ESR-App-Id` and `Origin` must match a registered web app."
         },
         {
           "name": "3. List documents",
@@ -232,20 +245,31 @@
       ]
     },
     {
-      "name": "Namespaces",
+      "name": "Web client",
+      "description": "Browser/SPA flow when app registration is enforced. Headers: `X-ESR-App-Id` + `Origin`. Run requests 1 → 3 in order.",
       "item": [
         {
-          "name": "Create namespace",
+          "name": "1. Create namespace",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-ESR-App-Id",
+                "value": "{{esrAppId}}",
+                "description": "Public app id — required when apps.enabled and requireRegistration"
+              },
+              {
+                "key": "Origin",
+                "value": "{{webOrigin}}",
+                "description": "Browser origin — must match a verified origin for web apps"
               }
             ],
             "url": "{{relayBaseUrl}}/namespaces",
-            "description": "Create workspace + first device. Returns `deviceToken` and `deviceId`.",
+            "description": "First device for a browser/SPA. Headers: `X-ESR-App-Id`, `Origin` (must match a verified web origin).",
             "auth": {
               "type": "noauth"
             },
@@ -268,6 +292,7 @@
                   "pm.test('Namespace created', function () {",
                   "    pm.response.to.have.status(201);",
                   "    const json = pm.response.json();",
+                  "    pm.expect(json.deviceToken).to.be.a('string');",
                   "    pm.environment.set('namespaceId', json.namespaceId);",
                   "    pm.environment.set('deviceToken', json.deviceToken);",
                   "    pm.environment.set('deviceId', json.deviceId);",
@@ -276,8 +301,372 @@
               }
             }
           ],
-          "description": "Create workspace + first device. Returns `deviceToken` and `deviceId`."
+          "description": "First device for a browser/SPA. Headers: `X-ESR-App-Id`, `Origin` (must match a verified web origin)."
         },
+        {
+          "name": "2. Create pairing token (host)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ESR-App-Id",
+                "value": "{{esrAppId}}",
+                "description": "Public app id — required when apps.enabled and requireRegistration"
+              },
+              {
+                "key": "Origin",
+                "value": "{{webOrigin}}",
+                "description": "Browser origin — must match a verified origin for web apps"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/pairing-tokens",
+            "description": "Host generates a 6-digit code. Same web headers as namespace create.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ttlSeconds\": 600,\n  \"allowedAppIds\": [\n    \"{{esrAppId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Pairing token created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('pairingCode', json.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Host generates a 6-digit code. Same web headers as namespace create."
+        },
+        {
+          "name": "3. Redeem pairing code (guest)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ESR-App-Id",
+                "value": "{{esrAppId}}",
+                "description": "Public app id — required when apps.enabled and requireRegistration"
+              },
+              {
+                "key": "Origin",
+                "value": "{{webOrigin}}",
+                "description": "Browser origin — must match a verified origin for web apps"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/devices",
+            "description": "Guest browser redeems the code — no device token required.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pairingCode\": \"{{pairingCode}}\",\n  \"deviceLabel\": \"{{deviceLabelGuest}}\",\n  \"clientDeviceId\": \"{{guestClientDeviceId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Device paired', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('guestDeviceToken', json.deviceToken);",
+                  "    pm.environment.set('guestDeviceId', json.deviceId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Guest browser redeems the code — no device token required."
+        },
+        {
+          "name": "4. Create pairing token (scoped allowedAppIds)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ESR-App-Id",
+                "value": "{{esrAppId}}",
+                "description": "Public app id — required when apps.enabled and requireRegistration"
+              },
+              {
+                "key": "Origin",
+                "value": "{{webOrigin}}",
+                "description": "Browser origin — must match a verified origin for web apps"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/pairing-tokens",
+            "description": "Optional — restrict which registered apps may redeem the pairing code.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ttlSeconds\": 600,\n  \"allowedAppIds\": [\n    \"{{esrAppId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Optional — restrict which registered apps may redeem the pairing code."
+        }
+      ]
+    },
+    {
+      "name": "Native client",
+      "description": "iOS/Android/desktop flow when app registration is enforced. Headers: `X-ESR-App-Id` + platform + bundle id (+ client secret when required). Run requests 1 → 3 in order.",
+      "item": [
+        {
+          "name": "1. Create namespace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ESR-App-Id",
+                "value": "{{esrAppId}}",
+                "description": "Public app id — required when apps.enabled and requireRegistration"
+              },
+              {
+                "key": "X-ESR-Platform",
+                "value": "{{nativePlatform}}",
+                "description": "Native platform: ios, android, or desktop"
+              },
+              {
+                "key": "X-ESR-Bundle-Id",
+                "value": "{{bundleId}}",
+                "description": "Registered bundle id for the native app"
+              },
+              {
+                "key": "X-ESR-Client-Secret",
+                "value": "{{clientSecret}}",
+                "description": "Required when GET /health → apps.nativeRequireClientSecret is true"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces",
+            "description": "First device on iOS/Android/desktop. Headers: `X-ESR-App-Id`, `X-ESR-Platform`, `X-ESR-Bundle-Id`, optional `X-ESR-Client-Secret`.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"namespaceId\": \"{{namespaceId}}\",\n  \"namespaceLabel\": \"{{namespaceLabel}}\",\n  \"deviceLabel\": \"{{deviceLabelHost}}\",\n  \"clientDeviceId\": \"{{clientDeviceId}}\",\n  \"recoveryKeyProof\": {\n    \"salt\": \"{{recoverySalt}}\",\n    \"hash\": \"{{recoveryHash}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Namespace created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.deviceToken).to.be.a('string');",
+                  "    pm.environment.set('namespaceId', json.namespaceId);",
+                  "    pm.environment.set('deviceToken', json.deviceToken);",
+                  "    pm.environment.set('deviceId', json.deviceId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "First device on iOS/Android/desktop. Headers: `X-ESR-App-Id`, `X-ESR-Platform`, `X-ESR-Bundle-Id`, optional `X-ESR-Client-Secret`."
+        },
+        {
+          "name": "2. Create pairing token (host)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ESR-App-Id",
+                "value": "{{esrAppId}}",
+                "description": "Public app id — required when apps.enabled and requireRegistration"
+              },
+              {
+                "key": "X-ESR-Platform",
+                "value": "{{nativePlatform}}",
+                "description": "Native platform: ios, android, or desktop"
+              },
+              {
+                "key": "X-ESR-Bundle-Id",
+                "value": "{{bundleId}}",
+                "description": "Registered bundle id for the native app"
+              },
+              {
+                "key": "X-ESR-Client-Secret",
+                "value": "{{clientSecret}}",
+                "description": "Required when GET /health → apps.nativeRequireClientSecret is true"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/pairing-tokens",
+            "description": "Native host pairing — same native headers as namespace create.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{deviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ttlSeconds\": 600\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Pairing token created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('pairingCode', json.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Native host pairing — same native headers as namespace create."
+        },
+        {
+          "name": "3. Redeem pairing code (guest)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ESR-App-Id",
+                "value": "{{esrAppId}}",
+                "description": "Public app id — required when apps.enabled and requireRegistration"
+              },
+              {
+                "key": "X-ESR-Platform",
+                "value": "{{nativePlatform}}",
+                "description": "Native platform: ios, android, or desktop"
+              },
+              {
+                "key": "X-ESR-Bundle-Id",
+                "value": "{{bundleId}}",
+                "description": "Registered bundle id for the native app"
+              },
+              {
+                "key": "X-ESR-Client-Secret",
+                "value": "{{clientSecret}}",
+                "description": "Required when GET /health → apps.nativeRequireClientSecret is true"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/devices",
+            "description": "Native guest redeems the code. Set `bundleId`, `nativePlatform`, and `clientSecret` in the environment first.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pairingCode\": \"{{pairingCode}}\",\n  \"deviceLabel\": \"{{deviceLabelGuest}}\",\n  \"clientDeviceId\": \"{{guestClientDeviceId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Device paired', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('guestDeviceToken', json.deviceToken);",
+                  "    pm.environment.set('guestDeviceId', json.deviceId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Native guest redeems the code. Set `bundleId`, `nativePlatform`, and `clientSecret` in the environment first."
+        }
+      ]
+    },
+    {
+      "name": "Namespaces",
+      "item": [
         {
           "name": "Get namespace",
           "request": {
@@ -589,105 +978,15 @@
     },
     {
       "name": "Devices & pairing",
+      "description": "Client-agnostic device management after pairing. Pairing flows live under **Web client** or **Native client**.",
       "item": [
-        {
-          "name": "Create pairing token (host)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/pairing-tokens",
-            "description": "Host device generates a 6-digit pairing code. When `apps.enabled`, add header `X-ESR-App-Id: {{esrAppId}}` (enable in environment). Optional body scope: `{ \"ttlSeconds\": 600, \"allowedAppIds\": [\"esr_app_a\", \"esr_app_b\"] }`.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{deviceToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ttlSeconds\": 600\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Pairing token created', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "    const json = pm.response.json();",
-                  "    pm.environment.set('pairingCode', json.code);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "description": "Host device generates a 6-digit pairing code. When `apps.enabled`, add header `X-ESR-App-Id: {{esrAppId}}` (enable in environment). Optional body scope: `{ \"ttlSeconds\": 600, \"allowedAppIds\": [\"esr_app_a\", \"esr_app_b\"] }`."
-        },
-        {
-          "name": "Redeem pairing code (guest)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/devices",
-            "description": "Guest device redeems the pairing code — no device token required.",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"pairingCode\": \"{{pairingCode}}\",\n  \"deviceLabel\": \"{{deviceLabelGuest}}\",\n  \"clientDeviceId\": \"{{guestClientDeviceId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Device paired', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "    const json = pm.response.json();",
-                  "    pm.environment.set('guestDeviceToken', json.deviceToken);",
-                  "    pm.environment.set('guestDeviceId', json.deviceId);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "description": "Guest device redeems the pairing code — no device token required."
-        },
         {
           "name": "List devices",
           "request": {
             "method": "GET",
             "header": [],
             "url": "{{relayBaseUrl}}/namespaces/{{namespaceId}}/devices",
+            "description": "Client-agnostic — no app registry headers required.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -698,7 +997,8 @@
                 }
               ]
             }
-          }
+          },
+          "description": "Client-agnostic — no app registry headers required."
         },
         {
           "name": "Revoke device",
@@ -867,6 +1167,749 @@
             }
           },
           "description": "WebSocket upgrade for `head_changed` and `limits_changed` events.\n\nIn Postman: switch protocol to **WebSocket**, set header `Sec-WebSocket-Protocol: esr-notifications-v1`, and send the same `Authorization: Bearer {{deviceToken}}` header.\n\nAfter `auth_ok`, optionally send:\n```json\n{ \"type\": \"subscribe\", \"documentIds\": [\"primary\", \"notes\"] }\n```\n\nAlways fetch document data over HTTP (`GET .../head`) — notifications carry metadata only."
+        }
+      ]
+    },
+    {
+      "name": "App registry — Developer auth",
+      "description": "Self-service registration and JWT session. Requires developer portal enabled on the relay.",
+      "item": [
+        {
+          "name": "Register developer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/developer/register",
+            "description": "Requires `apps.registrationMode: self_service` and `ESR_DEVELOPER_JWT_SECRET`. May return JWT immediately or a pending-verification message.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{developerEmail}}\",\n  \"password\": \"{{developerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Developer registered or pending verification', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    if (json.token) {",
+                  "        pm.environment.set('developerToken', json.token);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Requires `apps.registrationMode: self_service` and `ESR_DEVELOPER_JWT_SECRET`. May return JWT immediately or a pending-verification message."
+        },
+        {
+          "name": "Login developer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/developer/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{developerEmail}}\",\n  \"password\": \"{{developerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Developer JWT issued', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.environment.set('developerToken', pm.response.json().token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get developer profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/developer/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/developer/password",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{developerPassword}}\",\n  \"newPassword\": \"{{developerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Logout developer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{relayBaseUrl}}/developer/logout",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "App registry — Developer apps",
+      "description": "Create and manage your own applications. List search matches app ID, name, or bundle ID.",
+      "item": [
+        {
+          "name": "List apps (search by bundle ID)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/developer/apps?q={{bundleId}}",
+            "description": "`q` matches app ID, display name, or registered bundle ID.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "`q` matches app ID, display name, or registered bundle ID."
+        },
+        {
+          "name": "Create app (web)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/developer/apps",
+            "description": "Server assigns `esr_app_*` id. App starts pending; no client secret until rotate-secret.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{appName}}\",\n  \"type\": \"web\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('App created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('esrAppId', json.appId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Server assigns `esr_app_*` id. App starts pending; no client secret until rotate-secret."
+        },
+        {
+          "name": "Get app detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/developer/apps/{{esrAppId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add web origin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/developer/apps/{{esrAppId}}/origins",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": \"{{webOrigin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Origin added', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    const origin = json.origins.find((row) => row.origin === pm.environment.get(\"webOrigin\"));",
+                  "    if (origin) {",
+                  "        pm.environment.set('originId', origin.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify web origin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{relayBaseUrl}}/developer/apps/{{esrAppId}}/origins/{{originId}}/verify",
+            "description": "DNS TXT or HTTPS `/.well-known/esr-app-verification` — see App Registry docs.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "DNS TXT or HTTPS `/.well-known/esr-app-verification` — see App Registry docs."
+        },
+        {
+          "name": "Add native bundle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/developer/apps/{{esrAppId}}/bundles",
+            "description": "When `apps.native.requireManualReview` is true, bundle stays pending until operator approval.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"ios\",\n  \"bundleId\": \"{{bundleId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Bundle added', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    const bundle = json.bundles.find((row) => row.bundleId === pm.environment.get(\"bundleId\"));",
+                  "    if (bundle) {",
+                  "        pm.environment.set('nativeBundleRecordId', bundle.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "When `apps.native.requireManualReview` is true, bundle stays pending until operator approval."
+        },
+        {
+          "name": "Rotate client secret",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{relayBaseUrl}}/developer/apps/{{esrAppId}}/rotate-secret",
+            "description": "Requires active app and approved bundles when manual review is enabled.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Client secret rotated', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.environment.set('clientSecret', pm.response.json().clientSecret);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Requires active app and approved bundles when manual review is enabled."
+        },
+        {
+          "name": "Archive app",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{relayBaseUrl}}/developer/apps/{{esrAppId}}",
+            "description": "Soft-delete — status becomes `archived`. Origins can be removed; bundle rows remain.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{developerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "Soft-delete — status becomes `archived`. Origins can be removed; bundle rows remain."
+        }
+      ]
+    },
+    {
+      "name": "App registry — Operator apps",
+      "description": "Operator-managed applications. Set `adminToken` (Bearer) from `ESR_ADMIN_TOKEN`.",
+      "item": [
+        {
+          "name": "List apps (search by bundle ID)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/admin/apps?q={{bundleId}}",
+            "description": "`q` matches app ID, display name, or registered bundle ID.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "`q` matches app ID, display name, or registered bundle ID."
+        },
+        {
+          "name": "Create app (operator)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/admin/apps",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appId\": \"{{esrAppId}}\",\n  \"name\": \"{{appName}}\",\n  \"type\": \"web\",\n  \"status\": \"active\",\n  \"origins\": [\n    \"{{webOrigin}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Operator app created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get app detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/admin/apps/{{esrAppId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add native bundle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/admin/apps/{{esrAppId}}/bundles",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"ios\",\n  \"bundleId\": \"{{bundleId}}\",\n  \"verified\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Bundle added', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const json = pm.response.json();",
+                  "    const bundle = json.bundles.find((row) => row.bundleId === pm.environment.get(\"bundleId\"));",
+                  "    if (bundle) {",
+                  "        pm.environment.set('nativeBundleRecordId', bundle.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Approve native bundle",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{relayBaseUrl}}/admin/apps/{{esrAppId}}/bundles/{{nativeBundleRecordId}}/approve",
+            "description": "Required when `apps.native.requireManualReview` is enabled.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "Required when `apps.native.requireManualReview` is enabled."
+        },
+        {
+          "name": "Suspend app",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/admin/apps/{{esrAppId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"suspended\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Archive app",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{relayBaseUrl}}/admin/apps/{{esrAppId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "App registry — Operator developers",
+      "description": "Manage self-service developer accounts (verify email, disable).",
+      "item": [
+        {
+          "name": "List developer accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/admin/developers?q={{developerEmail}}&filter=all",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get developer account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{relayBaseUrl}}/admin/developers/{{developerAccountId}}",
+            "description": "Set `developerAccountId` from list response `items[].id`.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "description": "Set `developerAccountId` from list response `items[].id`."
+        },
+        {
+          "name": "Verify developer email",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/admin/developers/{{developerAccountId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailVerified\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Disable developer account",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{relayBaseUrl}}/admin/developers/{{developerAccountId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disabled\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         }
       ]
     }
