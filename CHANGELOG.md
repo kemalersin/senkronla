@@ -11,6 +11,17 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.7]
+
+### Added
+
+- **server:** `ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW` env override for native bundle operator approval
+
+### Changed
+
+- **docs:** OpenAPI 1.3.1 — app registry (`/admin/developers`, bundle ID list search, `/health` fields, sync route headers)
+- **web:** Postman collection expanded with developer portal and operator app registry request folders
+
 ## [0.1.6]
 
 ### Added

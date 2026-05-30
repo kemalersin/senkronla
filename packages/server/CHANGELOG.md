@@ -9,7 +9,11 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
-## [0.1.6]
+## [0.1.7]
+
+### Added
+
+- `ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW` environment override for `apps.native.requireManualReview`
 
 ### Added
 
@@ -18,6 +22,9 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
+- App list search (`q`) also matches registered bundle IDs (operator and developer portals)
+- OpenAPI 1.3.1 — `/health` schema, `/admin/developers`, bundle ID search on app lists, app registry headers on sync routes
+- Swagger UI serves `openapi.yaml` in static mode so route stubs no longer overwrite documented operations
 - Developer app create no longer assigns a client secret; secret is set only via rotate-secret
 
 ## [0.1.5]

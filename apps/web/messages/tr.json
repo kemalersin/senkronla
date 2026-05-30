@@ -383,6 +383,7 @@
           "appsRegistrationMode": "<tag>ESR_APPS__REGISTRATION_MODE</tag> — <tag>operator_managed</tag> veya <tag>self_service</tag>",
           "appsLocalhost": "<tag>ESR_APPS__ALLOW_LOCALHOST_ORIGINS</tag> — DNS doğrulamasız <tag>http://localhost</tag> (yalnızca dev)",
           "appsNativeSecret": "<tag>ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET</tag> — kimlik doğrulamasız rotalarda <tag>X-ESR-Client-Secret</tag> zorunlu",
+          "appsNativeReview": "<tag>ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW</tag> — native bundle'lar uygulama <tag>active</tag> olmadan önce operatör onayı (varsayılan true)",
           "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 karakter; self-service <tag>/developer</tag> portalı için"
         }
       },
@@ -1338,7 +1339,7 @@
       "suspend": "Askıya al",
       "activate": "Etkinleştir",
       "archive": "Arşivle",
-      "searchPlaceholder": "App ID veya ad…"
+      "searchPlaceholder": "App ID, ad veya bundle ID…"
     },
     "developers": {
       "title": "Geliştirici hesapları",
@@ -1422,6 +1423,6 @@
     "registerPendingVerification": "Hesabınız oluşturuldu. E-posta doğrulamasından sonra giriş yapabilirsiniz.",
     "loading": "Yükleniyor…",
     "searchLabel": "Ara",
-    "searchPlaceholder": "Uygulama adı veya ID…"
+    "searchPlaceholder": "Uygulama adı, ID veya bundle ID…"
   }
 }

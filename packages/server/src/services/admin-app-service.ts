@@ -236,7 +236,9 @@ export async function listAdminApps(
             (SELECT COUNT(*)::text FROM app_bundles b WHERE b.app_uuid = a.id) AS bundle_count,
             (SELECT COUNT(*)::text FROM namespaces n WHERE n.app_uuid = a.id) AS namespace_count
      FROM apps a
-     WHERE ($1::text IS NULL OR a.app_id ILIKE $1 OR a.name ILIKE $1)
+     WHERE ($1::text IS NULL OR a.app_id ILIKE $1 OR a.name ILIKE $1 OR EXISTS (
+         SELECT 1 FROM app_bundles b WHERE b.app_uuid = a.id AND b.bundle_id ILIKE $1
+       ))
        AND ($2::text IS NULL OR a.status = $2)
      ORDER BY a.created_at DESC
      LIMIT $3 OFFSET $4`,
@@ -246,7 +248,9 @@ export async function listAdminApps(
   const totalResult = await pool.query<{ count: string }>(
     `SELECT COUNT(*)::text AS count
      FROM apps a
-     WHERE ($1::text IS NULL OR a.app_id ILIKE $1 OR a.name ILIKE $1)
+     WHERE ($1::text IS NULL OR a.app_id ILIKE $1 OR a.name ILIKE $1 OR EXISTS (
+         SELECT 1 FROM app_bundles b WHERE b.app_uuid = a.id AND b.bundle_id ILIKE $1
+       ))
        AND ($2::text IS NULL OR a.status = $2)`,
     [pattern, input.status ?? null],
   )

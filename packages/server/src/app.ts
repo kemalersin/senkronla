@@ -2,10 +2,8 @@ import cors from '@fastify/cors'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import Fastify, { type FastifyReply } from 'fastify'
-import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parse } from 'yaml'
 import { getDatabaseMode, type ServerConfig } from './config.js'
 import type { DbPool } from './db/pool.js'
 import { createLoggerOptions, runHealthChecks } from './health/checks.js'
@@ -28,12 +26,7 @@ import {
 } from './services/rate-limit-service.js'
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..')
-
-function loadOpenApiSpec(): Record<string, unknown> {
-  const specPath = join(repoRoot, 'openapi.yaml')
-  const raw = readFileSync(specPath, 'utf8')
-  return parse(raw) as Record<string, unknown>
-}
+const openApiSpecPath = join(repoRoot, 'openapi.yaml')
 
 function applyRateLimitErrorHeaders(reply: FastifyReply, error: AppError): void {
   const retryAfterSeconds = error.details.retryAfterSeconds
@@ -151,10 +144,12 @@ export async function buildApp({ config, db }: AppDependencies) {
     sendRateLimitHeaders(request, reply)
   })
 
-  const openApiSpec = loadOpenApiSpec()
-
   await app.register(swagger, {
-    openapi: openApiSpec,
+    mode: 'static',
+    specification: {
+      path: openApiSpecPath,
+      baseDir: repoRoot,
+    },
   })
 
   await app.register(swaggerUi, {
@@ -165,12 +160,7 @@ export async function buildApp({ config, db }: AppDependencies) {
     },
   })
 
-  app.get('/health', {
-    schema: {
-      tags: ['Health'],
-      summary: 'Health check',
-    },
-  }, async (_request, reply) => {
+  app.get('/health', async (_request, reply) => {
     const result = await runHealthChecks(db, config, getDatabaseMode(config.database.url))
 
     if (result.status !== 'ok') {

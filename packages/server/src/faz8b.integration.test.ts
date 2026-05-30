@@ -238,5 +238,15 @@ describe('Faz 8b — admin app registry API (integration)', () => {
 
     expect(approveResponse.statusCode).toBe(200)
     expect(approveResponse.json().bundles[0].verifiedAt).toBeTruthy()
+
+    const searchResponse = await app!.inject({
+      method: 'GET',
+      url: '/v1/admin/apps?q=com.example.admintest',
+      headers: adminAuth,
+    })
+
+    expect(searchResponse.statusCode).toBe(200)
+    const searchList = searchResponse.json()
+    expect(searchList.items.some((item: { appId: string }) => item.appId === appId)).toBe(true)
   })
 })

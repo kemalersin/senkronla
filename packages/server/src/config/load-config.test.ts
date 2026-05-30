@@ -45,6 +45,7 @@ describe('loadConfig', () => {
       ESR_APPS__REQUIRE_REGISTRATION: 'false',
       ESR_APPS__ALLOW_LOCALHOST_ORIGINS: 'true',
       ESR_APPS__LEGACY_DEFAULT_APP_ID: 'esr_app_legacy',
+      ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW: 'false',
       ESR_DEVELOPER_JWT_SECRET: 'x'.repeat(32),
       ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY: '50',
     })
@@ -54,6 +55,7 @@ describe('loadConfig', () => {
     expect(config.apps.requireRegistration).toBe(false)
     expect(config.apps.allowLocalhostOrigins).toBe(true)
     expect(config.apps.legacyDefaultAppId).toBe('esr_app_legacy')
+    expect(config.apps.native.requireManualReview).toBe(false)
     expect(config.apps.developerPortal.jwtSecret).toBe('x'.repeat(32))
     expect(config.apps.limits.perApp.namespacesPerDay).toBe(50)
   })

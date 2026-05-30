@@ -161,6 +161,7 @@ ESR_APPS__REQUIRE_REGISTRATION=true
 ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
 ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary   # v1.2 migration only
 ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
+ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW=true
 ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET=change-me-long-random-min-32-chars
 ESR_DEVELOPER_JWT_SECRET=change-me-long-random-min-32-chars   # alias for jwtSecret above
 ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY=100
@@ -168,7 +169,7 @@ ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR=30
 ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
 ```
 
-**YAML only (no env override today):** `verification.*`, `limits.perDeveloper.maxApps`, `native.requireManualReview`, `developerPortal.enabled`, `developerPortal.sessionTtlHours`, `developerPortal.requireEmailVerification`, `seed[]`.
+**YAML only (no env override today):** `verification.*`, `limits.perDeveloper.maxApps`, `developerPortal.enabled`, `developerPortal.sessionTtlHours`, `developerPortal.requireEmailVerification`, `seed[]`.
 
 **Developer portal runtime:** The portal is available when `apps.enabled: true`, `registrationMode: self_service`, and `developerPortal.jwtSecret` is set (min 32 chars). The `developerPortal.enabled` field is stored in config but is **not** read by the server gate — use `registrationMode` + JWT secret instead.
 

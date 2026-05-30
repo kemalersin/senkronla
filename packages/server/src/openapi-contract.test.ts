@@ -13,9 +13,10 @@ const TEST_PATH_PARAMS: Record<string, string> = {
   namespaceId: '550e8400-e29b-41d4-a716-446655440000',
   deviceId: '01JFTESTDEVICE000000000000',
   documentId: 'primary',
-  appId: '550e8400-e29b-41d4-a716-446655440001',
+  appId: 'esr_app_postman_test',
   originId: '550e8400-e29b-41d4-a716-446655440002',
   bundleId: '550e8400-e29b-41d4-a716-446655440003',
+  developerId: '550e8400-e29b-41d4-a716-446655440004',
 }
 
 function isRouteNotFound(statusCode: number, body: string): boolean {

@@ -175,6 +175,7 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
     env.ESR_APPS__ALLOW_LOCALHOST_ORIGINS ||
     env.ESR_APPS__LEGACY_DEFAULT_APP_ID ||
     env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET ||
+    env.ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW ||
     env.ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET ||
     env.ESR_DEVELOPER_JWT_SECRET ||
     env.ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY ||
@@ -199,6 +200,19 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
           }
         : undefined
 
+    const nativeOverrides =
+      env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET !== undefined ||
+      env.ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW !== undefined
+        ? {
+            ...(env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET !== undefined
+              ? { requireClientSecret: parseEnvBoolean(env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET) }
+              : {}),
+            ...(env.ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW !== undefined
+              ? { requireManualReview: parseEnvBoolean(env.ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW) }
+              : {}),
+          }
+        : undefined
+
     overrides.apps = {
       ...(overrides.apps as RawConfig),
       ...(env.ESR_APPS__ENABLED !== undefined ? { enabled: parseEnvBoolean(env.ESR_APPS__ENABLED) } : {}),
@@ -212,13 +226,7 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
       ...(env.ESR_APPS__LEGACY_DEFAULT_APP_ID
         ? { legacyDefaultAppId: env.ESR_APPS__LEGACY_DEFAULT_APP_ID }
         : {}),
-      ...(env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET !== undefined
-        ? {
-            native: {
-              requireClientSecret: parseEnvBoolean(env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET),
-            },
-          }
-        : {}),
+      ...(nativeOverrides ? { native: nativeOverrides } : {}),
       ...(developerJwtSecret
         ? {
             developerPortal: {

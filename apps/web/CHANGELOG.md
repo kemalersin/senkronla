@@ -9,6 +9,16 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.7]
+
+### Changed
+
+- Operator and developer app search placeholders mention bundle ID
+- Postman collection — app registry folders (developer auth/apps, operator apps/developers, sync with `X-ESR-App-Id`); new environment variables
+- Postman sync requests show app registry headers (`X-ESR-App-Id`, `Origin`, native platform/bundle/secret) on namespace and pairing examples
+- Postman collection — **Web client** and **Native client** folders replace mixed pairing requests
+- ESR setup guide — document `ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW`
+
 ## [0.1.6]
 
 ### Added

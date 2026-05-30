@@ -1,10 +1,14 @@
 openapi: 3.1.0
 info:
   title: Envelope Sync Relay API
-  version: 1.3.0
+  version: 1.3.1
   description: |
     Zero-knowledge document sync relay for offline-first applications.
     Full specification: docs/envelope-sync-relay/README.md
+
+    **v1.3.1:** App list search (`q`) matches app ID, name, and registered bundle ID; `/health`
+    exposes `developerPortal.enabled` and `apps.nativeRequireClientSecret`; operator developer
+    accounts API (`/admin/developers`).
 
     **v1.3:** Application registry — `X-ESR-App-Id`, namespace–app binding, operator admin API,
     developer self-service portal, origin verification, pairing `allowedAppIds`.
@@ -51,11 +55,11 @@ components:
     AppIdHeader:
       name: X-ESR-App-Id
       in: header
-      required: true
+      required: false
       schema:
         type: string
         pattern: '^esr_app_[a-z0-9_]+$'
-      description: Public application id (required when apps.enabled)
+      description: Public application id — required when apps.enabled and apps.requireRegistration
     OriginHeader:
       name: Origin
       in: header
@@ -391,6 +395,87 @@ components:
         developer:
           $ref: '#/components/schemas/DeveloperProfile'
 
+    AdminDeveloperSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+        disabled:
+          type: boolean
+        disabledAt:
+          type: string
+          format: date-time
+          nullable: true
+        appCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    PaginatedDevelopers:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminDeveloperSummary'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        version:
+          type: string
+        database:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [ok, error]
+            mode:
+              type: string
+              enum: [bundled, external]
+            message:
+              type: string
+        blob:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [ok, error]
+            path:
+              type: string
+            message:
+              type: string
+        websocket:
+          type: boolean
+        developerPortal:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+          description: True when self-service developer portal is configured
+        apps:
+          type: object
+          properties:
+            nativeRequireClientSecret:
+              type: boolean
+          description: When true, native API calls need X-ESR-Client-Secret for confidential apps
+
     PairingTokenResult:
       type: object
       properties:
@@ -476,27 +561,38 @@ paths:
     get:
       tags: [Health]
       summary: Health check
+      servers:
+        - url: http://localhost:8080
+          description: Local development (root — not under /v1)
+        - url: https://sync.example.com
+          description: Production (root)
+      description: |
+        No authentication. Returns `503` when database or blob storage checks fail (`status: degraded`).
+        Use `developerPortal.enabled` and `apps.nativeRequireClientSecret` to configure portal UI.
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  version:
-                    type: string
-                  db:
-                    type: string
-                  blob:
-                    type: string
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Degraded (database or blob check failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
 
   /namespaces:
     post:
       tags: [Namespaces]
       summary: Create namespace (first device / host)
+      parameters:
+        - $ref: '#/components/parameters/AppIdHeader'
+        - $ref: '#/components/parameters/OriginHeader'
+      description: |
+        When `apps.enabled` and `apps.requireRegistration` are true, `X-ESR-App-Id` is required and
+        web apps must send a matching `Origin` header.
       requestBody:
         required: true
         content:
@@ -598,6 +694,11 @@ paths:
           required: true
           schema:
             type: string
+        - $ref: '#/components/parameters/AppIdHeader'
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/NativePlatformHeader'
+        - $ref: '#/components/parameters/NativeBundleIdHeader'
+        - $ref: '#/components/parameters/NativeClientSecretHeader'
       requestBody:
         required: true
         content:
@@ -657,6 +758,11 @@ paths:
           required: true
           schema:
             type: string
+        - $ref: '#/components/parameters/AppIdHeader'
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/NativePlatformHeader'
+        - $ref: '#/components/parameters/NativeBundleIdHeader'
+        - $ref: '#/components/parameters/NativeClientSecretHeader'
       requestBody:
         content:
           application/json:
@@ -1130,6 +1236,7 @@ paths:
           in: query
           schema:
             type: string
+          description: Search app ID, display name, or registered bundle ID (partial match)
         - name: status
           in: query
           schema:
@@ -1153,6 +1260,9 @@ paths:
     post:
       tags: [Applications, Admin]
       summary: Create application (operator_managed)
+      description: |
+        Operator-managed app registration. Optional `clientSecret` for native confidential clients;
+        not assigned automatically — use rotate-secret on the developer path or set explicitly here.
       security:
         - AdminToken: []
       requestBody:
@@ -1428,6 +1538,96 @@ paths:
               schema:
                 $ref: '#/components/schemas/AppDetail'
 
+  /admin/developers:
+    get:
+      tags: [Admin, Developer]
+      summary: List developer accounts (operator)
+      security:
+        - AdminToken: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Filter by email address (partial match)
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, verified, unverified, disabled]
+            default: all
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated developer accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDevelopers'
+
+  /admin/developers/{developerId}:
+    get:
+      tags: [Admin, Developer]
+      summary: Get developer account detail
+      security:
+        - AdminToken: []
+      parameters:
+        - name: developerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Developer account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDeveloperSummary'
+        '404':
+          $ref: '#/components/responses/Error404'
+    patch:
+      tags: [Admin, Developer]
+      summary: Verify, revoke verification, or disable developer account
+      security:
+        - AdminToken: []
+      parameters:
+        - name: developerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                disabled:
+                  type: boolean
+                emailVerified:
+                  type: boolean
+              description: At least one of `disabled` or `emailVerified` is required
+      responses:
+        '200':
+          description: Updated developer account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDeveloperSummary'
+        '404':
+          $ref: '#/components/responses/Error404'
+
   /developer/register:
     post:
       tags: [Developer]
@@ -1446,7 +1646,7 @@ paths:
                   format: email
                 password:
                   type: string
-                  minLength: 12
+                  minLength: 8
       responses:
         '201':
           description: Developer registered
@@ -1481,7 +1681,7 @@ paths:
                   format: email
                 password:
                   type: string
-                  minLength: 12
+                  minLength: 8
       responses:
         '200':
           description: JWT issued
@@ -1557,6 +1757,12 @@ paths:
           in: query
           schema:
             type: string
+          description: Search app ID, display name, or registered bundle ID (partial match)
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, pending_verification, active, suspended, archived]
         - name: limit
           in: query
           schema:
@@ -1575,6 +1781,9 @@ paths:
     post:
       tags: [Developer, Applications]
       summary: Create app (self_service)
+      description: |
+        Creates a pending app with a generated `esr_app_*` id. No client secret is assigned —
+        call `POST .../rotate-secret` after the app is active and bundles are approved.
       security:
         - DeveloperToken: []
       requestBody:
@@ -1781,7 +1990,10 @@ paths:
   /developer/apps/{appId}/rotate-secret:
     post:
       tags: [Developer, Applications]
-      summary: Rotate native client secret
+      summary: Generate or rotate native client secret
+      description: |
+        Returns a new secret once. Requires active app status and approved bundles when
+        `apps.native.requireManualReview` is enabled. Replaces any previous secret immediately.
       security:
         - DeveloperToken: []
       parameters:

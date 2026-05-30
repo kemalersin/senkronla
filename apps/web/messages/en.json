@@ -383,6 +383,7 @@
           "appsRegistrationMode": "<tag>ESR_APPS__REGISTRATION_MODE</tag> — <tag>operator_managed</tag> or <tag>self_service</tag>",
           "appsLocalhost": "<tag>ESR_APPS__ALLOW_LOCALHOST_ORIGINS</tag> — allow <tag>http://localhost</tag> without DNS verify (dev only)",
           "appsNativeSecret": "<tag>ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET</tag> — require <tag>X-ESR-Client-Secret</tag> on unauthenticated routes",
+          "appsNativeReview": "<tag>ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW</tag> — operator must approve native bundles before app becomes <tag>active</tag> (default true)",
           "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 chars; required for <tag>/developer</tag> portal when self-service"
         }
       },
@@ -1337,7 +1338,7 @@
       "suspend": "Suspend",
       "activate": "Activate",
       "archive": "Archive",
-      "searchPlaceholder": "App ID or name…"
+      "searchPlaceholder": "App ID, name, or bundle ID…"
     },
     "developers": {
       "title": "Developer accounts",
@@ -1421,6 +1422,6 @@
     "registerPendingVerification": "Account created. You can sign in after email verification.",
     "loading": "Loading…",
     "searchLabel": "Search",
-    "searchPlaceholder": "App name or ID…"
+    "searchPlaceholder": "App name, ID, or bundle ID…"
   }
 }

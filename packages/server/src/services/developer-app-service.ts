@@ -115,7 +115,9 @@ export async function listDeveloperApps(
             (SELECT COUNT(*)::text FROM namespaces n WHERE n.app_uuid = a.id) AS namespace_count
      FROM apps a
      WHERE a.developer_uuid = $1
-       AND ($2::text IS NULL OR a.app_id ILIKE $2 OR a.name ILIKE $2)
+       AND ($2::text IS NULL OR a.app_id ILIKE $2 OR a.name ILIKE $2 OR EXISTS (
+         SELECT 1 FROM app_bundles b WHERE b.app_uuid = a.id AND b.bundle_id ILIKE $2
+       ))
        AND ($3::text IS NULL OR a.status = $3)
      ORDER BY a.created_at DESC
      LIMIT $4 OFFSET $5`,
@@ -124,10 +126,12 @@ export async function listDeveloperApps(
 
   const totalResult = await pool.query<{ count: string }>(
     `SELECT COUNT(*)::text AS count
-     FROM apps
-     WHERE developer_uuid = $1
-       AND ($2::text IS NULL OR app_id ILIKE $2 OR name ILIKE $2)
-       AND ($3::text IS NULL OR status = $3)`,
+     FROM apps a
+     WHERE a.developer_uuid = $1
+       AND ($2::text IS NULL OR a.app_id ILIKE $2 OR a.name ILIKE $2 OR EXISTS (
+         SELECT 1 FROM app_bundles b WHERE b.app_uuid = a.id AND b.bundle_id ILIKE $2
+       ))
+       AND ($3::text IS NULL OR a.status = $3)`,
     [developerUuid, pattern, input.status ?? null],
   )
 

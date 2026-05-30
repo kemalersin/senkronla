@@ -67,6 +67,7 @@ export default async function EsrGuidePage({ params }: PageProps) {
     ['ESR_APPS__REGISTRATION_MODE', t.rich('sections.config.rows.appsRegistrationMode', rich)],
     ['ESR_APPS__ALLOW_LOCALHOST_ORIGINS', t.rich('sections.config.rows.appsLocalhost', rich)],
     ['ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET', t.rich('sections.config.rows.appsNativeSecret', rich)],
+    ['ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW', t.rich('sections.config.rows.appsNativeReview', rich)],
     ['ESR_DEVELOPER_JWT_SECRET', t.rich('sections.config.rows.developerJwt', rich)],
   ]
 
