@@ -19,6 +19,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Fixed
 
+- Keep doc tags, badges, and status labels on a single line instead of breaking mid-label on mobile and in lists
 - Syntax highlighting after locale switch (server docs layout, baked Shiki colors, full locale navigation)
 - Restore code block colors by removing legacy Shiki CSS overrides that cleared inline token colors
 - Fix locale switcher by using next-intl `Link` again instead of broken plain anchors

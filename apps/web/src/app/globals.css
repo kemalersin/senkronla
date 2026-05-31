@@ -454,6 +454,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .landing-hero h1 {
@@ -775,11 +776,6 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 .doc-list.ordered {
   list-style: decimal;
-}
-
-.doc-method-name .doc-tag {
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 
 .doc-method-name {
@@ -2691,6 +2687,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   font-size: 0.8125rem;
   padding: 0.375rem 0.75rem;
   border-radius: 999px;
+  white-space: nowrap;
 }
 
 .operator-login-card .status-badge,
@@ -2992,7 +2989,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 }
 
 .doc-tag {
-  display: inline;
+  display: inline-block;
   font-family: var(--font-mono);
   font-size: 0.82em;
   font-weight: 500;
@@ -3004,17 +3001,14 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   color: var(--text);
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
   vertical-align: baseline;
 }
 
 .doc-section-body .doc-tag {
   top: -0.05em;
   position: relative;
-}
-
-.doc-list .doc-tag {
-  white-space: normal;
-  word-break: break-word;
 }
 
 @media (max-width: 900px) {
@@ -3066,29 +3060,14 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
     word-break: break-word;
   }
 
-  .doc-tag {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
   .doc-endpoint-heading {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .doc-endpoint-heading .doc-tag {
-    white-space: normal;
-    flex-shrink: 1;
-  }
-
   .doc-endpoint-path {
     flex-basis: auto;
     width: 100%;
-  }
-
-  .doc-method-name .doc-tag {
-    white-space: normal;
   }
 
   .compare-grid {
@@ -3123,12 +3102,6 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
     word-break: break-word;
     min-width: 8rem;
     max-width: 14rem;
-  }
-
-  .docs-table-wrap .doc-tag {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
   }
 }
 

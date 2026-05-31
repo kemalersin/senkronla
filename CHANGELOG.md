@@ -21,6 +21,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Fixed
 
+- **web:** Doc tags and badges stay on one line instead of breaking mid-label on mobile and in lists
 - **web:** Reference docs fit mobile viewport without horizontal page overflow
 - **web:** Code block syntax highlighting after locale switch (docs layout split, baked Shiki colors)
 - **web:** Developer portal tab title after sign-in no longer stays on “Sign in”
