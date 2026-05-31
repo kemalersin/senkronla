@@ -1,12 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 
 import { DocCallout } from '@/components/doc-callout'
 import { OperatorSpinner } from '@/components/operator-spinner'
+import {
+  OperatorLimitsModal,
+  type OperatorLimitsTarget,
+} from '@/components/operator-limits-modal'
 import { Link } from '@/i18n/navigation'
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
+import { dedupedGet, fetchJson } from '@/lib/deduped-fetch'
 import { withDocRich } from '@/lib/doc-rich-text'
 
 interface Paginated<T> {
@@ -36,7 +41,13 @@ const DEVELOPER_FILTERS = ['all', 'verified', 'unverified', 'disabled'] as const
 type DeveloperFilter = (typeof DEVELOPER_FILTERS)[number]
 
 function formatDate(iso: string, locale: string) {
-  return new Date(iso).toLocaleString(locale)
+  return new Date(iso).toLocaleString(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 async function readJson<T>(response: Response): Promise<T & ApiErrorBody> {
@@ -67,6 +78,7 @@ function accountStatusPillClass(developer: DeveloperRow) {
 interface OperatorDevelopersPanelProps {
   authState: 'loading' | 'guest' | 'authenticated'
   page: number
+  onNavigateToApps?: (developerId: string, email: string) => void
   onUnauthorized: () => void
   onPageChange: (page: number) => void
 }
@@ -74,6 +86,7 @@ interface OperatorDevelopersPanelProps {
 export function OperatorDevelopersPanel({
   authState,
   page,
+  onNavigateToApps,
   onUnauthorized,
   onPageChange,
 }: OperatorDevelopersPanelProps) {
@@ -91,6 +104,14 @@ export function OperatorDevelopersPanel({
   const [detailError, setDetailError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
+  const loadDevelopersRequestId = useRef(0)
+  const tRef = useRef(t)
+  tRef.current = t
+  const onUnauthorizedRef = useRef(onUnauthorized)
+  onUnauthorizedRef.current = onUnauthorized
+  const listQueryRef = useRef({ debouncedSearch, filter, page })
+  listQueryRef.current = { debouncedSearch, filter, page }
 
   const filterLabel = useCallback(
     (value: DeveloperFilter) => {
@@ -109,56 +130,73 @@ export function OperatorDevelopersPanel({
   )
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
-
-  useEffect(() => {
-    if (authState !== 'authenticated') {
+    if (searchQuery.trim() === debouncedSearch) {
       return
     }
 
-    onPageChange(0)
-  }, [authState, debouncedSearch, filter, onPageChange])
+    const timer = window.setTimeout(() => {
+      onPageChange(0)
+      setDebouncedSearch(searchQuery.trim())
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [debouncedSearch, onPageChange, searchQuery])
 
-  const loadDevelopers = useCallback(async () => {
+  const loadDevelopers = useCallback(async (options?: { dedupe?: boolean }) => {
+    const requestId = ++loadDevelopersRequestId.current
+    const query = listQueryRef.current
     setLoading(true)
     setError(null)
 
     try {
       const params = new URLSearchParams({
         limit: String(PAGE_SIZE),
-        offset: String(page * PAGE_SIZE),
+        offset: String(query.page * PAGE_SIZE),
       })
 
-      if (debouncedSearch) {
-        params.set('q', debouncedSearch)
+      if (query.debouncedSearch) {
+        params.set('q', query.debouncedSearch)
       }
 
-      if (filter !== 'all') {
-        params.set('filter', filter)
+      if (query.filter !== 'all') {
+        params.set('filter', query.filter)
       }
 
-      const response = await fetch(`/api/operator/developers?${params.toString()}`)
+      const url = `/api/operator/developers?${params.toString()}`
+      const { response, body: rawBody } = options?.dedupe
+        ? await dedupedGet(url)
+        : await fetchJson(url)
+      const body = rawBody as Paginated<DeveloperRow> & ApiErrorBody
 
-      if (response.status === 401) {
-        onUnauthorized()
+      if (requestId !== loadDevelopersRequestId.current) {
         return
       }
 
-      const body = await readJson<Paginated<DeveloperRow>>(response)
+      if (response.status === 401) {
+        onUnauthorizedRef.current()
+        return
+      }
+
+      if (requestId !== loadDevelopersRequestId.current) {
+        return
+      }
 
       if (!response.ok) {
-        throw new Error(body.error?.message ?? t('loadFailed'))
+        throw new Error(body.error?.message ?? tRef.current('loadFailed'))
       }
 
       setDevelopers(body)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('loadFailed'))
+      if (requestId !== loadDevelopersRequestId.current) {
+        return
+      }
+
+      setError(loadError instanceof Error ? loadError.message : tRef.current('loadFailed'))
     } finally {
-      setLoading(false)
+      if (requestId === loadDevelopersRequestId.current) {
+        setLoading(false)
+      }
     }
-  }, [debouncedSearch, filter, onUnauthorized, page, t])
+  }, [])
 
   const loadDeveloperDetail = useCallback(
     async (developerId: string) => {
@@ -206,8 +244,8 @@ export function OperatorDevelopersPanel({
       return
     }
 
-    void loadDevelopers()
-  }, [authState, loadDevelopers])
+    void loadDevelopers({ dedupe: true })
+  }, [authState, debouncedSearch, filter, loadDevelopers, page])
 
   useEffect(() => {
     if (!selectedId || selectedDeveloper?.id === selectedId) {
@@ -274,8 +312,12 @@ export function OperatorDevelopersPanel({
   }
 
   function renderListBody(content: ReactNode, total: number) {
-    if (loading || !developers) {
+    if (!developers && loading) {
       return <OperatorSpinner label={t('loading')} />
+    }
+
+    if (!developers) {
+      return null
     }
 
     return (
@@ -508,6 +550,7 @@ export function OperatorDevelopersPanel({
                     <th className="operator-table-col-status">{t('columns.status')}</th>
                     <th className="operator-table-col-numeric">{t('developers.apps')}</th>
                     <th className="operator-table-col-date">{t('columns.created')}</th>
+                    <th className="operator-table-col-actions">{t('columns.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -524,9 +567,43 @@ export function OperatorDevelopersPanel({
                           {accountStatusLabel(row, t)}
                         </span>
                       </td>
-                      <td className="operator-table-col-numeric">{row.appCount}</td>
+                      <td
+                        className="operator-table-col-numeric"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {onNavigateToApps ? (
+                          <button
+                            type="button"
+                            className="operator-table-nav-link"
+                            onClick={() => onNavigateToApps(row.id, row.email)}
+                            title={t('viewApps')}
+                          >
+                            {row.appCount}
+                          </button>
+                        ) : (
+                          row.appCount
+                        )}
+                      </td>
                       <td className="operator-table-col-date">
                         {formatDate(row.createdAt, locale)}
+                      </td>
+                      <td
+                        className="operator-table-col-actions"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() =>
+                            setLimitsTarget({
+                              scope: 'developers',
+                              scopeId: row.id,
+                              title: row.email,
+                            })
+                          }
+                        >
+                          {t('limits.openButton')}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -541,6 +618,12 @@ export function OperatorDevelopersPanel({
       </section>
 
       {renderDetailDrawer()}
+
+      <OperatorLimitsModal
+        target={limitsTarget}
+        onClose={() => setLimitsTarget(null)}
+        onUnauthorized={onUnauthorized}
+      />
     </div>
   )
 }

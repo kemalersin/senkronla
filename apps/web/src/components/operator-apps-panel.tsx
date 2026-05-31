@@ -6,6 +6,10 @@ import { useLocale, useTranslations } from 'next-intl'
 import { OperatorCopyField } from '@/components/operator-copy-field'
 import { OperatorCopyButton } from '@/components/operator-copy-button'
 import {
+  OperatorLimitsModal,
+  type OperatorLimitsTarget,
+} from '@/components/operator-limits-modal'
+import {
   OperatorOriginVerifyError,
   type OriginVerifyErrorState,
 } from '@/components/operator-origin-verify-error'
@@ -13,6 +17,7 @@ import { OperatorSegmentedField } from '@/components/operator-segmented-field'
 import { OperatorSpinner } from '@/components/operator-spinner'
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
 import { isValidAppId, normalizeAppId } from '@/lib/app-id'
+import { dedupedGet, fetchJson } from '@/lib/deduped-fetch'
 import { type NativePlatform } from '@/lib/native-platform'
 import { withDocRich } from '@/lib/doc-rich-text'
 
@@ -53,6 +58,7 @@ interface AppSummaryRow {
   originCount: number
   bundleCount: number
   namespaceCount: number
+  developerEmail?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -117,7 +123,13 @@ const APP_STATUS_FILTERS = [
 ] as const
 
 function formatDate(iso: string, locale: string) {
-  return new Date(iso).toLocaleString(locale)
+  return new Date(iso).toLocaleString(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 async function readJson<T>(response: Response): Promise<T & ApiErrorBody> {
@@ -181,6 +193,10 @@ interface OperatorAppsPanelProps {
   page: number
   mode?: 'operator' | 'developer'
   nativeRequireClientSecret?: boolean
+  developerIdFilter?: string | null
+  developerFilterLabel?: string | null
+  onClearDeveloperFilter?: () => void
+  onNavigateToNamespaces?: (appId: string, label: string) => void
   onUnauthorized: () => void
   onPageChange: (page: number) => void
 }
@@ -190,6 +206,10 @@ export function OperatorAppsPanel({
   page,
   mode = 'operator',
   nativeRequireClientSecret = false,
+  developerIdFilter = null,
+  developerFilterLabel = null,
+  onClearDeveloperFilter,
+  onNavigateToNamespaces,
   onUnauthorized,
   onPageChange,
 }: OperatorAppsPanelProps) {
@@ -223,59 +243,86 @@ export function OperatorAppsPanel({
   const [revealedClientSecret, setRevealedClientSecret] = useState<string | null>(null)
   const [verifyingOriginId, setVerifyingOriginId] = useState<string | null>(null)
   const [originVerifyErrors, setOriginVerifyErrors] = useState<Record<string, OriginVerifyErrorState>>({})
+  const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
   const loadAppsRequestId = useRef(0)
+  const tRef = useRef(t)
+  tRef.current = t
+  const onUnauthorizedRef = useRef(onUnauthorized)
+  onUnauthorizedRef.current = onUnauthorized
+  const listQueryRef = useRef({
+    apiBase,
+    debouncedSearch,
+    developerIdFilter,
+    mode,
+    page,
+    statusFilter,
+  })
+  listQueryRef.current = {
+    apiBase,
+    debouncedSearch,
+    developerIdFilter,
+    mode,
+    page,
+    statusFilter,
+  }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
-
-  useEffect(() => {
-    if (authState !== 'authenticated') {
+    if (searchQuery.trim() === debouncedSearch) {
       return
     }
 
-    onPageChange(0)
-  }, [authState, debouncedSearch, statusFilter, onPageChange])
+    const timer = window.setTimeout(() => {
+      onPageChange(0)
+      setDebouncedSearch(searchQuery.trim())
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [debouncedSearch, onPageChange, searchQuery])
 
-  const loadApps = useCallback(async () => {
+  const loadApps = useCallback(async (options?: { dedupe?: boolean }) => {
     const requestId = ++loadAppsRequestId.current
+    const query = listQueryRef.current
     setLoading(true)
     setError(null)
 
     try {
       const params = new URLSearchParams({
         limit: String(PAGE_SIZE),
-        offset: String(page * PAGE_SIZE),
+        offset: String(query.page * PAGE_SIZE),
       })
 
-      if (debouncedSearch) {
-        params.set('q', debouncedSearch)
+      if (query.debouncedSearch) {
+        params.set('q', query.debouncedSearch)
       }
 
-      if (statusFilter) {
-        params.set('status', statusFilter)
+      if (query.statusFilter) {
+        params.set('status', query.statusFilter)
       }
 
-      const response = await fetch(`${apiBase}/apps?${params.toString()}`)
+      if (query.mode === 'operator' && query.developerIdFilter) {
+        params.set('developerId', query.developerIdFilter)
+      }
+
+      const url = `${query.apiBase}/apps?${params.toString()}`
+      const { response, body: rawBody } = options?.dedupe
+        ? await dedupedGet(url)
+        : await fetchJson(url)
+      const body = rawBody as Paginated<AppSummaryRow> & ApiErrorBody
 
       if (requestId !== loadAppsRequestId.current) {
         return
       }
 
       if (response.status === 401) {
-        onUnauthorized()
+        onUnauthorizedRef.current()
         return
       }
-
-      const body = await readJson<Paginated<AppSummaryRow>>(response)
 
       if (requestId !== loadAppsRequestId.current) {
         return
       }
 
       if (!response.ok) {
-        throw new Error(body.error?.message ?? t('loadFailed'))
+        throw new Error(body.error?.message ?? tRef.current('loadFailed'))
       }
 
       setApps(body)
@@ -284,13 +331,13 @@ export function OperatorAppsPanel({
         return
       }
 
-      setError(loadError instanceof Error ? loadError.message : t('loadFailed'))
+      setError(loadError instanceof Error ? loadError.message : tRef.current('loadFailed'))
     } finally {
       if (requestId === loadAppsRequestId.current) {
         setLoading(false)
       }
     }
-  }, [apiBase, debouncedSearch, onUnauthorized, page, statusFilter, t])
+  }, [])
 
   const loadAppDetail = useCallback(
     async (appId: string) => {
@@ -343,8 +390,8 @@ export function OperatorAppsPanel({
       return
     }
 
-    void loadApps()
-  }, [authState, loadApps])
+    void loadApps({ dedupe: true })
+  }, [authState, apiBase, debouncedSearch, developerIdFilter, loadApps, mode, page, statusFilter])
 
   useEffect(() => {
     if (!selectedAppId || selectedApp?.appId === selectedAppId) {
@@ -657,8 +704,12 @@ export function OperatorAppsPanel({
   }
 
   function renderListBody(content: ReactNode, total: number) {
-    if (loading || !apps) {
+    if (!apps && loading) {
       return <OperatorSpinner label={t('loading')} />
+    }
+
+    if (!apps) {
+      return null
     }
 
     return (
@@ -1217,6 +1268,16 @@ export function OperatorAppsPanel({
             </button>
           ))}
         </div>
+        {mode === 'operator' && developerIdFilter && developerFilterLabel && onClearDeveloperFilter && (
+          <div className="operator-list-filter">
+            <span className="operator-muted">
+              {t('appsDeveloperFilter', { email: developerFilterLabel })}
+            </span>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onClearDeveloperFilter}>
+              {t('clearFilter')}
+            </button>
+          </div>
+        )}
       </div>
 
       <section className="operator-content operator-section card operator-apps-list">
@@ -1227,12 +1288,15 @@ export function OperatorAppsPanel({
               <table className="operator-table operator-table--apps">
                 <thead>
                   <tr>
-                    <th>{t('apps.listApp')}</th>
+                    <th className="operator-table-col-sticky">{t('apps.listApp')}</th>
                     <th>{t('apps.type')}</th>
                     <th className="operator-table-col-status">{t('columns.status')}</th>
                     <th className="operator-table-col-numeric">{t('apps.origins')}</th>
                     <th className="operator-table-col-numeric">{t('apps.namespaces')}</th>
                     <th className="operator-table-col-date">{t('columns.created')}</th>
+                    {mode === 'operator' && (
+                      <th className="operator-table-col-actions">{t('columns.actions')}</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -1243,7 +1307,7 @@ export function OperatorAppsPanel({
                       data-selected={selectedAppId === row.appId ? 'true' : 'false'}
                       onClick={() => selectApp(row.appId)}
                     >
-                      <td className="operator-apps-cell-primary">
+                      <td className="operator-table-col-sticky operator-apps-cell-primary">
                         <span className="operator-apps-cell-name">{row.name}</span>
                         <span
                           className="operator-apps-cell-id-row"
@@ -1260,8 +1324,45 @@ export function OperatorAppsPanel({
                         </span>
                       </td>
                       <td className="operator-table-col-numeric">{row.originCount}</td>
-                      <td className="operator-table-col-numeric">{row.namespaceCount}</td>
+                      <td
+                        className="operator-table-col-numeric"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {mode === 'operator' && onNavigateToNamespaces ? (
+                          <button
+                            type="button"
+                            className="operator-table-nav-link"
+                            onClick={() => onNavigateToNamespaces(row.appId, row.name)}
+                            title={t('viewNamespaces')}
+                          >
+                            {row.namespaceCount}
+                          </button>
+                        ) : (
+                          row.namespaceCount
+                        )}
+                      </td>
                       <td className="operator-table-col-date">{formatDate(row.createdAt, locale)}</td>
+                      {mode === 'operator' && (
+                        <td
+                          className="operator-table-col-actions"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() =>
+                              setLimitsTarget({
+                                scope: 'apps',
+                                scopeId: row.appId,
+                                title: row.name,
+                                subtitle: row.appId,
+                              })
+                            }
+                          >
+                            {t('limits.openButton')}
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -1276,6 +1377,15 @@ export function OperatorAppsPanel({
 
       {renderCreateDrawer()}
       {renderDetailDrawer()}
+
+      {mode === 'operator' && (
+        <OperatorLimitsModal
+          target={limitsTarget}
+          apiBase={apiBase}
+          onClose={() => setLimitsTarget(null)}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
     </div>
   )
 }
