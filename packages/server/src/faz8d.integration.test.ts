@@ -25,6 +25,7 @@ function withSelfServiceConfig(base: ServerConfig): ServerConfig {
       allowLocalhostOrigins: true,
       seed: [],
       developerPortal: {
+        ...base.apps.developerPortal,
         enabled: true,
         jwtSecret: DEV_JWT_SECRET,
         sessionTtlHours: 24,
