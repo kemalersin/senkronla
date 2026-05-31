@@ -959,11 +959,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 }
 
 .developer-auth-header {
-  margin-bottom: 1.25rem;
-}
-
-.developer-auth-card > .operator-segmented-field {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.75rem;
 }
 
 .developer-auth-header h1 {
@@ -981,7 +977,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 }
 
 .developer-auth-card .operator-segmented-field {
-  margin: 0;
+  margin: 0 0 1.75rem;
 }
 
 .developer-auth-card .operator-segmented-control {

@@ -9,6 +9,14 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- Operator panel — limit override forms on namespace drawer and app/developer detail panels
+
+### Changed
+
+- Developer sign-in/register card — more spacing above the email fields
+
 ## [0.1.8]
 
 ### Changed
