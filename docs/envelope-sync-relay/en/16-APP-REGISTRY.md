@@ -610,7 +610,7 @@ Base: `/v1/admin/apps` — requires `admin_api_token`.
 | POST | `/apps` | Create app (skip portal) |
 | GET | `/apps` | List all |
 | GET | `/apps/:appId` | Detail |
-| PATCH | `/apps/:appId` | status, quotas |
+| PATCH | `/apps/:appId` | status, limit overrides (see doc 17) |
 | POST | `/apps/:appId/origins` | Add verified origin directly |
 | POST | `/apps/:appId/bundles/:id/approve` | Approve native bundle |
 | DELETE | `/apps/:appId` | Archive |
@@ -731,15 +731,18 @@ ALTER TABLE pairing_tokens
 
 ## 15. Rate limits and quotas
 
-New rate-limit scopes:
+Implemented with operator overrides (doc [17-OPERATOR-LIMIT-OVERRIDES.md](./17-OPERATOR-LIMIT-OVERRIDES.md)).
 
 | action id | Scope | Default |
 |-----------|-------|---------|
-| `namespace_create` | per `app_id` + IP | from `apps.limits.perApp.namespacesPerDay` |
-| `pairing_token` | per `app_id` | existing + app dimension |
-| `global_ip` | per IP | unchanged |
+| `namespace_create` | per `app_uuid` + IP | `apps.limits.perApp.namespacesPerDay` |
+| `pairing_token` | per `namespace_uuid` | `limits.rateLimit.pairingTokensPerHour` |
+| `recover`, `pair_device`, `put_document` | per namespace or device | `limits.rateLimit.*` |
+| `global_ip` | per IP | config only (no entity override) |
 
-Exceeded app quota → `429 RATE_LIMIT_EXCEEDED` with `details.appId`.
+Exceeded quota → `429 RATE_LIMIT_EXCEEDED` with `details.effectiveLimitSource`.
+
+Admin: `GET/PATCH /v1/admin/{namespaces,apps,developers}/.../limits`.
 
 Operator suspend → immediate `403 APP_SUSPENDED` (no grace period).
 

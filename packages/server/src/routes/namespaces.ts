@@ -2,6 +2,7 @@ import { isValidNamespaceId } from '@senkronla/protocol'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { AppError } from '../errors/app-error.js'
+import { trackRateLimitQuota, withRateLimits } from '../lib/rate-limit-headers.js'
 import { createRequireDeviceAuth, requireNamespaceExists } from '../middleware/auth-device.js'
 import {
   createNamespace,
@@ -71,9 +72,12 @@ export async function registerNamespaceRoutes(app: FastifyInstance, ctx: AppCont
       clientDeviceId: body.clientDeviceId,
       appUuid: request.appAuth?.appUuid ?? null,
       appId: request.appAuth?.appId ?? null,
+      clientIp: request.ip,
     })
+    trackRateLimitQuota(request, result.rateLimit)
 
-    return reply.code(201).send(result)
+    const { rateLimit: _rateLimit, ...payload } = result
+    return reply.code(201).send(withRateLimits(request, payload))
   })
 
   app.get('/namespaces/:namespaceId', { preHandler: requireDeviceAuth }, async (request) => {

@@ -1,6 +1,9 @@
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool, DbQueryable } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
+import type { AppRow, NamespaceRow } from '../types/db.js'
+import { loadLimitContext } from './limit-context-loader.js'
+import { resolveSlotLimits, type LimitContext } from './limit-resolution-service.js'
 
 export interface Limits {
   freeDeviceLimit: number
@@ -45,12 +48,32 @@ export function buildLimits(
 
 export async function getLimitsForNamespace(
   pool: DbQueryable,
-  namespaceUuid: string,
-  freeDeviceLimit: number,
-  purchasedSlots: number,
+  config: ServerConfig,
+  ctx: LimitContext,
 ): Promise<Limits> {
-  const activeDevices = await countActiveDevices(pool, namespaceUuid)
+  if (!ctx.namespace) {
+    throw new Error('Limit context requires namespace')
+  }
+
+  const { freeDeviceLimit, purchasedSlots } = resolveSlotLimits(ctx, config)
+  const activeDevices = await countActiveDevices(pool, ctx.namespace.id)
   return buildLimits(freeDeviceLimit, purchasedSlots, activeDevices)
+}
+
+export async function loadNamespaceLimits(
+  pool: DbPool | DbQueryable,
+  config: ServerConfig,
+  namespace: NamespaceRow,
+  options?: { appUuid?: string | null; appId?: string | null; app?: AppRow | null },
+): Promise<Limits> {
+  const ctx = await loadLimitContext(pool as DbPool, {
+    namespace,
+    app: options?.app ?? null,
+    appUuid: options?.appUuid ?? null,
+    appId: options?.appId ?? null,
+  })
+
+  return getLimitsForNamespace(pool, config, ctx)
 }
 
 export function canAddDevice(limits: Limits): boolean {

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { AppError } from '../errors/app-error.js'
+import { APP_ID_PATTERN, APP_ID_VALIDATION_MESSAGE, normalizeAppId } from '../lib/app-id.js'
 import { createRequireAdminAuth } from '../middleware/auth-admin.js'
 import {
   getAdminOverview,
@@ -12,6 +13,13 @@ import {
 import { RATE_LIMIT_ACTION } from '../services/rate-limit-service.js'
 import { findNamespaceByPublicId } from '../services/namespace-service.js'
 import { createUnlockCode } from '../services/unlock-service.js'
+import {
+  getNamespaceLimits,
+  patchNamespaceLimits,
+} from '../services/operator-limit-service.js'
+import { getMailSettings, patchMailSettings } from '../services/mail-settings-service.js'
+import { patchLimitOverridesSchema } from '../types/limit-overrides.js'
+import { mailSettingsOverrideSchema } from '../types/mail-settings.js'
 import type { AppContext } from '../types/context.js'
 
 const createUnlockCodeBodySchema = z.object({
@@ -30,6 +38,14 @@ const listQuerySchema = paginationQuerySchema.extend({
   q: z.string().max(128).optional(),
 })
 
+const namespaceListQuerySchema = listQuerySchema.extend({
+  appId: z
+    .string()
+    .transform(normalizeAppId)
+    .refine((value) => APP_ID_PATTERN.test(value), { message: APP_ID_VALIDATION_MESSAGE })
+    .optional(),
+})
+
 const rateLimitListQuerySchema = listQuerySchema.extend({
   action: z
     .enum([
@@ -37,6 +53,7 @@ const rateLimitListQuerySchema = listQuerySchema.extend({
       RATE_LIMIT_ACTION.pairDevice,
       RATE_LIMIT_ACTION.pairingToken,
       RATE_LIMIT_ACTION.putDocument,
+      RATE_LIMIT_ACTION.namespaceCreate,
       RATE_LIMIT_ACTION.globalIp,
     ])
     .optional(),
@@ -50,8 +67,8 @@ export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext)
   })
 
   app.get('/admin/namespaces', { preHandler: requireAdminAuth }, async (request) => {
-    const query = listQuerySchema.parse(request.query)
-    return listAdminNamespaces(ctx.db, query)
+    const query = namespaceListQuerySchema.parse(request.query)
+    return listAdminNamespaces(ctx.db, query, ctx.config.apps.enabled)
   })
 
   app.get('/admin/unlock-codes', { preHandler: requireAdminAuth }, async (request) => {
@@ -80,5 +97,25 @@ export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext)
     const result = await createUnlockCode(ctx.db, ctx.config, body)
 
     return reply.code(201).send(result)
+  })
+
+  app.get('/admin/namespaces/:namespaceId/limits', { preHandler: requireAdminAuth }, async (request) => {
+    const { namespaceId } = request.params as { namespaceId: string }
+    return getNamespaceLimits(ctx.db, ctx.config, namespaceId)
+  })
+
+  app.patch('/admin/namespaces/:namespaceId/limits', { preHandler: requireAdminAuth }, async (request) => {
+    const { namespaceId } = request.params as { namespaceId: string }
+    const body = patchLimitOverridesSchema.parse(request.body ?? {})
+    return patchNamespaceLimits(ctx.db, ctx.config, namespaceId, body)
+  })
+
+  app.get('/admin/settings/mail', { preHandler: requireAdminAuth }, async () => {
+    return getMailSettings(ctx.db, ctx.config)
+  })
+
+  app.patch('/admin/settings/mail', { preHandler: requireAdminAuth }, async (request) => {
+    const body = mailSettingsOverrideSchema.parse(request.body ?? {})
+    return patchMailSettings(ctx.db, ctx.config, body)
   })
 }

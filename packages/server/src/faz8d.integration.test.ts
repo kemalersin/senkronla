@@ -29,6 +29,8 @@ function withSelfServiceConfig(base: ServerConfig): ServerConfig {
         jwtSecret: DEV_JWT_SECRET,
         sessionTtlHours: 24,
         requireEmailVerification: false,
+        emailVerifyTtlSeconds: 86_400,
+        passwordResetTtlSeconds: 3600,
       },
       limits: {
         ...base.apps.limits,

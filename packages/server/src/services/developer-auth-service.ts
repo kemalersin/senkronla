@@ -4,6 +4,13 @@ import { AppError } from '../errors/app-error.js'
 import { signDeveloperJwt, verifyDeveloperJwt } from '../lib/developer-jwt.js'
 import { isDeveloperPortalEnabled } from '../lib/developer-portal.js'
 import { hashPassword, verifyPassword } from '../lib/password-hash.js'
+import type { MailLocale } from '../types/mail-settings.js'
+import { consumeDeveloperAuthToken } from './developer-auth-token-service.js'
+import {
+  sendDeveloperPasswordResetEmail,
+  sendDeveloperVerificationEmail,
+} from './developer-mail-service.js'
+import { getEffectiveMailConfig, isMailConfigured } from './mail-settings-service.js'
 
 export interface DeveloperRow {
   id: string
@@ -108,11 +115,12 @@ function issueToken(config: ServerConfig, developer: DeveloperRow): string {
 export async function registerDeveloper(
   pool: DbPool,
   config: ServerConfig,
-  input: { email: string; password: string },
+  input: { email: string; password: string; locale?: MailLocale },
 ): Promise<DeveloperAuthResult> {
   requirePortalConfig(config)
 
   const email = normalizeEmail(input.email)
+  const locale = input.locale ?? 'en'
   assertPasswordStrength(input.password)
 
   const passwordHash = await hashPassword(input.password)
@@ -132,6 +140,19 @@ export async function registerDeveloper(
     }
 
     if (config.apps.developerPortal.requireEmailVerification) {
+      const mail = await getEffectiveMailConfig(pool, config)
+      if (isMailConfigured(mail)) {
+        try {
+          await sendDeveloperVerificationEmail(pool, config, {
+            developerUuid: developer.id,
+            email: developer.email,
+            locale,
+          })
+        } catch {
+          // Account is created even if outbound mail fails; user can resend later.
+        }
+      }
+
       return {
         token: '',
         developer: mapDeveloper(developer),
@@ -265,4 +286,134 @@ export async function resolveDeveloperSession(
   }
 
   return developer
+}
+
+export async function verifyDeveloperEmail(
+  pool: DbPool,
+  config: ServerConfig,
+  token: string,
+): Promise<{ ok: true; developer: DeveloperProfile }> {
+  requirePortalConfig(config)
+
+  const { developerUuid } = await consumeDeveloperAuthToken(pool, 'email_verify', token)
+  const developer = await findDeveloperById(pool, developerUuid)
+
+  if (!developer) {
+    throw new AppError(404, 'NOT_FOUND', 'Developer account not found')
+  }
+
+  if (developer.disabled_at) {
+    throw new AppError(403, 'DEVELOPER_ACCOUNT_DISABLED', 'Developer account is disabled')
+  }
+
+  if (developer.email_verified_at) {
+    return { ok: true, developer: mapDeveloper(developer) }
+  }
+
+  const result = await pool.query<DeveloperRow>(
+    `UPDATE developers
+     SET email_verified_at = now()
+     WHERE id = $1
+     RETURNING id, email, password_hash, email_verified_at, disabled_at, session_version, created_at`,
+    [developerUuid],
+  )
+
+  const updated = result.rows[0]
+  if (!updated) {
+    throw new AppError(404, 'NOT_FOUND', 'Developer account not found')
+  }
+
+  return { ok: true, developer: mapDeveloper(updated) }
+}
+
+export async function resendDeveloperVerification(
+  pool: DbPool,
+  config: ServerConfig,
+  input: { email: string; locale?: MailLocale },
+): Promise<{ ok: true }> {
+  requirePortalConfig(config)
+
+  if (!config.apps.developerPortal.requireEmailVerification) {
+    return { ok: true }
+  }
+
+  const email = normalizeEmail(input.email)
+  const locale = input.locale ?? 'en'
+  const developer = await findDeveloperByEmail(pool, email)
+
+  if (
+    !developer ||
+    developer.disabled_at ||
+    developer.email_verified_at ||
+    !(await isMailConfigured(await getEffectiveMailConfig(pool, config)))
+  ) {
+    return { ok: true }
+  }
+
+  await sendDeveloperVerificationEmail(pool, config, {
+    developerUuid: developer.id,
+    email: developer.email,
+    locale,
+  })
+
+  return { ok: true }
+}
+
+export async function requestDeveloperPasswordReset(
+  pool: DbPool,
+  config: ServerConfig,
+  input: { email: string; locale?: MailLocale },
+): Promise<{ ok: true }> {
+  requirePortalConfig(config)
+
+  const email = normalizeEmail(input.email)
+  const locale = input.locale ?? 'en'
+  const developer = await findDeveloperByEmail(pool, email)
+
+  if (
+    !developer ||
+    developer.disabled_at ||
+    !(await isMailConfigured(await getEffectiveMailConfig(pool, config)))
+  ) {
+    return { ok: true }
+  }
+
+  await sendDeveloperPasswordResetEmail(pool, config, {
+    developerUuid: developer.id,
+    email: developer.email,
+    locale,
+  })
+
+  return { ok: true }
+}
+
+export async function resetDeveloperPassword(
+  pool: DbPool,
+  config: ServerConfig,
+  input: { token: string; newPassword: string },
+): Promise<{ ok: true }> {
+  requirePortalConfig(config)
+
+  assertPasswordStrength(input.newPassword)
+  const { developerUuid } = await consumeDeveloperAuthToken(pool, 'password_reset', input.token)
+  const developer = await findDeveloperById(pool, developerUuid)
+
+  if (!developer) {
+    throw new AppError(404, 'NOT_FOUND', 'Developer account not found')
+  }
+
+  if (developer.disabled_at) {
+    throw new AppError(403, 'DEVELOPER_ACCOUNT_DISABLED', 'Developer account is disabled')
+  }
+
+  const passwordHash = await hashPassword(input.newPassword)
+
+  await pool.query(
+    `UPDATE developers
+     SET password_hash = $1, session_version = session_version + 1
+     WHERE id = $2`,
+    [passwordHash, developerUuid],
+  )
+
+  return { ok: true }
 }

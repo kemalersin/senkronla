@@ -262,6 +262,44 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
     }
   }
 
+  if (
+    env.ESR_MAIL__ENABLED ||
+    env.ESR_MAIL__FROM ||
+    env.ESR_MAIL__FROM_NAME ||
+    env.ESR_MAIL__WEB_BASE_URL ||
+    env.ESR_SMTP__HOST ||
+    env.ESR_SMTP__PORT ||
+    env.ESR_SMTP__SECURE ||
+    env.ESR_SMTP__USER ||
+    env.ESR_SMTP__PASSWORD
+  ) {
+    const smtpOverrides =
+      env.ESR_SMTP__HOST ||
+      env.ESR_SMTP__PORT ||
+      env.ESR_SMTP__SECURE ||
+      env.ESR_SMTP__USER ||
+      env.ESR_SMTP__PASSWORD
+        ? {
+            ...(env.ESR_SMTP__HOST ? { host: env.ESR_SMTP__HOST } : {}),
+            ...(env.ESR_SMTP__PORT ? { port: env.ESR_SMTP__PORT } : {}),
+            ...(env.ESR_SMTP__SECURE !== undefined
+              ? { secure: parseEnvBoolean(env.ESR_SMTP__SECURE) }
+              : {}),
+            ...(env.ESR_SMTP__USER ? { user: env.ESR_SMTP__USER } : {}),
+            ...(env.ESR_SMTP__PASSWORD ? { password: env.ESR_SMTP__PASSWORD } : {}),
+          }
+        : undefined
+
+    overrides.mail = {
+      ...(overrides.mail as RawConfig),
+      ...(env.ESR_MAIL__ENABLED !== undefined ? { enabled: parseEnvBoolean(env.ESR_MAIL__ENABLED) } : {}),
+      ...(env.ESR_MAIL__FROM ? { from: env.ESR_MAIL__FROM } : {}),
+      ...(env.ESR_MAIL__FROM_NAME ? { fromName: env.ESR_MAIL__FROM_NAME } : {}),
+      ...(env.ESR_MAIL__WEB_BASE_URL ? { webBaseUrl: env.ESR_MAIL__WEB_BASE_URL } : {}),
+      ...(smtpOverrides ? { smtp: smtpOverrides } : {}),
+    }
+  }
+
   return overrides
 }
 

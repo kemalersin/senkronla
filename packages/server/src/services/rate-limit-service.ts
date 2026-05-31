@@ -7,6 +7,7 @@ export const RATE_LIMIT_ACTION = {
   pairDevice: 'pair_device',
   pairingToken: 'pairing_token',
   putDocument: 'put_document',
+  namespaceCreate: 'namespace_create',
   globalIp: 'global_ip',
 } as const
 
@@ -16,6 +17,7 @@ export interface RateLimitScope {
   namespaceUuid?: string | null
   deviceUuid?: string | null
   clientIp?: string | null
+  appUuid?: string | null
 }
 
 export interface RateLimitQuota {
@@ -42,7 +44,19 @@ function buildRateLimitQuery(
     }
   }
 
-  if (scope.clientIp) {
+  if (scope.appUuid && scope.clientIp) {
+    return {
+      sql: `SELECT COUNT(*)::text AS count, MIN(created_at) AS oldest_at
+            FROM rate_limit_events
+            WHERE app_uuid = $1
+              AND client_ip = $2
+              AND action = $3
+              AND created_at > now() - ($4 || ' seconds')::interval`,
+      params: [scope.appUuid, scope.clientIp, action, String(windowSeconds)],
+    }
+  }
+
+  if (scope.clientIp && !scope.namespaceUuid && !scope.deviceUuid) {
     return {
       sql: `SELECT COUNT(*)::text AS count, MIN(created_at) AS oldest_at
             FROM rate_limit_events
@@ -54,7 +68,7 @@ function buildRateLimitQuery(
   }
 
   if (!scope.namespaceUuid) {
-    throw new Error('Rate limit scope requires namespaceUuid, deviceUuid, or clientIp')
+    throw new Error('Rate limit scope requires namespaceUuid, deviceUuid, appUuid+clientIp, or clientIp')
   }
 
   return {
@@ -148,9 +162,15 @@ export async function recordRateLimitEvent(
   scope: RateLimitScope,
 ): Promise<void> {
   await pool.query(
-    `INSERT INTO rate_limit_events (namespace_uuid, device_uuid, client_ip, action)
-     VALUES ($1, $2, $3, $4)`,
-    [scope.namespaceUuid ?? null, scope.deviceUuid ?? null, scope.clientIp ?? null, action],
+    `INSERT INTO rate_limit_events (namespace_uuid, device_uuid, client_ip, app_uuid, action)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [
+      scope.namespaceUuid ?? null,
+      scope.deviceUuid ?? null,
+      scope.clientIp ?? null,
+      scope.appUuid ?? null,
+      action,
+    ],
   )
 }
 
@@ -159,6 +179,7 @@ export interface RateLimitRule {
   limit: number
   windowSeconds: number
   message: string
+  source?: string
 }
 
 export function getRecoverRateLimitRule(config: ServerConfig): RateLimitRule {
@@ -238,6 +259,7 @@ export async function enforceRateLimit(
       retryAfterSeconds: status.resetAfterSeconds,
       action: rule.action,
       rateLimit: status,
+      ...(rule.source ? { effectiveLimitSource: rule.source } : {}),
     })
   }
 

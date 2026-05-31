@@ -31,6 +31,7 @@ The service is designed to transport an **encrypted snapshot envelope** for any 
 | 14 | [openapi.yaml](../openapi.yaml) | Machine-readable REST API definition |
 | 15 | [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) | **Multi-document per namespace (spec v1.2)** |
 | 16 | [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) | **Application registry, namespace–app binding (spec v1.3 — planned)** |
+| 17 | [17-OPERATOR-LIMIT-OVERRIDES.md](./17-OPERATOR-LIMIT-OVERRIDES.md) | **Operator limit overrides — namespace / app / developer cascade (v1.3.2)** |
 
 ---
 

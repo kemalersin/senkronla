@@ -132,6 +132,8 @@ export const serverConfigSchema = z.object({
           jwtSecret: z.string().min(32).optional(),
           sessionTtlHours: z.coerce.number().int().positive().default(168),
           requireEmailVerification: z.coerce.boolean().default(true),
+          emailVerifyTtlSeconds: z.coerce.number().int().positive().default(86_400),
+          passwordResetTtlSeconds: z.coerce.number().int().positive().default(3600),
         })
         .default({}),
       seed: z
@@ -155,6 +157,23 @@ export const serverConfigSchema = z.object({
           }),
         )
         .default([]),
+    })
+    .default({}),
+  mail: z
+    .object({
+      enabled: z.coerce.boolean().default(false),
+      from: z.string().default(''),
+      fromName: z.string().default('Senkronla'),
+      webBaseUrl: z.string().url().default('http://localhost:3000'),
+      smtp: z
+        .object({
+          host: z.string().default(''),
+          port: z.coerce.number().int().positive().default(587),
+          secure: z.coerce.boolean().default(false),
+          user: z.string().default(''),
+          password: z.string().default(''),
+        })
+        .default({}),
     })
     .default({}),
   cors: z

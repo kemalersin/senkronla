@@ -158,22 +158,11 @@ Webhook güvenliği: HMAC signature, idempotency key.
 
 ## 7. Namespace bazında override
 
-Operatör VIP veya test için:
+Operatör override'ları veritabanında tutulur; runtime'da çözülür. Bkz. [17-OPERATOR-LIMIT-OVERRIDES.md](./17-OPERATOR-LIMIT-OVERRIDES.md).
 
-```yaml
-# admin PATCH veya DB
-namespace_overrides:
-  "550e8400-...":
-    free_device_limit: 10
-    purchased_slots: 0
-```
+Sıra: namespace → app → developer → namespace satır snapshot → config.
 
-Efektif:
-
-```
-free = override.free ?? server.default_free_device_limit
-max = free + purchased_slots
-```
+Admin API: `GET/PATCH /v1/admin/namespaces/{namespaceId}/limits`.
 
 ## 8. free_device_limit ilk tetikleme
 

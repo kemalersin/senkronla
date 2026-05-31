@@ -871,5 +871,20 @@ export function createEsrGuideSnippets(exampleOrigin = 'https://yourdomain.com')
     healthCheck: `curl -s ${origin}/health`,
     migrate: `pnpm --filter @senkronla/server migrate`,
     unlockCode: `pnpm --filter @senkronla/cli exec senkronla generate-unlock-code \\\n  --namespace-id 550e8400-e29b-41d4-a716-446655440000 \\\n  --slots 3 \\\n  --note "Invoice #1234"`,
+    rateLimitConfig: `limits:
+  rateLimit:
+    enabled: true
+    recoverPerHour: 5
+    pairingPerHour: 20
+    pairingTokensPerHour: 30
+    pushPerHourPerDevice: 120
+    generalPerMinutePerIp: 300
+
+apps:
+  limits:
+    perApp:
+      namespacesPerDay: 100
+      recoverPerHour: 5
+      pairingTokensPerHour: 30`,
   }
 }

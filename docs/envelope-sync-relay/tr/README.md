@@ -31,6 +31,7 @@ Servis, herhangi bir offline-first uygulamanın **şifreli snapshot zarfını** 
 | 14 | [openapi.yaml](../openapi.yaml) | Makine okunur REST API tanımı |
 | 15 | [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) | **Namespace başına çoklu döküman (spec v1.2)** |
 | 16 | [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) | **Uygulama kaydı, namespace–app bağlama (spec v1.3 — planlandı)** |
+| 17 | [17-OPERATOR-LIMIT-OVERRIDES.md](./17-OPERATOR-LIMIT-OVERRIDES.md) | **Operatör limit override — namespace / app / developer cascade (v1.3.2)** |
 
 ---
 

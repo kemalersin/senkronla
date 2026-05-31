@@ -9,7 +9,7 @@ import {
   revokeDevice,
 } from '../services/device-service.js'
 import { createPairingToken } from '../services/pairing-service.js'
-import { buildLimitsResponse, getLimitsForNamespace } from '../services/slot-service.js'
+import { buildLimitsResponse, loadNamespaceLimits } from '../services/slot-service.js'
 import type { AppContext } from '../types/context.js'
 
 const pairingTokenBodySchema = z.object({
@@ -77,12 +77,7 @@ export async function registerDeviceRoutes(app: FastifyInstance, ctx: AppContext
   app.get('/namespaces/:namespaceId/limits', { preHandler: requireDeviceAuth }, async (request) => {
     const { namespaceId } = request.params as { namespaceId: string }
     const namespace = await requireNamespaceExists(ctx, namespaceId, request)
-    const limits = await getLimitsForNamespace(
-      ctx.db,
-      namespace.id,
-      namespace.free_device_limit,
-      namespace.purchased_slots,
-    )
+    const limits = await loadNamespaceLimits(ctx.db, ctx.config, namespace)
 
     return buildLimitsResponse(ctx.config, limits)
   })

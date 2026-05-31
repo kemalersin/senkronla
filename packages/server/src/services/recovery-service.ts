@@ -4,8 +4,10 @@ import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
 import { generateDeviceToken, hashDeviceToken } from '../lib/crypto.js'
+import { loadLimitContext } from './limit-context-loader.js'
+import { resolveRateLimitRule } from './limit-resolution-service.js'
 import { buildLimitsResponse, getLimitsForNamespace } from './slot-service.js'
-import { enforceRateLimit, getRecoverRateLimitRule, type RateLimitQuota } from './rate-limit-service.js'
+import { enforceRateLimit, RATE_LIMIT_ACTION, type RateLimitQuota } from './rate-limit-service.js'
 import type { NamespaceRow } from '../types/db.js'
 
 export interface RecoverNamespaceInput {
@@ -40,7 +42,9 @@ export async function recoverNamespace(
   namespace: NamespaceRow,
   input: RecoverNamespaceInput,
 ): Promise<RecoverNamespaceResult> {
-  const recoverRateLimit = await enforceRateLimit(pool, config, getRecoverRateLimitRule(config), {
+  const ctx = await loadLimitContext(pool, { namespace })
+  const recoverRule = resolveRateLimitRule(RATE_LIMIT_ACTION.recover, ctx, config)
+  const recoverRateLimit = await enforceRateLimit(pool, config, recoverRule, {
     namespaceUuid: namespace.id,
   })
   assertRecoveryProof(namespace, input.recoveryKeyProof)
@@ -85,12 +89,7 @@ export async function recoverNamespace(
 
     await client.query('COMMIT')
 
-    const limits = await getLimitsForNamespace(
-      pool,
-      namespace.id,
-      namespace.free_device_limit,
-      namespace.purchased_slots,
-    )
+    const limits = await getLimitsForNamespace(pool, config, ctx)
 
     return {
       deviceToken,

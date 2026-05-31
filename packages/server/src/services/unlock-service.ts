@@ -2,10 +2,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto'
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
-import {
-  canAddDevice,
-  getLimitsForNamespace,
-} from './slot-service.js'
+import { canAddDevice, loadNamespaceLimits } from './slot-service.js'
 import type { NamespaceRow } from '../types/db.js'
 
 export interface UnlockCodeRow {
@@ -182,12 +179,11 @@ export async function redeemUnlockCode(
 
     await client.query('COMMIT')
 
-    const limits = await getLimitsForNamespace(
-      pool,
-      namespace.id,
-      updatedNamespace.free_device_limit,
-      updatedNamespace.purchased_slots,
-    )
+    const limits = await loadNamespaceLimits(pool, config, {
+      ...namespace,
+      free_device_limit: updatedNamespace.free_device_limit,
+      purchased_slots: updatedNamespace.purchased_slots,
+    })
 
     return {
       slotsAdded: row.slots,

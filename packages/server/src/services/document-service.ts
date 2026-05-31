@@ -8,9 +8,11 @@ import type { ServerConfig } from '../config/schema.js'
 import type { DbPool, DbQueryable } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
 import { buildBlobKey, readBlob, writeBlob } from '../blob/store.js'
+import { loadLimitContext } from './limit-context-loader.js'
+import { resolveRateLimitRule } from './limit-resolution-service.js'
 import {
   enforceRateLimit,
-  getPutDocumentRateLimitRule,
+  RATE_LIMIT_ACTION,
 } from './rate-limit-service.js'
 import type { DeviceAuthContext } from '../types/context.js'
 import type { NamespaceRow } from '../types/db.js'
@@ -232,7 +234,9 @@ export async function pushDocument(
   documentId: string,
   input: PushDocumentInput,
 ): Promise<PushDocumentResult> {
-  const pushRateLimit = await enforceRateLimit(pool, config, getPutDocumentRateLimitRule(config), {
+  const ctx = await loadLimitContext(pool, { namespace })
+  const pushRule = resolveRateLimitRule(RATE_LIMIT_ACTION.putDocument, ctx, config)
+  const pushRateLimit = await enforceRateLimit(pool, config, pushRule, {
     deviceUuid: deviceAuth.deviceUuid,
   })
 

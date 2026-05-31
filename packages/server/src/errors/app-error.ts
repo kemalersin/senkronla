@@ -47,6 +47,8 @@ export type ErrorCode =
   | 'DEVELOPER_ACCOUNT_DISABLED'
   | 'DEVELOPER_APP_LIMIT_REACHED'
   | 'DEVELOPER_FORBIDDEN'
+  | 'INVALID_TOKEN'
+  | 'MAIL_NOT_CONFIGURED'
   | 'INTERNAL_ERROR'
 
 export class AppError extends Error {

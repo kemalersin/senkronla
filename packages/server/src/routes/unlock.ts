@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createRequireDeviceAuth, requireNamespaceExists } from '../middleware/auth-device.js'
 import { AppError } from '../errors/app-error.js'
 import { redeemUnlockCode } from '../services/unlock-service.js'
-import { getLimitsForNamespace } from '../services/slot-service.js'
+import { loadNamespaceLimits } from '../services/slot-service.js'
 import type { AppContext } from '../types/context.js'
 
 const redeemUnlockBodySchema = z.object({
@@ -27,12 +27,10 @@ export async function registerUnlockRoutes(app: FastifyInstance, ctx: AppContext
 
       const result = await redeemUnlockCode(ctx.db, ctx.config, namespace, body.unlockCode)
 
-      const limits = await getLimitsForNamespace(
-        ctx.db,
-        namespace.id,
-        namespace.free_device_limit,
-        result.purchasedSlots,
-      )
+      const limits = await loadNamespaceLimits(ctx.db, ctx.config, {
+        ...namespace,
+        purchased_slots: result.purchasedSlots,
+      })
 
       ctx.notificationHub?.broadcast(namespaceId, {
         type: 'limits_changed',

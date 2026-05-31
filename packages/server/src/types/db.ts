@@ -1,5 +1,7 @@
 import type { NativePlatform } from '@senkronla/protocol'
 
+import type { LimitOverrides } from './limit-overrides.js'
+
 export interface NamespaceRow {
   id: string
   namespace_id: string
@@ -9,6 +11,7 @@ export interface NamespaceRow {
   recovery_salt: string
   recovery_hash: string
   app_uuid: string | null
+  limit_overrides: LimitOverrides | null
   created_at: Date
   updated_at: Date
 }
@@ -21,8 +24,18 @@ export interface AppRow {
   type: 'web' | 'native'
   status: string
   client_secret_hash: string | null
+  limit_overrides: LimitOverrides | null
   created_at: Date
   updated_at: Date
+}
+
+export interface DeveloperRow {
+  id: string
+  email: string
+  email_verified_at: Date | null
+  disabled_at: Date | null
+  limit_overrides: LimitOverrides | null
+  created_at: Date
 }
 
 export interface AppOriginRow {

@@ -15,6 +15,11 @@ import {
   updateAdminApp,
   verifyAdminAppOrigin,
 } from '../services/admin-app-service.js'
+import {
+  getAppLimits,
+  patchAppLimits,
+} from '../services/operator-limit-service.js'
+import { patchLimitOverridesSchema } from '../types/limit-overrides.js'
 import type { AppContext } from '../types/context.js'
 
 const appIdSchema = z
@@ -33,6 +38,7 @@ const paginationQuerySchema = z.object({
   status: z
     .enum(['pending', 'pending_verification', 'active', 'suspended', 'archived'])
     .optional(),
+  developerId: z.string().uuid().optional(),
 })
 
 const createAppBodySchema = z.object({
@@ -153,4 +159,15 @@ export async function registerAdminAppRoutes(app: FastifyInstance, ctx: AppConte
       return approveAdminAppBundle(ctx.db, ctx.config, appId, bundleId)
     },
   )
+
+  app.get('/admin/apps/:appId/limits', { preHandler: requireAdminAuth }, async (request) => {
+    const { appId } = appIdParamSchema.parse(request.params)
+    return getAppLimits(ctx.db, ctx.config, appId)
+  })
+
+  app.patch('/admin/apps/:appId/limits', { preHandler: requireAdminAuth }, async (request) => {
+    const { appId } = appIdParamSchema.parse(request.params)
+    const body = patchLimitOverridesSchema.parse(request.body ?? {})
+    return patchAppLimits(ctx.db, ctx.config, appId, body)
+  })
 }

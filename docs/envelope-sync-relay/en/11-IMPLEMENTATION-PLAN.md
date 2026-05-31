@@ -302,6 +302,21 @@ See [16-APP-REGISTRY.md](./16-APP-REGISTRY.md) §20.
 
 **Definition of done:** `apps.enabled: false` passes all existing tests; operator_managed web app creates namespace bound to app; self_service developer verifies domain without operator; wrong origin / cross-app namespace rejected.
 
+### Phase 9 — Operator limit overrides (v1.3.2)
+
+See [17-OPERATOR-LIMIT-OVERRIDES.md](./17-OPERATOR-LIMIT-OVERRIDES.md).
+
+| Sub-phase | Scope | Status |
+|-----------|--------|--------|
+| 9a | Migration 010, `limit_overrides` JSONB, audit table | done |
+| 9b | `limit-resolution-service`, cascade + slot/rate wiring | done |
+| 9c | `namespace_create` enforcement | done |
+| 9d | Admin GET/PATCH limits API, OpenAPI | done |
+| 9e | Operator portal drawers + BFF | done |
+| 9f | Integration tests | done |
+
+**Definition of done:** Namespace override beats app override beats developer beats config; operator can clear overrides via PATCH null keys.
+
 ## 11. Known limitations (current release)
 
 - Multi-document uses `documents[]` in `@senkronla/client` (see doc 14 §5.2)

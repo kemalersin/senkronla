@@ -82,7 +82,21 @@ apps:
     jwtSecret: "${ESR_DEVELOPER_JWT_SECRET}"
     sessionTtlHours: 168
     requireEmailVerification: true
+    emailVerifyTtlSeconds: 86400
+    passwordResetTtlSeconds: 3600
   seed: []
+
+mail:
+  enabled: false
+  from: "${ESR_MAIL__FROM}"
+  fromName: "Senkronla"
+  webBaseUrl: "http://localhost:3000"
+  smtp:
+    host: "${ESR_SMTP__HOST}"
+    port: 587
+    secure: false
+    user: "${ESR_SMTP__USER}"
+    password: "${ESR_SMTP__PASSWORD}"
 
 cors:
   allowedOrigins:

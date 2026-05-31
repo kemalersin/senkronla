@@ -158,22 +158,18 @@ Webhook security: HMAC signature, idempotency key.
 
 ## 7. Per-namespace override
 
-Operator for VIP or test:
+Operator overrides for VIP or test namespaces are stored in the database and resolved at runtime. See [17-OPERATOR-LIMIT-OVERRIDES.md](./17-OPERATOR-LIMIT-OVERRIDES.md).
 
-```yaml
-# admin PATCH or DB
-namespace_overrides:
-  "550e8400-...":
-    free_device_limit: 10
-    purchased_slots: 0
-```
+Resolution order: namespace → app → developer → namespace row snapshot → server config default.
 
 Effective:
 
 ```
-free = override.free ?? server.default_free_device_limit
-max = free + purchased_slots
+free = resolved freeDeviceLimit
+max = free + resolved purchasedSlots
 ```
+
+Admin API: `GET/PATCH /v1/admin/namespaces/{namespaceId}/limits`.
 
 ## 8. free_device_limit initial trigger
 

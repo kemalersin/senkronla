@@ -1,9 +1,11 @@
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { generatePairingCode, hashPairingCode } from '../lib/crypto.js'
+import { loadLimitContext } from './limit-context-loader.js'
+import { resolveRateLimitRule } from './limit-resolution-service.js'
 import {
   enforceRateLimit,
-  getPairingTokenRateLimitRule,
+  RATE_LIMIT_ACTION,
   type RateLimitQuota,
 } from './rate-limit-service.js'
 import { assertCanAddDevice, getLimitsForNamespace } from './slot-service.js'
@@ -30,16 +32,13 @@ export async function createPairingToken(
   hostLabel: string,
   input: CreatePairingTokenInput = {},
 ): Promise<CreatePairingTokenResult> {
-  const pairingTokenRateLimit = await enforceRateLimit(pool, config, getPairingTokenRateLimitRule(config), {
+  const ctx = await loadLimitContext(pool, { namespace })
+  const pairingRule = resolveRateLimitRule(RATE_LIMIT_ACTION.pairingToken, ctx, config)
+  const pairingTokenRateLimit = await enforceRateLimit(pool, config, pairingRule, {
     namespaceUuid: namespace.id,
   })
 
-  const limits = await getLimitsForNamespace(
-    pool,
-    namespace.id,
-    namespace.free_device_limit,
-    namespace.purchased_slots,
-  )
+  const limits = await getLimitsForNamespace(pool, config, ctx)
 
   assertCanAddDevice(config, limits)
 

@@ -9,6 +9,12 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.9]
+
+### Added
+
+- Operator limit overrides — cascade resolution (namespace → app → developer → config) for rate limits and slot limits; admin `GET/PATCH .../limits` on namespaces, apps, and developers; `namespace_create` rate limit enforcement; operator panel limits UI
+
 ## [0.1.7]
 
 ### Added

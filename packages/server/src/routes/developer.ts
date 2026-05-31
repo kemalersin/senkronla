@@ -12,6 +12,10 @@ import {
   loginDeveloper,
   logoutDeveloper,
   registerDeveloper,
+  requestDeveloperPasswordReset,
+  resendDeveloperVerification,
+  resetDeveloperPassword,
+  verifyDeveloperEmail,
 } from '../services/developer-auth-service.js'
 import {
   addDeveloperAppBundle,
@@ -30,9 +34,27 @@ import type { AppContext } from '../types/context.js'
 const registerBodySchema = z.object({
   email: z.string().email().max(320),
   password: z.string().min(8).max(256),
+  locale: z.enum(['en', 'tr']).optional(),
 })
 
-const loginBodySchema = registerBodySchema
+const loginBodySchema = z.object({
+  email: z.string().email().max(320),
+  password: z.string().min(8).max(256),
+})
+
+const emailLocaleBodySchema = z.object({
+  email: z.string().email().max(320),
+  locale: z.enum(['en', 'tr']).optional(),
+})
+
+const verifyEmailBodySchema = z.object({
+  token: z.string().min(16).max(512),
+})
+
+const resetPasswordBodySchema = z.object({
+  token: z.string().min(16).max(512),
+  newPassword: z.string().min(8).max(256),
+})
 
 const changePasswordBodySchema = z.object({
   currentPassword: z.string().min(1).max(256),
@@ -112,6 +134,26 @@ export async function registerDeveloperRoutes(app: FastifyInstance, ctx: AppCont
   app.patch('/developer/password', { preHandler: requireDeveloperAuth }, async (request) => {
     const body = changePasswordBodySchema.parse(request.body)
     return changeDeveloperPassword(ctx.db, request.developerAuth!.developerUuid, body)
+  })
+
+  app.post('/developer/verify-email', { preHandler: requireDeveloperPortal }, async (request) => {
+    const body = verifyEmailBodySchema.parse(request.body)
+    return verifyDeveloperEmail(ctx.db, ctx.config, body.token)
+  })
+
+  app.post('/developer/resend-verification', { preHandler: requireDeveloperPortal }, async (request) => {
+    const body = emailLocaleBodySchema.parse(request.body)
+    return resendDeveloperVerification(ctx.db, ctx.config, body)
+  })
+
+  app.post('/developer/request-password-reset', { preHandler: requireDeveloperPortal }, async (request) => {
+    const body = emailLocaleBodySchema.parse(request.body)
+    return requestDeveloperPasswordReset(ctx.db, ctx.config, body)
+  })
+
+  app.post('/developer/reset-password', { preHandler: requireDeveloperPortal }, async (request) => {
+    const body = resetPasswordBodySchema.parse(request.body)
+    return resetDeveloperPassword(ctx.db, ctx.config, body)
   })
 
   app.get('/developer/apps', { preHandler: requireDeveloperAuth }, async (request) => {

@@ -56,6 +56,9 @@ limits:
     pushPerHourPerDevice: 120      # put_document (headers: RateLimit-PutDocument-*)
     generalPerMinutePerIp: 300     # global_ip
 
+# Operator overrides (runtime, DB) sit above this block — see doc 17.
+# Cascade: namespace → app → developer → values below.
+
 pairing:
   codeTtlSeconds: 600
   codeLength: 6

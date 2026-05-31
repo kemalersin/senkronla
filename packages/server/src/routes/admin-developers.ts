@@ -6,6 +6,11 @@ import {
   listAdminDevelopers,
   updateAdminDeveloper,
 } from '../services/admin-developer-service.js'
+import {
+  getDeveloperLimits,
+  patchDeveloperLimits,
+} from '../services/operator-limit-service.js'
+import { patchLimitOverridesSchema } from '../types/limit-overrides.js'
 import type { AppContext } from '../types/context.js'
 
 const developerIdParamSchema = z.object({
@@ -45,5 +50,16 @@ export async function registerAdminDeveloperRoutes(app: FastifyInstance, ctx: Ap
     const { developerId } = developerIdParamSchema.parse(request.params)
     const body = updateDeveloperBodySchema.parse(request.body)
     return updateAdminDeveloper(ctx.db, developerId, body)
+  })
+
+  app.get('/admin/developers/:developerId/limits', { preHandler: requireAdminAuth }, async (request) => {
+    const { developerId } = developerIdParamSchema.parse(request.params)
+    return getDeveloperLimits(ctx.db, ctx.config, developerId)
+  })
+
+  app.patch('/admin/developers/:developerId/limits', { preHandler: requireAdminAuth }, async (request) => {
+    const { developerId } = developerIdParamSchema.parse(request.params)
+    const body = patchLimitOverridesSchema.parse(request.body ?? {})
+    return patchDeveloperLimits(ctx.db, ctx.config, developerId, body)
   })
 }

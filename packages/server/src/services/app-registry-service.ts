@@ -38,7 +38,8 @@ function constantTimeSecretMatch(provided: string, expectedHash: string | null):
 
 export async function findAppByPublicId(pool: DbPool, appId: string): Promise<AppRow | null> {
   const result = await pool.query<AppRow>(
-    `SELECT id, app_id, developer_uuid, name, type, status, client_secret_hash, created_at, updated_at
+    `SELECT id, app_id, developer_uuid, name, type, status, client_secret_hash,
+            limit_overrides, created_at, updated_at
      FROM apps
      WHERE app_id = $1`,
     [appId],

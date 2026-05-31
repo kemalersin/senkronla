@@ -4,6 +4,7 @@ import { relayDeveloperPublicJson } from '@/lib/developer-relay'
 interface AuthBody {
   email?: string
   password?: string
+  locale?: 'en' | 'tr'
 }
 
 export async function POST(request: Request) {
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   }>('/developer/register', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, locale: body.locale }),
   })
 
   if (!responseBody.token) {

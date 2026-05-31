@@ -4,7 +4,14 @@ import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
 import { generateDeviceToken, hashDeviceToken } from '../lib/crypto.js'
-import { buildLimitsResponse, getLimitsForNamespace } from './slot-service.js'
+import { loadLimitContext } from './limit-context-loader.js'
+import { resolveRateLimitRule } from './limit-resolution-service.js'
+import {
+  enforceRateLimit,
+  RATE_LIMIT_ACTION,
+  type RateLimitQuota,
+} from './rate-limit-service.js'
+import { buildLimitsResponse, loadNamespaceLimits } from './slot-service.js'
 import type { NamespaceRow } from '../types/db.js'
 import { getDocumentHeadMeta, listDocumentHeads } from './document-service.js'
 
@@ -17,6 +24,7 @@ export interface CreateNamespaceInput {
   clientDeviceId: string
   appUuid?: string | null
   appId?: string | null
+  clientIp?: string | null
 }
 
 export interface CreateNamespaceResult {
@@ -25,6 +33,7 @@ export interface CreateNamespaceResult {
   deviceToken: string
   deviceId: string
   limits: ReturnType<typeof buildLimitsResponse>
+  rateLimit?: RateLimitQuota | null
 }
 
 export async function findNamespaceByPublicId(
@@ -33,7 +42,7 @@ export async function findNamespaceByPublicId(
 ): Promise<NamespaceRow | null> {
   const result = await pool.query<NamespaceRow>(
     `SELECT id, namespace_id, namespace_label, free_device_limit, purchased_slots,
-            recovery_salt, recovery_hash, app_uuid, created_at, updated_at
+            recovery_salt, recovery_hash, app_uuid, limit_overrides, created_at, updated_at
      FROM namespaces
      WHERE namespace_id = $1`,
     [namespaceId],
@@ -62,6 +71,16 @@ export async function createNamespace(
     throw new AppError(409, 'NAMESPACE_EXISTS', 'Namespace already exists')
   }
 
+  let namespaceCreateRateLimit: RateLimitQuota | null = null
+  if (input.appUuid && input.clientIp) {
+    const ctx = await loadLimitContext(pool, { appUuid: input.appUuid, appId: input.appId ?? null })
+    const rule = resolveRateLimitRule(RATE_LIMIT_ACTION.namespaceCreate, ctx, config)
+    namespaceCreateRateLimit = await enforceRateLimit(pool, config, rule, {
+      appUuid: input.appUuid,
+      clientIp: input.clientIp,
+    })
+  }
+
   const deviceToken = generateDeviceToken()
   const tokenHash = hashDeviceToken(deviceToken)
   const devicePublicId = ulid()
@@ -77,7 +96,7 @@ export async function createNamespace(
          recovery_salt, recovery_hash, app_uuid
        ) VALUES ($1, $2, $3, 0, $4, $5, $6)
        RETURNING id, namespace_id, namespace_label, free_device_limit, purchased_slots,
-                 recovery_salt, recovery_hash, app_uuid, created_at, updated_at`,
+                 recovery_salt, recovery_hash, app_uuid, limit_overrides, created_at, updated_at`,
       [
         input.namespaceId,
         input.namespaceLabel,
@@ -102,12 +121,10 @@ export async function createNamespace(
 
     await client.query('COMMIT')
 
-    const limits = await getLimitsForNamespace(
-      pool,
-      namespace.id,
-      namespace.free_device_limit,
-      namespace.purchased_slots,
-    )
+    const limits = await loadNamespaceLimits(pool, config, namespace, {
+      appUuid: input.appUuid ?? null,
+      appId: input.appId ?? null,
+    })
 
     return {
       namespaceId: namespace.namespace_id,
@@ -115,6 +132,7 @@ export async function createNamespace(
       deviceToken,
       deviceId: devicePublicId,
       limits: buildLimitsResponse(config, limits),
+      rateLimit: namespaceCreateRateLimit,
     }
   } catch (error) {
     await client.query('ROLLBACK')
@@ -129,12 +147,7 @@ export async function getNamespaceInfo(
   config: ServerConfig,
   namespace: NamespaceRow,
 ) {
-  const limits = await getLimitsForNamespace(
-    pool,
-    namespace.id,
-    namespace.free_device_limit,
-    namespace.purchased_slots,
-  )
+  const limits = await loadNamespaceLimits(pool, config, namespace)
 
   const documents = await listDocumentHeads(pool, namespace.id)
   const primaryHead = await getDocumentHeadMeta(pool, namespace.id, 'primary')

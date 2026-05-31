@@ -64,6 +64,7 @@ export interface AdminAppSummary {
   originCount: number
   bundleCount: number
   namespaceCount: number
+  developerEmail?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -221,38 +222,44 @@ export async function buildAdminAppDetail(
 
 export async function listAdminApps(
   pool: DbPool,
-  input: PaginationInput & { q?: string; status?: string },
+  input: PaginationInput & { q?: string; status?: string; developerId?: string },
 ): Promise<PaginatedAppsResult> {
   const limit = resolveLimit(input.limit)
   const offset = resolveOffset(input.offset)
   const pattern = input.q?.trim() ? `%${input.q.trim()}%` : null
+  const developerId = input.developerId?.trim() || null
 
   const result = await pool.query<
-    AppRow & { origin_count: string; bundle_count: string; namespace_count: string }
+    AppRow & { origin_count: string; bundle_count: string; namespace_count: string; developer_email: string | null }
   >(
     `SELECT a.id, a.app_id, a.developer_uuid, a.name, a.type, a.status, a.client_secret_hash,
             a.created_at, a.updated_at,
             (SELECT COUNT(*)::text FROM app_origins o WHERE o.app_uuid = a.id) AS origin_count,
             (SELECT COUNT(*)::text FROM app_bundles b WHERE b.app_uuid = a.id) AS bundle_count,
-            (SELECT COUNT(*)::text FROM namespaces n WHERE n.app_uuid = a.id) AS namespace_count
+            (SELECT COUNT(*)::text FROM namespaces n WHERE n.app_uuid = a.id) AS namespace_count,
+            d.email AS developer_email
      FROM apps a
-     WHERE ($1::text IS NULL OR a.app_id ILIKE $1 OR a.name ILIKE $1 OR EXISTS (
+     LEFT JOIN developers d ON d.id = a.developer_uuid
+     WHERE ($1::text IS NULL OR a.app_id ILIKE $1 OR a.name ILIKE $1 OR COALESCE(d.email, '') ILIKE $1 OR EXISTS (
          SELECT 1 FROM app_bundles b WHERE b.app_uuid = a.id AND b.bundle_id ILIKE $1
        ))
        AND ($2::text IS NULL OR a.status = $2)
+       AND ($5::uuid IS NULL OR a.developer_uuid = $5)
      ORDER BY a.created_at DESC
      LIMIT $3 OFFSET $4`,
-    [pattern, input.status ?? null, limit, offset],
+    [pattern, input.status ?? null, limit, offset, developerId],
   )
 
   const totalResult = await pool.query<{ count: string }>(
     `SELECT COUNT(*)::text AS count
      FROM apps a
-     WHERE ($1::text IS NULL OR a.app_id ILIKE $1 OR a.name ILIKE $1 OR EXISTS (
+     LEFT JOIN developers d ON d.id = a.developer_uuid
+     WHERE ($1::text IS NULL OR a.app_id ILIKE $1 OR a.name ILIKE $1 OR COALESCE(d.email, '') ILIKE $1 OR EXISTS (
          SELECT 1 FROM app_bundles b WHERE b.app_uuid = a.id AND b.bundle_id ILIKE $1
        ))
-       AND ($2::text IS NULL OR a.status = $2)`,
-    [pattern, input.status ?? null],
+       AND ($2::text IS NULL OR a.status = $2)
+       AND ($3::uuid IS NULL OR a.developer_uuid = $3)`,
+    [pattern, input.status ?? null, developerId],
   )
 
   return {
@@ -264,6 +271,7 @@ export async function listAdminApps(
       originCount: Number(row.origin_count),
       bundleCount: Number(row.bundle_count),
       namespaceCount: Number(row.namespace_count),
+      developerEmail: row.developer_email,
       createdAt: row.created_at.toISOString(),
       updatedAt: row.updated_at.toISOString(),
     })),

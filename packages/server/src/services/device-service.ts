@@ -3,15 +3,18 @@ import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
 import { generateDeviceToken, hashDeviceToken, hashPairingCode } from '../lib/crypto.js'
+import { loadLimitContext } from './limit-context-loader.js'
+import { resolveRateLimitRule } from './limit-resolution-service.js'
 import {
   enforceRateLimit,
-  getPairDeviceRateLimitRule,
+  RATE_LIMIT_ACTION,
   type RateLimitQuota,
 } from './rate-limit-service.js'
 import {
   assertCanAddDevice,
   buildLimitsResponse,
   getLimitsForNamespace,
+  loadNamespaceLimits,
 } from './slot-service.js'
 import type { AppAuthContext } from './app-registry-service.js'
 import { assertPairingAppAllowed } from './pairing-scope-service.js'
@@ -51,12 +54,7 @@ export async function listDevices(
     [namespace.id],
   )
 
-  const limits = await getLimitsForNamespace(
-    pool,
-    namespace.id,
-    namespace.free_device_limit,
-    namespace.purchased_slots,
-  )
+  const limits = await loadNamespaceLimits(pool, config, namespace)
 
   return {
     devices: result.rows.map((device) => ({
@@ -121,7 +119,13 @@ export async function pairDeviceWithCode(
   input: PairDeviceInput,
   appAuth?: AppAuthContext | null,
 ): Promise<PairDeviceResult> {
-  const pairRateLimit = await enforceRateLimit(pool, config, getPairDeviceRateLimitRule(config), {
+  const ctx = await loadLimitContext(pool, {
+    namespace,
+    appUuid: appAuth?.appUuid ?? null,
+    appId: appAuth?.appId ?? null,
+  })
+  const pairRule = resolveRateLimitRule(RATE_LIMIT_ACTION.pairDevice, ctx, config)
+  const pairRateLimit = await enforceRateLimit(pool, config, pairRule, {
     namespaceUuid: namespace.id,
   })
 
@@ -130,12 +134,7 @@ export async function pairDeviceWithCode(
   try {
     await client.query('BEGIN')
 
-    const limits = await getLimitsForNamespace(
-      client,
-      namespace.id,
-      namespace.free_device_limit,
-      namespace.purchased_slots,
-    )
+    const limits = await getLimitsForNamespace(client, config, ctx)
 
     const existingDevice = await client.query<DeviceRow>(
       `SELECT id, namespace_uuid, device_id, client_device_id, label, token_hash,
@@ -193,12 +192,7 @@ export async function pairDeviceWithCode(
 
     await client.query('COMMIT')
 
-    const updatedLimits = await getLimitsForNamespace(
-      pool,
-      namespace.id,
-      namespace.free_device_limit,
-      namespace.purchased_slots,
-    )
+    const updatedLimits = await getLimitsForNamespace(pool, config, ctx)
 
     return {
       deviceToken,

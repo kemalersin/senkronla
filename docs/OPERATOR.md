@@ -53,6 +53,18 @@ When `apps.enabled: true`, static CORS lists are superseded by per-app verified 
 
 Full spec: [16-APP-REGISTRY.md](envelope-sync-relay/en/16-APP-REGISTRY.md) · [TR](envelope-sync-relay/tr/16-APP-REGISTRY.md).
 
+### Operator limit overrides (v1.3.2)
+
+Per-namespace, per-app, and per-developer limits override config defaults at runtime. Cascade: **namespace → app → developer → config**.
+
+| API | Purpose |
+|-----|---------|
+| `GET/PATCH /v1/admin/namespaces/:namespaceId/limits` | Slot + rate overrides for one workspace |
+| `GET/PATCH /v1/admin/apps/:appId/limits` | Defaults for all namespaces under the app |
+| `GET/PATCH /v1/admin/developers/:developerId/limits` | Defaults for all apps owned by the developer |
+
+Operator portal: Namespaces drawer, Apps/Developer **Limits** section. Spec: [17-OPERATOR-LIMIT-OVERRIDES.md](envelope-sync-relay/en/17-OPERATOR-LIMIT-OVERRIDES.md).
+
 ### Migrating from v1.2 to v1.3
 
 1. **Keep `apps.enabled: false`** until all client builds send `X-ESR-App-Id` (and web `Origin` or native bundle headers).

@@ -38,6 +38,9 @@ export interface AdminNamespaceRow {
   documentRevision: string | null
   documentWrittenAt: string | null
   documentSizeBytes: number | null
+  appId: string | null
+  appName: string | null
+  developerEmail: string | null
 }
 
 export interface AdminUnlockCodeRow {
@@ -73,6 +76,7 @@ export interface AdminRateLimitGroupRow {
 export interface ListQueryInput extends PaginationInput {
   q?: string
   action?: string
+  appId?: string
 }
 
 function resolveSearchPattern(q?: string): string | null {
@@ -138,9 +142,29 @@ export async function getAdminOverview(pool: DbPool): Promise<AdminOverview> {
 export async function listAdminNamespaces(
   pool: DbPool,
   input: ListQueryInput = {},
+  appsEnabled = false,
 ): Promise<PaginatedResult<AdminNamespaceRow>> {
   const { limit, offset } = resolvePagination(input)
   const searchPattern = resolveSearchPattern(input.q)
+  const appId = appsEnabled ? input.appId?.trim() || null : null
+  const searchWhere = appsEnabled
+    ? `($3::text IS NULL OR (
+      n.namespace_id ILIKE $3 OR
+      n.namespace_label ILIKE $3 OR
+      COALESCE(dh.revision, '') ILIKE $3 OR
+      COALESCE(a.app_id, '') ILIKE $3 OR
+      COALESCE(a.name, '') ILIKE $3 OR
+      COALESCE(d.email, '') ILIKE $3
+    ))`
+    : `($3::text IS NULL OR (
+      n.namespace_id ILIKE $3 OR
+      n.namespace_label ILIKE $3 OR
+      COALESCE(dh.revision, '') ILIKE $3
+    ))`
+  const appIdWhere = appsEnabled ? 'AND ($4::text IS NULL OR a.app_id = $4)' : ''
+  const params = appsEnabled
+    ? [limit, offset, searchPattern, appId]
+    : [limit, offset, searchPattern]
 
   const result = await pool.query<{
     namespace_id: string
@@ -153,6 +177,9 @@ export async function listAdminNamespaces(
     written_at: Date | null
     size_bytes: string | null
     document_count: string
+    app_id: string | null
+    app_name: string | null
+    developer_email: string | null
     total_count: string
   }>(
     `
@@ -175,19 +202,21 @@ export async function listAdminNamespaces(
         FROM document_heads dh_all
         WHERE dh_all.namespace_uuid = n.id
       ) AS document_count,
+      a.app_id,
+      a.name AS app_name,
+      d.email AS developer_email,
       COUNT(*) OVER() AS total_count
     FROM namespaces n
     LEFT JOIN document_heads dh
       ON dh.namespace_uuid = n.id AND dh.document_id = 'primary'
-    WHERE ($3::text IS NULL OR (
-      n.namespace_id ILIKE $3 OR
-      n.namespace_label ILIKE $3 OR
-      COALESCE(dh.revision, '') ILIKE $3
-    ))
+    LEFT JOIN apps a ON a.id = n.app_uuid
+    LEFT JOIN developers d ON d.id = a.developer_uuid
+    WHERE ${searchWhere}
+    ${appIdWhere}
     ORDER BY n.created_at DESC
     LIMIT $1 OFFSET $2
     `,
-    [limit, offset, searchPattern],
+    params,
   )
 
   const total = Number(result.rows[0]?.total_count ?? 0)
@@ -204,6 +233,9 @@ export async function listAdminNamespaces(
       documentRevision: row.revision,
       documentWrittenAt: row.written_at?.toISOString() ?? null,
       documentSizeBytes: row.size_bytes ? Number(row.size_bytes) : null,
+      appId: row.app_id,
+      appName: row.app_name,
+      developerEmail: row.developer_email,
     })),
     total,
     limit,
