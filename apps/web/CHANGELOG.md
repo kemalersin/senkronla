@@ -15,6 +15,12 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 - Operator settings — dangerous operations panel to permanently delete all relay records (namespaces, devices, documents, unlock data, apps, developers); requires typing `purge-all-records` and a confirmation dialog; SMTP overrides are preserved
 - Brand favicon and Apple touch icon: lowercase **s** in DM Sans Bold on accent teal gradient (SVG, PNG, ICO)
 
+### Fixed
+
+- Drawer backdrop shows default cursor instead of pointer; page content no longer receives hover under open overlays
+- Operator limit override clear control is an × inside the input (no separate row button or undo)
+- Operator console no longer flashes the full panel before the admin token sign-in screen when session is still loading
+
 ### Changed
 
 - Mobile site header shows doc search in the navbar; mobile menu places GitHub, theme, and locale controls on the same row as Sign in
@@ -28,11 +34,6 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 - Operator panel list tables center numeric columns (CSS specificity fix); zero-value app and namespace counts are plain text instead of navigation links
 - Limit overrides modal table vertically centers all columns
 - Limit overrides modal max width reduced (44rem); Override column and inputs use a fixed narrow width
-
-### Fixed
-
-- Operator limit override clear control is an × inside the input (no separate row button or undo)
-- Operator console no longer flashes the full panel before the admin token sign-in screen when session is still loading
 
 ## [0.1.9]
 

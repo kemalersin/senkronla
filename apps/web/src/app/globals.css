@@ -2394,7 +2394,8 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   border: none;
   padding: 0;
   background: rgb(15 23 42 / 0.28);
-  cursor: pointer;
+  cursor: default;
+  pointer-events: auto;
 }
 
 .operator-apps-drawer {
@@ -3565,6 +3566,17 @@ html.page-scroll-locked {
 html.page-scroll-locked body {
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+html.page-scroll-locked .site-main {
+  pointer-events: none;
+}
+
+html.page-scroll-locked .operator-apps-drawer-backdrop,
+html.page-scroll-locked .operator-apps-drawer,
+html.page-scroll-locked .operator-modal-overlay,
+html.page-scroll-locked .operator-modal {
+  pointer-events: auto;
 }
 
 html.page-scroll-locked .site-header {
