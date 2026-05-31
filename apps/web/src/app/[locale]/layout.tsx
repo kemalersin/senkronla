@@ -41,12 +41,12 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('senkronla-theme');document.documentElement.dataset.theme=t==='dark'?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();`,
+            __html: `(function(){try{var k='senkronla-theme',t=localStorage.getItem(k),m=t==='dark'?'dark':'light';document.documentElement.dataset.theme=m;document.cookie=k+'='+m+';path=/;max-age=31536000;SameSite=Lax';}catch(e){document.documentElement.dataset.theme='light';}})();`,
           }}
         />
       </head>
       <body>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <SiteHeader
             locale={locale as Locale}
             initialDeveloperAuthenticated={initialDeveloperAuthenticated}

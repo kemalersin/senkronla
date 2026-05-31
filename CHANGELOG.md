@@ -22,6 +22,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 ### Fixed
 
 - **web:** Reference docs fit mobile viewport without horizontal page overflow
+- **web:** Code block syntax highlighting after locale switch (docs layout split, baked Shiki colors)
 - **web:** Developer portal tab title after sign-in no longer stays on “Sign in”
 
 - **server:** Operator limit overrides (DB cascade, admin API, enforcement)

@@ -1,8 +1,11 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { clearHighlightCache } from '@/lib/highlight-code-cache'
+import { notifyShikiThemeChange } from '@/lib/shiki-theme'
 
 const STORAGE_KEY = 'senkronla-theme'
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 function SunIcon() {
   return (
@@ -32,6 +35,9 @@ export function ThemeToggle() {
     const next = readTheme() === 'light' ? 'dark' : 'light'
     document.documentElement.dataset.theme = next
     localStorage.setItem(STORAGE_KEY, next)
+    document.cookie = `${STORAGE_KEY}=${next};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`
+    clearHighlightCache()
+    notifyShikiThemeChange()
   }
 
   return (

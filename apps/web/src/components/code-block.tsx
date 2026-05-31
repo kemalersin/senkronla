@@ -1,9 +1,12 @@
-import { CodeBlockShell } from '@/components/code-block-shell'
+import { cookies } from 'next/headers'
+import { CodeBlockView } from '@/components/code-block-view'
 import type { CodeBlockLanguage } from '@/lib/code-block-types'
 import { highlightCode } from '@/lib/shiki'
-import { getLocale } from 'next-intl/server'
+import { resolveShikiThemeId } from '@/lib/shiki-theme'
 
 export type { CodeBlockLanguage } from '@/lib/code-block-types'
+
+const THEME_COOKIE = 'senkronla-theme'
 
 interface CodeBlockProps {
   code: string
@@ -12,15 +15,16 @@ interface CodeBlockProps {
 
 export async function CodeBlock({ code, language = 'typescript' }: CodeBlockProps) {
   const normalized = code.trimEnd()
-  const locale = await getLocale()
-  const initialHtml = await highlightCode(normalized, language)
+  const cookieStore = await cookies()
+  const theme = resolveShikiThemeId(cookieStore.get(THEME_COOKIE)?.value)
+  const initialHtml = await highlightCode(normalized, language, theme)
 
   return (
-    <CodeBlockShell
+    <CodeBlockView
       code={normalized}
       language={language}
-      locale={locale}
       initialHtml={initialHtml}
+      initialTheme={theme}
     />
   )
 }
