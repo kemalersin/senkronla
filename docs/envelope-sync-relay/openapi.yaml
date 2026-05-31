@@ -142,6 +142,66 @@ components:
           items:
             type: integer
 
+    LimitOverrides:
+      type: object
+      additionalProperties: false
+      properties:
+        recoverPerHour:
+          type: integer
+          minimum: 1
+          nullable: true
+        pairingPerHour:
+          type: integer
+          minimum: 1
+          nullable: true
+        pairingTokensPerHour:
+          type: integer
+          minimum: 1
+          nullable: true
+        pushPerHourPerDevice:
+          type: integer
+          minimum: 1
+          nullable: true
+        namespacesPerDay:
+          type: integer
+          minimum: 1
+          nullable: true
+        freeDeviceLimit:
+          type: integer
+          minimum: 0
+          nullable: true
+        purchasedSlots:
+          type: integer
+          minimum: 0
+          nullable: true
+
+    EffectiveLimitsResponse:
+      type: object
+      required: [effective, sources, overrides, configDefaults]
+      properties:
+        effective:
+          type: object
+          additionalProperties:
+            type: integer
+        sources:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [namespace, app, developer, row, config]
+        overrides:
+          type: object
+          properties:
+            namespace:
+              $ref: '#/components/schemas/LimitOverrides'
+            app:
+              $ref: '#/components/schemas/LimitOverrides'
+            developer:
+              $ref: '#/components/schemas/LimitOverrides'
+        configDefaults:
+          type: object
+          additionalProperties:
+            type: integer
+
     EsrDocEnvelope:
       type: object
       required:
@@ -1145,6 +1205,115 @@ paths:
         '200':
           description: Paginated namespaces
 
+  /admin/namespaces/{namespaceId}/limits:
+    get:
+      tags: [Admin]
+      summary: Get effective limits and overrides for a namespace
+      security:
+        - AdminToken: []
+      parameters:
+        - name: namespaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Effective limits with cascade sources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveLimitsResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
+    patch:
+      tags: [Admin]
+      summary: Merge namespace limit overrides
+      security:
+        - AdminToken: []
+      parameters:
+        - name: namespaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitOverrides'
+      responses:
+        '200':
+          description: Updated effective limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveLimitsResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /admin/settings/mail:
+    get:
+      tags: [Admin]
+      summary: Get mail settings (config, overrides, effective)
+      security:
+        - AdminToken: []
+      responses:
+        '200':
+          description: Mail settings with redacted SMTP password
+    patch:
+      tags: [Admin]
+      summary: Merge operator mail settings overrides
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  nullable: true
+                from:
+                  type: string
+                  nullable: true
+                fromName:
+                  type: string
+                  nullable: true
+                webBaseUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+                smtp:
+                  type: object
+                  nullable: true
+                  properties:
+                    host:
+                      type: string
+                      nullable: true
+                    port:
+                      type: integer
+                      nullable: true
+                    secure:
+                      type: boolean
+                      nullable: true
+                    user:
+                      type: string
+                      nullable: true
+                    password:
+                      type: string
+                      nullable: true
+      responses:
+        '200':
+          description: Updated mail settings
+
   /admin/unlock-events:
     get:
       tags: [Admin]
@@ -1543,6 +1712,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/AppDetail'
 
+  /admin/apps/{appId}/limits:
+    get:
+      tags: [Applications, Admin]
+      summary: Get effective limits and overrides for an app
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Effective limits with cascade sources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveLimitsResponse'
+        '403':
+          $ref: '#/components/responses/Error403'
+    patch:
+      tags: [Applications, Admin]
+      summary: Merge app limit overrides
+      security:
+        - AdminToken: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitOverrides'
+      responses:
+        '200':
+          description: Updated effective limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveLimitsResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '403':
+          $ref: '#/components/responses/Error403'
+
   /admin/developers:
     get:
       tags: [Admin, Developer]
@@ -1633,6 +1852,58 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
+  /admin/developers/{developerId}/limits:
+    get:
+      tags: [Admin, Developer]
+      summary: Get effective limits and overrides for a developer
+      security:
+        - AdminToken: []
+      parameters:
+        - name: developerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Effective limits with cascade sources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveLimitsResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
+    patch:
+      tags: [Admin, Developer]
+      summary: Merge developer limit overrides
+      security:
+        - AdminToken: []
+      parameters:
+        - name: developerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitOverrides'
+      responses:
+        '200':
+          description: Updated effective limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveLimitsResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+
   /developer/register:
     post:
       tags: [Developer]
@@ -1652,6 +1923,10 @@ paths:
                 password:
                   type: string
                   minLength: 8
+                locale:
+                  type: string
+                  enum: [en, tr]
+                  description: Email language for verification message
       responses:
         '201':
           description: Developer registered
@@ -1694,6 +1969,89 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeveloperAuthResponse'
+
+  /developer/verify-email:
+    post:
+      tags: [Developer]
+      summary: Verify developer email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Email verified
+
+  /developer/resend-verification:
+    post:
+      tags: [Developer]
+      summary: Resend verification email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                locale:
+                  type: string
+                  enum: [en, tr]
+      responses:
+        '200':
+          description: Request accepted
+
+  /developer/request-password-reset:
+    post:
+      tags: [Developer]
+      summary: Request password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                locale:
+                  type: string
+                  enum: [en, tr]
+      responses:
+        '200':
+          description: Request accepted
+
+  /developer/reset-password:
+    post:
+      tags: [Developer]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset
 
   /developer/logout:
     post:

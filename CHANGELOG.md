@@ -11,6 +11,8 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.9]
+
 ### Added
 
 - **web:** Locale-aware page titles and meta descriptions on all public routes

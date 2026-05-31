@@ -1,6 +1,6 @@
 {
   "name": "@senkronla/client",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Senkronla client SDK — RelayClient, SyncEngine, EsrSync facade",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@senkronla/server",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Senkronla Envelope Sync Relay — Fastify REST API and WebSocket hub",
   "license": "MIT",
   "type": "module",
@@ -37,6 +37,7 @@
     "@senkronla/protocol": "workspace:*",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.0",
+    "nodemailer": "^8.0.10",
     "pg": "^8.13.1",
     "ulid": "^2.3.0",
     "yaml": "^2.6.1",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^10.25.0",
+    "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.11.10",
     "@types/ws": "^8.18.1",
     "pino-pretty": "^13.0.0",

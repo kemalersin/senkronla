@@ -9,6 +9,8 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.9]
+
 ### Added
 
 - Locale-aware page titles and meta descriptions for every public route (guides, SDK, API, operator, developer portal)
