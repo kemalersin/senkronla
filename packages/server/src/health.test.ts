@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildApp } from './app.js'
 import { loadConfig } from './config.js'
+import { SERVER_VERSION } from './version.js'
 import type { DbPool } from './db/pool.js'
 
 function createMockPool(options?: { failDatabase?: boolean }): DbPool {
@@ -41,7 +42,7 @@ describe('@senkronla/server health', () => {
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({
       status: 'ok',
-      version: '0.1.8',
+      version: SERVER_VERSION,
       database: { status: 'ok', mode: 'external' },
       blob: { status: 'ok' },
       websocket: expect.any(Boolean),
@@ -111,7 +112,7 @@ describe('@senkronla/server health', () => {
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({
       status: 'ok',
-      version: '0.1.8',
+      version: SERVER_VERSION,
       database: { status: 'ok', mode: 'external' },
       blob: { status: 'ok', path: config.blob.filesystem.path },
       websocket: true,
