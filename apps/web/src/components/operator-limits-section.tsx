@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 
 import { OperatorSpinner } from '@/components/operator-spinner'
 
-type LimitScope = 'namespaces' | 'apps' | 'developers'
+type LimitScope = 'namespaces' | 'apps' | 'developers' | 'settings'
 
 type LimitKey =
   | 'recoverPerHour'
@@ -16,17 +16,20 @@ type LimitKey =
   | 'freeDeviceLimit'
   | 'purchasedSlots'
 
-type LimitSource = 'namespace' | 'app' | 'developer' | 'row' | 'config'
+type LimitSource = 'namespace' | 'app' | 'developer' | 'operator' | 'row' | 'env' | 'config'
 
 interface LimitsResponse {
   effective: Record<LimitKey, number>
   sources: Record<LimitKey, LimitSource>
   overrides: {
-    namespace: Record<string, number | null> | null
-    app: Record<string, number | null> | null
-    developer: Record<string, number | null> | null
+    namespace?: Record<string, number | null> | null
+    app?: Record<string, number | null> | null
+    developer?: Record<string, number | null> | null
+    operator?: Record<string, number | null> | null
   }
   configDefaults: Record<LimitKey, number>
+  envDefaults?: Partial<Record<LimitKey, number>>
+  inheritDefaults?: Record<LimitKey, number>
 }
 
 interface ApiErrorBody {
@@ -45,7 +48,7 @@ const LIMIT_KEYS: LimitKey[] = [
 
 interface OperatorLimitsSectionProps {
   scope: LimitScope
-  scopeId: string
+  scopeId?: string
   apiBase?: string
   showHeader?: boolean
   onUnauthorized: () => void
@@ -53,6 +56,14 @@ interface OperatorLimitsSectionProps {
 
 async function readJson<T>(response: Response): Promise<T & ApiErrorBody> {
   return (await response.json()) as T & ApiErrorBody
+}
+
+function limitsUrlForScope(apiBase: string, scope: LimitScope, scopeId?: string) {
+  if (scope === 'settings') {
+    return `${apiBase}/settings/limits`
+  }
+
+  return `${apiBase}/${scope}/${encodeURIComponent(scopeId ?? '')}/limits`
 }
 
 export function OperatorLimitsSection({
@@ -65,12 +76,13 @@ export function OperatorLimitsSection({
   const t = useTranslations('operator.limits')
   const [data, setData] = useState<LimitsResponse | null>(null)
   const [draft, setDraft] = useState<Partial<Record<LimitKey, string>>>({})
+  const [pendingClear, setPendingClear] = useState<Partial<Record<LimitKey, boolean>>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
-  const limitsUrl = `${apiBase}/${scope}/${encodeURIComponent(scopeId)}/limits`
+  const limitsUrl = limitsUrlForScope(apiBase, scope, scopeId)
 
   const loadLimits = useCallback(async () => {
     setLoading(true)
@@ -91,6 +103,7 @@ export function OperatorLimitsSection({
 
       setData(body)
       setDraft({})
+      setPendingClear({})
     } catch {
       setError(t('loadFailed'))
     } finally {
@@ -113,13 +126,13 @@ export function OperatorLimitsSection({
     const patch: Record<string, number | null> = {}
 
     for (const key of LIMIT_KEYS) {
-      const raw = draft[key]
-      if (raw === undefined || raw === '') {
+      if (pendingClear[key]) {
+        patch[key] = null
         continue
       }
 
-      if (raw === 'inherit') {
-        patch[key] = null
+      const raw = draft[key]
+      if (raw === undefined || raw === '') {
         continue
       }
 
@@ -158,6 +171,7 @@ export function OperatorLimitsSection({
 
       setData(body)
       setDraft({})
+      setPendingClear({})
       setSaved(true)
     } catch {
       setError(t('saveFailed'))
@@ -174,11 +188,44 @@ export function OperatorLimitsSection({
         return t('sources.app')
       case 'developer':
         return t('sources.developer')
+      case 'operator':
+        return t('sources.operator')
       case 'row':
         return t('sources.row')
+      case 'env':
+        return t('sources.env')
       default:
         return t('sources.config')
     }
+  }
+
+  function scopeOverrideForKey(key: LimitKey) {
+    if (!data) return undefined
+
+    switch (scope) {
+      case 'settings':
+        return data.overrides.operator?.[key]
+      case 'namespaces':
+        return data.overrides.namespace?.[key]
+      case 'apps':
+        return data.overrides.app?.[key]
+      case 'developers':
+        return data.overrides.developer?.[key]
+    }
+  }
+
+  function inheritPlaceholder(key: LimitKey) {
+    if (!data) return ''
+
+    if (data.inheritDefaults?.[key] !== undefined) {
+      return String(data.inheritDefaults[key])
+    }
+
+    if (data.envDefaults?.[key] !== undefined) {
+      return String(data.envDefaults[key])
+    }
+
+    return String(data.configDefaults[key])
   }
 
   if (loading) {
@@ -193,8 +240,8 @@ export function OperatorLimitsSection({
     <section className="operator-limits-section">
       {showHeader && (
         <header className="operator-limits-header">
-          <h4>{t('title')}</h4>
-          <p className="operator-muted">{t('hint')}</p>
+          <h4>{scope === 'settings' ? t('globalTitle') : t('title')}</h4>
+          <p className="operator-muted">{scope === 'settings' ? t('globalHint') : t('hint')}</p>
         </header>
       )}
 
@@ -211,36 +258,70 @@ export function OperatorLimitsSection({
             </thead>
             <tbody>
               {LIMIT_KEYS.map((key) => {
-                const scopeOverride =
-                  scope === 'namespaces'
-                    ? data.overrides.namespace?.[key]
-                    : scope === 'apps'
-                      ? data.overrides.app?.[key]
-                      : data.overrides.developer?.[key]
+                const scopeOverride = scopeOverrideForKey(key)
+                const hasScopeOverride = scopeOverride !== undefined && scopeOverride !== null
+                const willClear = Boolean(pendingClear[key])
 
                 return (
-                  <tr key={key}>
+                  <tr key={key} className={willClear ? 'operator-limits-row--clearing' : undefined}>
                     <td>{t(`keys.${key}`)}</td>
                     <td className="operator-table-col-numeric">
                       <code>{data.effective[key]}</code>
                     </td>
                     <td>{sourceLabel(data.sources[key])}</td>
                     <td className="operator-table-col-numeric">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        className="operator-limits-input"
-                        placeholder={
-                          scopeOverride != null
-                            ? String(scopeOverride)
-                            : String(data.configDefaults[key])
-                        }
-                        aria-label={t('columns.overrideFor', { key: t(`keys.${key}`) })}
-                        value={draft[key] ?? ''}
-                        onChange={(event) =>
-                          setDraft((current) => ({ ...current, [key]: event.target.value }))
-                        }
-                      />
+                      <div className="operator-limits-override-cell">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          className="operator-limits-input"
+                          placeholder={
+                            hasScopeOverride && !willClear
+                              ? String(scopeOverride)
+                              : inheritPlaceholder(key)
+                          }
+                          aria-label={t('columns.overrideFor', { key: t(`keys.${key}`) })}
+                          value={draft[key] ?? ''}
+                          disabled={willClear}
+                          onChange={(event) => {
+                            const value = event.target.value
+                            setDraft((current) => ({ ...current, [key]: value }))
+                            if (value !== '') {
+                              setPendingClear((current) => {
+                                if (!current[key]) return current
+                                const next = { ...current }
+                                delete next[key]
+                                return next
+                              })
+                            }
+                          }}
+                        />
+                        {(hasScopeOverride || willClear) && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm operator-limits-clear"
+                            disabled={saving}
+                            onClick={() => {
+                              if (willClear) {
+                                setPendingClear((current) => {
+                                  const next = { ...current }
+                                  delete next[key]
+                                  return next
+                                })
+                                return
+                              }
+                              setPendingClear((current) => ({ ...current, [key]: true }))
+                              setDraft((current) => {
+                                const next = { ...current }
+                                delete next[key]
+                                return next
+                              })
+                            }}
+                          >
+                            {willClear ? t('undoClearOverride') : t('clearOverride')}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )

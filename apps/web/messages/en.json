@@ -1323,6 +1323,7 @@
     "settingsButton": "Settings",
     "closeSettings": "Close settings",
     "settingsTabs": {
+      "limits": "Limits",
       "mail": "Mail",
       "danger": "Dangerous operations"
     },
@@ -1332,6 +1333,7 @@
     "unlockHint": "Create a redeemable code for extra device slots on a namespace.",
     "adminToken": "Admin token",
     "adminTokenHint": "Same value as ESR_ADMIN_TOKEN in your relay config",
+    "apiOriginLabel": "API origin",
     "namespaceId": "Namespace ID",
     "slots": "Device slots",
     "note": "Note",
@@ -1416,9 +1418,13 @@
     },
     "limits": {
       "title": "Limit overrides",
+      "globalTitle": "Global limits",
       "openButton": "Limits",
       "closeModal": "Close",
-      "hint": "Set a value to override at this scope. Type inherit to clear an override and fall back to the cascade.",
+      "hint": "Enter a number in Override to set a limit at this scope. Use the row button to remove a custom value and use the parent scope.",
+      "globalHint": "Set deployment-wide limits here. App and developer overrides take precedence. Order: app → developer → operator → environment variable → config.",
+      "clearOverride": "Clear",
+      "undoClearOverride": "Undo",
       "loading": "Loading limits…",
       "loadFailed": "Failed to load limits.",
       "saveFailed": "Failed to save limits.",
@@ -1437,7 +1443,9 @@
         "namespace": "Namespace",
         "app": "App",
         "developer": "Developer",
+        "operator": "Operator setting",
         "row": "Namespace row",
+        "env": "Environment variable",
         "config": "Config default"
       },
       "keys": {

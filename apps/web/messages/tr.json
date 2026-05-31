@@ -1324,6 +1324,7 @@
     "settingsButton": "Ayarlar",
     "closeSettings": "Ayarları kapat",
     "settingsTabs": {
+      "limits": "Limitler",
       "mail": "E-posta",
       "danger": "Tehlikeli işlemler"
     },
@@ -1333,6 +1334,7 @@
     "unlockHint": "Bir namespace için ek cihaz slotu tanımlayan kullanılabilir kod oluşturur.",
     "adminToken": "Yönetici token",
     "adminTokenHint": "Relay yapılandırmanızdaki ESR_ADMIN_TOKEN ile aynı değer",
+    "apiOriginLabel": "API kökeni",
     "namespaceId": "Namespace ID",
     "slots": "Cihaz slotu",
     "note": "Not",
@@ -1417,9 +1419,13 @@
     },
     "limits": {
       "title": "Limit geçersiz kılma",
+      "globalTitle": "Genel limitler",
       "openButton": "Limitler",
       "closeModal": "Kapat",
-      "hint": "Bu kapsamda geçersiz kılmak için değer girin. inherit yazarak override'ı silin ve cascade'e dönün.",
+      "hint": "Override sütununa sayı girerek bu kapsamda limiti değiştirin. Özel değeri kaldırmak için satırdaki düğmeyi kullanın.",
+      "globalHint": "Relay genelinde geçerli limitleri buradan ayarlayın. Uygulama ve geliştirici özel limitleri bunları geçersiz kılar. Öncelik: uygulama → geliştirici → operatör → ortam değişkeni → config.",
+      "clearOverride": "Kaldır",
+      "undoClearOverride": "Geri al",
       "loading": "Limitler yükleniyor…",
       "loadFailed": "Limitler yüklenemedi.",
       "saveFailed": "Limitler kaydedilemedi.",
@@ -1438,7 +1444,9 @@
         "namespace": "Namespace",
         "app": "Uygulama",
         "developer": "Geliştirici",
+        "operator": "Operatör ayarı",
         "row": "Namespace satırı",
+        "env": "Ortam değişkeni",
         "config": "Config varsayılanı"
       },
       "keys": {
