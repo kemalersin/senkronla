@@ -11,9 +11,13 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Added
 
-- Operator panel — limit override forms on namespace drawer and app/developer detail panels
+- Operator panel — limit override modal for namespaces, apps, and developers
 
 ### Changed
+
+- Operator unlock-code form — wider Namespace ID and note fields, narrower device-slot input
+
+- Operator limit overrides open in a dedicated modal from list action buttons (not inside detail drawers)
 
 - Developer sign-in/register card — more spacing above the email fields
 

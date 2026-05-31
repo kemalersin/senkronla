@@ -5,6 +5,11 @@ import { useLocale, useTranslations } from 'next-intl'
 
 import { OperatorAppsPanel } from '@/components/operator-apps-panel'
 import { OperatorDevelopersPanel } from '@/components/operator-developers-panel'
+import {
+  OperatorLimitsModal,
+  type OperatorLimitsTarget,
+} from '@/components/operator-limits-modal'
+import { OperatorSettingsDrawer } from '@/components/operator-settings-drawer'
 import { OperatorSpinner } from '@/components/operator-spinner'
 import { getPublicApiOrigin } from '@/lib/public-api-url'
 
@@ -35,6 +40,9 @@ interface HealthResponse {
   database: { status: string; mode: string }
   blob: { status: string }
   websocket: boolean
+  apps?: {
+    enabled: boolean
+  }
 }
 
 interface NamespaceRow {
@@ -45,9 +53,9 @@ interface NamespaceRow {
   activeDevices: number
   createdAt: string
   documentCount: number
-  documentRevision: string | null
-  documentWrittenAt: string | null
-  documentSizeBytes: number | null
+  appId: string | null
+  appName: string | null
+  developerEmail: string | null
 }
 
 interface UnlockCodeRow {
@@ -91,21 +99,33 @@ const RATE_LIMIT_FILTER_ACTIONS = [
   'pair_device',
   'pairing_token',
   'put_document',
+  'namespace_create',
 ] as const
 
 interface ListFetchOptions {
   q?: string
   action?: string
+  appId?: string
+}
+
+interface OperatorAppFilter {
+  appId: string
+  label: string
+}
+
+interface OperatorDeveloperFilter {
+  developerId: string
+  email: string
 }
 
 function formatDate(iso: string, locale: string) {
-  return new Date(iso).toLocaleString(locale)
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return new Date(iso).toLocaleString(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 function formatPeriod(startIso: string, endIso: string, locale: string) {
@@ -139,6 +159,8 @@ function rateLimitActionLabel(
       return t('rateLimitActions.pairing_token')
     case 'put_document':
       return t('rateLimitActions.put_document')
+    case 'namespace_create':
+      return t('rateLimitActions.namespace_create')
     default:
       return action
   }
@@ -171,6 +193,8 @@ export function OperatorPortal() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [rateLimitAction, setRateLimitAction] = useState('')
+  const [namespaceAppFilter, setNamespaceAppFilter] = useState<OperatorAppFilter | null>(null)
+  const [appsDeveloperFilter, setAppsDeveloperFilter] = useState<OperatorDeveloperFilter | null>(null)
 
   const [generateNamespaceId, setGenerateNamespaceId] = useState('')
   const [generateSlots, setGenerateSlots] = useState('3')
@@ -178,15 +202,51 @@ export function OperatorPortal() {
   const [generateLoading, setGenerateLoading] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
+  const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const checkSession = useCallback(async () => {
     const response = await fetch('/api/operator/auth/session')
     setAuthState(response.ok ? 'authenticated' : 'guest')
   }, [])
 
+  const loadHealth = useCallback(async () => {
+    const healthResponse = await fetch('/api/operator/health')
+    if (healthResponse.status === 401) {
+      setAuthState('guest')
+      return
+    }
+
+    if (healthResponse.ok) {
+      const healthBody = await readJson<HealthResponse>(healthResponse)
+      setHealth(healthBody)
+    }
+  }, [])
+
   useEffect(() => {
     void checkSession()
   }, [checkSession])
+
+  useEffect(() => {
+    if (authState === 'authenticated') {
+      void loadHealth()
+    }
+  }, [authState, loadHealth])
+
+  const appsEnabled = health?.apps?.enabled === true
+
+  useEffect(() => {
+    if (authState !== 'authenticated' || appsEnabled) {
+      return
+    }
+
+    if (tab === 'apps' || tab === 'developers') {
+      setTab('overview')
+      setPage(0)
+      setNamespaceAppFilter(null)
+      setAppsDeveloperFilter(null)
+    }
+  }, [appsEnabled, authState, tab])
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
@@ -199,7 +259,7 @@ export function OperatorPortal() {
     }
 
     setPage(0)
-  }, [debouncedSearch, rateLimitAction, authState, tab])
+  }, [debouncedSearch, rateLimitAction, namespaceAppFilter?.appId, authState, tab])
 
   const loadOverview = useCallback(async () => {
     setLoading(true)
@@ -217,14 +277,15 @@ export function OperatorPortal() {
       }
 
       const overviewBody = await readJson<Overview>(overviewResponse)
-      const healthBody = await readJson<HealthResponse>(healthResponse)
 
       if (!overviewResponse.ok) {
         throw new Error(overviewBody.error?.message ?? t('loadFailed'))
       }
 
       setOverview(overviewBody)
-      setHealth(healthResponse.ok ? healthBody : null)
+      if (healthResponse.ok) {
+        setHealth(await readJson<HealthResponse>(healthResponse))
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : t('loadFailed'))
     } finally {
@@ -249,6 +310,10 @@ export function OperatorPortal() {
 
         if (options.action) {
           params.set('action', options.action)
+        }
+
+        if (options.appId) {
+          params.set('appId', options.appId)
         }
 
         const response = await fetch(`${path}?${params.toString()}`)
@@ -295,6 +360,7 @@ export function OperatorPortal() {
       const listOptions: ListFetchOptions = {
         q: debouncedSearch || undefined,
         action: tab === 'rateLimits' && rateLimitAction ? rateLimitAction : undefined,
+        appId: tab === 'namespaces' && appsEnabled ? namespaceAppFilter?.appId : undefined,
       }
 
       if (tab === 'namespaces') {
@@ -307,7 +373,7 @@ export function OperatorPortal() {
         setRateLimits((await loadPaginated('/api/operator/rate-limit-events', page, listOptions)) as Paginated<RateLimitGroupRow> | null)
       }
     })()
-  }, [authState, tab, page, debouncedSearch, rateLimitAction, loadOverview, loadPaginated])
+  }, [authState, tab, page, debouncedSearch, rateLimitAction, appsEnabled, namespaceAppFilter?.appId, loadOverview, loadPaginated])
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -387,6 +453,24 @@ export function OperatorPortal() {
     }
   }
 
+  function navigateToAppNamespaces(appId: string, label: string) {
+    setPage(0)
+    setSearchQuery('')
+    setDebouncedSearch('')
+    setRateLimitAction('')
+    setNamespaceAppFilter({ appId, label })
+    setTab('namespaces')
+  }
+
+  function navigateToDeveloperApps(developerId: string, email: string) {
+    setPage(0)
+    setSearchQuery('')
+    setDebouncedSearch('')
+    setRateLimitAction('')
+    setAppsDeveloperFilter({ developerId, email })
+    setTab('apps')
+  }
+
   function renderListToolbar() {
     return (
       <div className="operator-list-toolbar">
@@ -397,7 +481,11 @@ export function OperatorPortal() {
             type="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder={t('searchPlaceholder')}
+            placeholder={
+              tab === 'namespaces' && appsEnabled
+                ? t('searchPlaceholderNamespacesWithApps')
+                : t('searchPlaceholder')
+            }
           />
         </div>
         {tab === 'rateLimits' && (
@@ -421,6 +509,20 @@ export function OperatorPortal() {
                 {rateLimitActionLabel(action, t)}
               </button>
             ))}
+          </div>
+        )}
+        {tab === 'namespaces' && appsEnabled && namespaceAppFilter && (
+          <div className="operator-list-filter">
+            <span className="operator-muted">
+              {t('namespaceAppFilter', { app: namespaceAppFilter.label })}
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setNamespaceAppFilter(null)}
+            >
+              {t('clearFilter')}
+            </button>
           </div>
         )}
       </div>
@@ -517,9 +619,13 @@ export function OperatorPortal() {
 
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: 'overview', label: t('tabs.overview') },
+    ...(appsEnabled
+      ? [
+          { id: 'developers' as const, label: t('tabs.developers') },
+          { id: 'apps' as const, label: t('tabs.apps') },
+        ]
+      : []),
     { id: 'namespaces', label: t('tabs.namespaces') },
-    { id: 'apps', label: t('tabs.apps') },
-    { id: 'developers', label: t('tabs.developers') },
     { id: 'unlockCodes', label: t('tabs.unlockCodes') },
     { id: 'unlockEvents', label: t('tabs.unlockEvents') },
     { id: 'rateLimits', label: t('tabs.rateLimits') },
@@ -576,7 +682,7 @@ export function OperatorPortal() {
             <h2>{t('unlock')}</h2>
             <p className="operator-muted">{t('unlockHint')}</p>
             <form className="operator-generate-form" onSubmit={handleGenerateUnlock}>
-              <div className="form-field">
+              <div className="form-field operator-generate-field operator-generate-field--namespace">
                 <label htmlFor="generate-namespace">{t('namespaceId')}</label>
                 <input
                   id="generate-namespace"
@@ -585,7 +691,7 @@ export function OperatorPortal() {
                   required
                 />
               </div>
-              <div className="form-field">
+              <div className="form-field operator-generate-field operator-generate-field--slots">
                 <label htmlFor="generate-slots">{t('slots')}</label>
                 <input
                   id="generate-slots"
@@ -597,7 +703,7 @@ export function OperatorPortal() {
                   required
                 />
               </div>
-              <div className="form-field">
+              <div className="form-field operator-generate-field operator-generate-field--note">
                 <label htmlFor="generate-note">{t('note')}</label>
                 <input
                   id="generate-note"
@@ -623,6 +729,8 @@ export function OperatorPortal() {
     }
 
     if (tab === 'namespaces' && namespaces) {
+      const showAppColumn = appsEnabled
+
       return (
         <section className="operator-content operator-section card">
           {renderListBody(
@@ -630,32 +738,58 @@ export function OperatorPortal() {
               <p className="operator-empty">{t('noResults')}</p>
             ) : (
               <div className="operator-table-wrap">
-                <table className="operator-table">
+                <table className="operator-table operator-table--namespaces">
                   <thead>
                     <tr>
-                      <th>{t('columns.namespace')}</th>
+                      <th className="operator-table-col-sticky">{t('columns.namespace')}</th>
                       <th>{t('columns.label')}</th>
+                      {showAppColumn && <th>{t('columns.app')}</th>}
                       <th>{t('columns.devices')}</th>
                       <th>{t('columns.slots')}</th>
                       <th>{t('columns.documentCount')}</th>
-                      <th>{t('columns.primaryHead')}</th>
                       <th>{t('columns.created')}</th>
+                      <th>{t('columns.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {namespaces.items.map((row) => (
                       <tr key={row.namespaceId}>
-                        <td><code>{row.namespaceId}</code></td>
+                        <td className="operator-table-col-sticky"><code>{row.namespaceId}</code></td>
                         <td>{row.namespaceLabel}</td>
+                        {showAppColumn && (
+                          <td className="operator-namespace-app-cell">
+                            {row.appId ? (
+                              <>
+                                <span>{row.appName ?? row.appId}</span>
+                                {row.appName && (
+                                  <code className="operator-namespace-app-id">{row.appId}</code>
+                                )}
+                              </>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                        )}
                         <td>{row.activeDevices}</td>
                         <td>{row.freeDeviceLimit + row.purchasedSlots}</td>
                         <td>{row.documentCount}</td>
-                        <td>
-                          {row.documentRevision
-                            ? `${row.documentRevision.slice(0, 8)}… (${formatBytes(row.documentSizeBytes ?? 0)})`
-                            : '—'}
-                        </td>
                         <td>{formatDate(row.createdAt, locale)}</td>
+                        <td className="operator-table-col-actions">
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() =>
+                              setLimitsTarget({
+                                scope: 'namespaces',
+                                scopeId: row.namespaceId,
+                                title: row.namespaceLabel,
+                                subtitle: row.namespaceId,
+                              })
+                            }
+                          >
+                            {t('limits.openButton')}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -788,22 +922,27 @@ export function OperatorPortal() {
       )
     }
 
-    if (tab === 'apps') {
+    if (appsEnabled && tab === 'apps') {
       return (
         <OperatorAppsPanel
           authState={authState}
           page={page}
+          developerIdFilter={appsDeveloperFilter?.developerId ?? null}
+          developerFilterLabel={appsDeveloperFilter?.email ?? null}
+          onClearDeveloperFilter={() => setAppsDeveloperFilter(null)}
+          onNavigateToNamespaces={navigateToAppNamespaces}
           onUnauthorized={() => setAuthState('guest')}
           onPageChange={setPage}
         />
       )
     }
 
-    if (tab === 'developers') {
+    if (appsEnabled && tab === 'developers') {
       return (
         <OperatorDevelopersPanel
           authState={authState}
           page={page}
+          onNavigateToApps={navigateToDeveloperApps}
           onUnauthorized={() => setAuthState('guest')}
           onPageChange={setPage}
         />
@@ -831,9 +970,18 @@ export function OperatorPortal() {
         <div className="operator-header-actions">
           <span className="operator-api-origin">{apiOrigin}</span>
           {authState === 'authenticated' && (
-            <button type="button" className="btn btn-secondary" onClick={() => void handleLogout()}>
-              {t('logout')}
-            </button>
+            <div className="operator-header-buttons">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setSettingsOpen(true)}
+              >
+                {t('settingsButton')}
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => void handleLogout()}>
+                {t('logout')}
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -852,6 +1000,8 @@ export function OperatorPortal() {
                 setSearchQuery('')
                 setDebouncedSearch('')
                 setRateLimitAction('')
+                setNamespaceAppFilter(null)
+                setAppsDeveloperFilter(null)
               }
               setTab(item.id)
             }}
@@ -864,6 +1014,22 @@ export function OperatorPortal() {
       {isListTab && renderListToolbar()}
 
       {showOverviewSpinner ? <OperatorSpinner label={t('loading')} /> : renderTabContent()}
+
+      <OperatorLimitsModal
+        target={limitsTarget}
+        onClose={() => setLimitsTarget(null)}
+        onUnauthorized={() => setAuthState('guest')}
+      />
+
+      <OperatorSettingsDrawer
+        open={settingsOpen}
+        authState={authState}
+        onClose={() => setSettingsOpen(false)}
+        onUnauthorized={() => {
+          setSettingsOpen(false)
+          setAuthState('guest')
+        }}
+      />
     </div>
   )
 }
