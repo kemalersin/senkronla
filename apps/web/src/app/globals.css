@@ -977,15 +977,58 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   color: var(--text-muted);
 }
 
-.operator-login {
+.operator-auth-shell {
   display: grid;
   place-items: center;
   min-height: 50vh;
 }
 
-.operator-login-card {
-  width: min(420px, 100%);
-  padding: 1.5rem;
+.operator-auth-card {
+  width: min(28rem, 100%);
+  padding: 1.75rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.operator-auth-header {
+  margin-bottom: 0;
+}
+
+.operator-auth-header h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.operator-auth-intro {
+  margin: 0.4rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.operator-auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.operator-auth-form .form-field {
+  margin-bottom: 0;
+}
+
+.operator-auth-token-input {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+}
+
+.operator-auth-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.25rem;
 }
 
 .developer-auth-shell {
@@ -1421,6 +1464,49 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   white-space: nowrap;
 }
 
+.operator-limits-input-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.operator-limits-input-wrap .operator-limits-input {
+  padding-right: 2.15rem;
+}
+
+.operator-limits-input-clear {
+  position: absolute;
+  top: 50%;
+  right: 0.3rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.operator-limits-input-clear:hover:not(:disabled) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+}
+
+.operator-limits-input-clear:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.operator-limits-row--clearing .operator-limits-input {
+  opacity: 0.55;
+}
+
 .operator-limits-input {
   display: block;
   width: auto;
@@ -1807,6 +1893,11 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   border-bottom: 1px solid var(--border);
   vertical-align: top;
   white-space: nowrap;
+}
+
+.operator-table.operator-limits-table th,
+.operator-table.operator-limits-table td {
+  vertical-align: middle;
 }
 
 .operator-table th {
@@ -2831,7 +2922,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   white-space: nowrap;
 }
 
-.operator-login-card .status-badge,
+.operator-auth-card .status-badge,
 .operator-generate-card .status-badge,
 .operator-content > .status-badge {
   margin-top: 0.75rem;
