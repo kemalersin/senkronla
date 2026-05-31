@@ -618,21 +618,32 @@ export function OperatorPortal() {
     )
   }
 
+  if (authState === 'loading') {
+    return (
+      <div className="operator-shell operator-auth-shell">
+        <OperatorSpinner label={t('loading')} />
+      </div>
+    )
+  }
+
   if (authState === 'guest') {
     return (
-      <div className="operator-shell operator-login">
-        <div className="operator-login-card card">
-          <h1>{t('title')}</h1>
-          <p className="operator-muted">{t('loginIntro')}</p>
-          <p className="operator-api-origin">{apiOrigin}</p>
+      <div className="operator-shell operator-auth-shell">
+        <div className="operator-auth-card card">
+          <header className="operator-auth-header">
+            <h1>{t('title')}</h1>
+            <p className="operator-auth-intro">{t('loginIntro')}</p>
+          </header>
 
-          <form onSubmit={handleLogin}>
+          <form className="operator-auth-form" onSubmit={handleLogin}>
             <div className="form-field">
               <label htmlFor="operator-login-token">{t('adminToken')}</label>
               <input
                 id="operator-login-token"
                 type="password"
                 autoComplete="off"
+                autoFocus
+                className="operator-auth-token-input"
                 placeholder="ESR_ADMIN_TOKEN"
                 value={loginToken}
                 onChange={(event) => setLoginToken(event.target.value)}
@@ -641,12 +652,25 @@ export function OperatorPortal() {
               <span className="form-hint">{t('adminTokenHint')}</span>
             </div>
 
-            <button type="submit" className="btn btn-primary" disabled={loginLoading}>
+            <button
+              type="submit"
+              className="btn btn-primary operator-auth-submit"
+              disabled={loginLoading}
+            >
               {loginLoading ? t('loggingIn') : t('login')}
             </button>
           </form>
 
-          {loginError && <div className="status-badge error">{loginError}</div>}
+          {loginError && (
+            <div className="developer-auth-error" role="alert">
+              <p>{loginError}</p>
+            </div>
+          )}
+
+          <footer className="developer-auth-footer">
+            <span className="operator-muted">{t('apiOriginLabel')}</span>
+            <code className="developer-auth-api-origin">{apiOrigin}</code>
+          </footer>
         </div>
       </div>
     )
@@ -666,7 +690,7 @@ export function OperatorPortal() {
     { id: 'rateLimits', label: t('tabs.rateLimits') },
   ]
 
-  const showOverviewSpinner = tab === 'overview' && (authState === 'loading' || loading)
+  const showOverviewSpinner = tab === 'overview' && loading
   const isListTab = tab !== 'overview' && tab !== 'apps' && tab !== 'developers'
 
   function renderTabContent() {
@@ -1033,7 +1057,6 @@ export function OperatorPortal() {
             type="button"
             className="operator-tab"
             data-active={tab === item.id ? 'true' : 'false'}
-            disabled={authState === 'loading'}
             onClick={() => {
               if (item.id !== tab) {
                 setPage(0)

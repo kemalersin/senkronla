@@ -13,18 +13,25 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Added
 
+- **server:** Deployment-wide operator limit overrides with admin `GET/PATCH /v1/admin/settings/limits`
+- **web:** Operator settings global limits tab
 - **server:** Admin purge endpoint to delete all relay operational records (namespaces, devices, documents, apps, developers, blobs)
 - **web:** Operator settings dangerous operations panel to purge all relay records from the UI
 - **server:** Rate limits for developer verification and password-reset mail (per IP and per developer account)
 
 ### Changed
 
-- **web:** Operator settings drawer uses tabs for mail and dangerous operations
+- **web:** Operator admin token sign-in screen layout aligned with the developer portal auth card
+- **web:** Operator settings drawer uses tabs for limits, mail, and dangerous operations
 - **web:** Operator Developers tab self-service prerequisites callout can be dismissed
 - **web:** Drawer loading spinners are vertically centered in the drawer body
 - **web:** Operator panel list tables center numeric columns; zero-value counts are not navigation links
 - **server:** Developer verification and password-reset mail is dispatched in the background so API responses are not blocked on SMTP delivery
 - **server:** Developer auth emails use branded HTML templates aligned with the web portal
+
+### Fixed
+
+- **web:** Operator console no longer flashes the full panel before the admin token sign-in screen when session is still loading
 
 ## [0.1.9]
 
