@@ -80,6 +80,34 @@ describe('limit-resolution-service', () => {
     expect(result).toEqual({ value: 100, source: 'developer' })
   })
 
+  it('falls back to operator override before row and config', () => {
+    const result = resolveLimitKey(
+      'recoverPerHour',
+      {
+        namespace: { ...namespace, limit_overrides: null },
+        app: { ...app, limit_overrides: null },
+        developer: { ...developer, limit_overrides: null },
+        operator: { recoverPerHour: 8 },
+      },
+      config,
+    )
+    expect(result).toEqual({ value: 8, source: 'operator' })
+  })
+
+  it('prefers app override over operator default', () => {
+    const result = resolveLimitKey(
+      'pairingPerHour',
+      {
+        namespace: { ...namespace, limit_overrides: null },
+        app,
+        developer: { ...developer, limit_overrides: null },
+        operator: { pairingPerHour: 99 },
+      },
+      config,
+    )
+    expect(result).toEqual({ value: 15, source: 'app' })
+  })
+
   it('uses namespace row for slot keys before config', () => {
     const result = resolveLimitKey('freeDeviceLimit', { namespace, app, developer }, config)
     expect(result).toEqual({ value: 3, source: 'row' })

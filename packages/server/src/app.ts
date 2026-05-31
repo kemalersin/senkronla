@@ -24,6 +24,7 @@ import {
   getGlobalIpRateLimitRule,
   type RateLimitQuota,
 } from './services/rate-limit-service.js'
+import { buildLimitBaselines, setRuntimeLimitBaselines } from './services/limit-resolution-service.js'
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..')
 const openApiSpecPath = join(repoRoot, 'openapi.yaml')
@@ -43,9 +44,12 @@ function applyRateLimitErrorHeaders(reply: FastifyReply, error: AppError): void 
 export interface AppDependencies {
   config: ServerConfig
   db: DbPool
+  env?: NodeJS.ProcessEnv
 }
 
-export async function buildApp({ config, db }: AppDependencies) {
+export async function buildApp({ config, db, env = process.env }: AppDependencies) {
+  setRuntimeLimitBaselines(buildLimitBaselines(env))
+
   const app = Fastify({
     logger: createLoggerOptions(config),
     trustProxy: config.server.trustProxy,

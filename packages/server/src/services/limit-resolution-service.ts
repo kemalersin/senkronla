@@ -1,5 +1,9 @@
+import { deepMerge } from '../config/merge.js'
+import { loadEnvOverrides, loadYamlConfig } from '../config/load-config.js'
 import type { ServerConfig } from '../config/schema.js'
+import { serverConfigSchema } from '../config/schema.js'
 import type { LimitOverrideKey, LimitOverrideSource, LimitOverrides } from '../types/limit-overrides.js'
+import { LIMIT_OVERRIDE_KEYS } from '../types/limit-overrides.js'
 import type { AppRow, DeveloperRow, NamespaceRow } from '../types/db.js'
 import {
   RATE_LIMIT_ACTION,
@@ -11,6 +15,7 @@ export interface LimitContext {
   namespace?: NamespaceRow | null
   app?: AppRow | null
   developer?: DeveloperRow | null
+  operator?: LimitOverrides | null
 }
 
 export interface ResolvedLimitEntry {
@@ -19,6 +24,56 @@ export interface ResolvedLimitEntry {
 }
 
 export type EffectiveLimits = Record<LimitOverrideKey, ResolvedLimitEntry>
+
+export interface LimitBaselines {
+  yaml: Record<LimitOverrideKey, number>
+  env: Partial<Record<LimitOverrideKey, number>>
+}
+
+let runtimeBaselines: LimitBaselines | null = null
+
+export function setRuntimeLimitBaselines(baselines: LimitBaselines): void {
+  runtimeBaselines = baselines
+}
+
+export function buildLimitBaselines(processEnv: NodeJS.ProcessEnv = process.env): LimitBaselines {
+  const yamlConfig = serverConfigSchema.parse(loadYamlConfig(processEnv))
+  const envOverrides = loadEnvOverrides(processEnv)
+  const envOnlyConfig =
+    Object.keys(envOverrides).length > 0
+      ? serverConfigSchema.parse(deepMerge({}, envOverrides))
+      : null
+
+  const yaml = getConfigDefaults(yamlConfig)
+  const envDefaults: Partial<Record<LimitOverrideKey, number>> = {}
+
+  if (envOnlyConfig) {
+    const parsedEnvDefaults = getConfigDefaults(envOnlyConfig)
+    for (const key of LIMIT_OVERRIDE_KEYS) {
+      if (parsedEnvDefaults[key] !== yaml[key]) {
+        envDefaults[key] = parsedEnvDefaults[key]
+      }
+    }
+  }
+
+  return { yaml, env: envDefaults }
+}
+
+function resolveBaselines(config: ServerConfig, baselines?: LimitBaselines): LimitBaselines {
+  if (baselines) {
+    return baselines
+  }
+
+  if (runtimeBaselines) {
+    return runtimeBaselines
+  }
+
+  return { yaml: getConfigDefaults(config), env: {} }
+}
+
+export function getRuntimeLimitBaselines(config: ServerConfig): LimitBaselines {
+  return resolveBaselines(config)
+}
 
 const RATE_LIMIT_KEY_TO_ACTION: Partial<Record<LimitOverrideKey, RateLimitAction>> = {
   recoverPerHour: RATE_LIMIT_ACTION.recover,
@@ -79,11 +134,27 @@ function readOverride(
   return typeof value === 'number' ? value : undefined
 }
 
+function resolveBaselineFallback(
+  key: LimitOverrideKey,
+  config: ServerConfig,
+  baselines: LimitBaselines,
+): ResolvedLimitEntry {
+  const envValue = baselines.env[key]
+  if (envValue !== undefined) {
+    return { value: envValue, source: 'env' }
+  }
+
+  return { value: baselines.yaml[key] ?? getConfigDefault(key, config), source: 'config' }
+}
+
 export function resolveLimitKey(
   key: LimitOverrideKey,
   ctx: LimitContext,
   config: ServerConfig,
+  baselines?: LimitBaselines,
 ): ResolvedLimitEntry {
+  const resolvedBaselines = resolveBaselines(config, baselines)
+
   const namespaceValue = readOverride(ctx.namespace?.limit_overrides as LimitOverrides | null, key)
   if (namespaceValue !== undefined) {
     return { value: namespaceValue, source: 'namespace' }
@@ -99,23 +170,32 @@ export function resolveLimitKey(
     return { value: developerValue, source: 'developer' }
   }
 
+  const operatorValue = readOverride(ctx.operator, key)
+  if (operatorValue !== undefined) {
+    return { value: operatorValue, source: 'operator' }
+  }
+
   const rowFallback = getRowFallback(key, ctx)
   if (rowFallback !== undefined) {
     return { value: rowFallback, source: 'row' }
   }
 
-  return { value: getConfigDefault(key, config), source: 'config' }
+  return resolveBaselineFallback(key, config, resolvedBaselines)
 }
 
-export function resolveEffectiveLimits(ctx: LimitContext, config: ServerConfig): EffectiveLimits {
+export function resolveEffectiveLimits(
+  ctx: LimitContext,
+  config: ServerConfig,
+  baselines?: LimitBaselines,
+): EffectiveLimits {
   return {
-    recoverPerHour: resolveLimitKey('recoverPerHour', ctx, config),
-    pairingPerHour: resolveLimitKey('pairingPerHour', ctx, config),
-    pairingTokensPerHour: resolveLimitKey('pairingTokensPerHour', ctx, config),
-    pushPerHourPerDevice: resolveLimitKey('pushPerHourPerDevice', ctx, config),
-    namespacesPerDay: resolveLimitKey('namespacesPerDay', ctx, config),
-    freeDeviceLimit: resolveLimitKey('freeDeviceLimit', ctx, config),
-    purchasedSlots: resolveLimitKey('purchasedSlots', ctx, config),
+    recoverPerHour: resolveLimitKey('recoverPerHour', ctx, config, baselines),
+    pairingPerHour: resolveLimitKey('pairingPerHour', ctx, config, baselines),
+    pairingTokensPerHour: resolveLimitKey('pairingTokensPerHour', ctx, config, baselines),
+    pushPerHourPerDevice: resolveLimitKey('pushPerHourPerDevice', ctx, config, baselines),
+    namespacesPerDay: resolveLimitKey('namespacesPerDay', ctx, config, baselines),
+    freeDeviceLimit: resolveLimitKey('freeDeviceLimit', ctx, config, baselines),
+    purchasedSlots: resolveLimitKey('purchasedSlots', ctx, config, baselines),
   }
 }
 
@@ -127,6 +207,7 @@ export function resolveRateLimitRule(
   action: RateLimitAction,
   ctx: LimitContext,
   config: ServerConfig,
+  baselines?: LimitBaselines,
 ): ResolvedRateLimitRule {
   const key = Object.entries(RATE_LIMIT_KEY_TO_ACTION).find(([, value]) => value === action)?.[0] as
     | LimitOverrideKey
@@ -136,7 +217,7 @@ export function resolveRateLimitRule(
     throw new Error(`Unsupported rate limit action for resolution: ${action}`)
   }
 
-  const resolved = resolveLimitKey(key, ctx, config)
+  const resolved = resolveLimitKey(key, ctx, config, baselines)
 
   return {
     action,
@@ -150,10 +231,11 @@ export function resolveRateLimitRule(
 export function resolveSlotLimits(
   ctx: LimitContext,
   config: ServerConfig,
+  baselines?: LimitBaselines,
 ): { freeDeviceLimit: number; purchasedSlots: number } {
   return {
-    freeDeviceLimit: resolveLimitKey('freeDeviceLimit', ctx, config).value,
-    purchasedSlots: resolveLimitKey('purchasedSlots', ctx, config).value,
+    freeDeviceLimit: resolveLimitKey('freeDeviceLimit', ctx, config, baselines).value,
+    purchasedSlots: resolveLimitKey('purchasedSlots', ctx, config, baselines).value,
   }
 }
 

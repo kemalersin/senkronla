@@ -2,6 +2,7 @@ import type { DbPool } from '../db/pool.js'
 import type { AppRow, DeveloperRow, NamespaceRow } from '../types/db.js'
 import { findAppByPublicId } from './app-registry-service.js'
 import type { LimitContext } from './limit-resolution-service.js'
+import { loadOperatorLimitsIntoContext } from './operator-limit-settings-service.js'
 
 export async function findDeveloperByUuid(
   pool: DbPool,
@@ -58,9 +59,12 @@ export async function loadLimitContext(
     developer = await findDeveloperByUuid(pool, app.developer_uuid)
   }
 
+  const operator = await loadOperatorLimitsIntoContext(pool)
+
   return {
     namespace,
     app,
     developer,
+    operator,
   }
 }

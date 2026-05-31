@@ -19,6 +19,11 @@ import {
 } from '../services/operator-limit-service.js'
 import { purgeAllRecords } from '../services/admin-purge-service.js'
 import { getMailSettings, patchMailSettings } from '../services/mail-settings-service.js'
+import {
+  getOperatorLimitSettings,
+  patchOperatorLimitSettings,
+} from '../services/operator-limit-settings-service.js'
+import { getRuntimeLimitBaselines } from '../services/limit-resolution-service.js'
 import { patchLimitOverridesSchema } from '../types/limit-overrides.js'
 import { mailSettingsOverrideSchema } from '../types/mail-settings.js'
 import type { AppContext } from '../types/context.js'
@@ -66,6 +71,7 @@ const rateLimitListQuerySchema = listQuerySchema.extend({
 
 export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext) {
   const requireAdminAuth = createRequireAdminAuth(ctx)
+  const limitBaselines = getRuntimeLimitBaselines(ctx.config)
 
   app.get('/admin/overview', { preHandler: requireAdminAuth }, async () => {
     return getAdminOverview(ctx.db)
@@ -106,13 +112,22 @@ export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext)
 
   app.get('/admin/namespaces/:namespaceId/limits', { preHandler: requireAdminAuth }, async (request) => {
     const { namespaceId } = request.params as { namespaceId: string }
-    return getNamespaceLimits(ctx.db, ctx.config, namespaceId)
+    return getNamespaceLimits(ctx.db, ctx.config, namespaceId, limitBaselines)
   })
 
   app.patch('/admin/namespaces/:namespaceId/limits', { preHandler: requireAdminAuth }, async (request) => {
     const { namespaceId } = request.params as { namespaceId: string }
     const body = patchLimitOverridesSchema.parse(request.body ?? {})
-    return patchNamespaceLimits(ctx.db, ctx.config, namespaceId, body)
+    return patchNamespaceLimits(ctx.db, ctx.config, namespaceId, body, limitBaselines)
+  })
+
+  app.get('/admin/settings/limits', { preHandler: requireAdminAuth }, async () => {
+    return getOperatorLimitSettings(ctx.db, ctx.config, limitBaselines)
+  })
+
+  app.patch('/admin/settings/limits', { preHandler: requireAdminAuth }, async (request) => {
+    const body = patchLimitOverridesSchema.parse(request.body ?? {})
+    return patchOperatorLimitSettings(ctx.db, ctx.config, limitBaselines, body)
   })
 
   app.get('/admin/settings/mail', { preHandler: requireAdminAuth }, async () => {

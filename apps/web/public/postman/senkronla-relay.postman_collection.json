@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "429aa46b-1016-4c41-9407-d76df139ed68",
+    "_postman_id": "d4c02ba9-522e-4095-af32-ec05b93a9933",
     "name": "Senkronla Relay API v1",
     "description": "Runnable Postman collection for the Senkronla Envelope Sync Relay REST API (`/v1`).\n\n**Setup**\n1. Import `senkronla-relay-local.postman_environment.json` (or the production template).\n2. Set `relayOrigin` to your relay host (default: `http://localhost:8080`).\n3. Pick **Web client** or **Native client** (run numbered requests in order when `apps.enabled` is true).\n\nCollection auth uses `{{deviceToken}}`. Unauthenticated routes override auth per request.\n\n**App registry:** Set `esrAppId`, `webOrigin` (web), or `bundleId` / `nativePlatform` / `clientSecret` (native). Portal folders need `adminToken` or developer credentials.\n\nDocs: https://senkronla.dev/api",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"

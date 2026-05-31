@@ -23,7 +23,7 @@ function resolveConfigPath(env: NodeJS.ProcessEnv): string | undefined {
   return undefined
 }
 
-function loadYamlConfig(env: NodeJS.ProcessEnv): RawConfig {
+export function loadYamlConfig(env: NodeJS.ProcessEnv): RawConfig {
   const configPath = resolveConfigPath(env)
   if (!configPath) return {}
 
@@ -55,7 +55,7 @@ function parseEnvBoolean(value: string | undefined): boolean | undefined {
   return undefined
 }
 
-function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
+export function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
   const overrides: RawConfig = {}
 
   if (env.ESR_HOST || env.ESR_PORT || env.ESR_PUBLIC_URL || env.ESR_TRUST_PROXY) {

@@ -14,12 +14,19 @@ import { findNamespaceByPublicId } from './namespace-service.js'
 import { findAppByPublicId } from './app-registry-service.js'
 import { findDeveloperByUuid, loadLimitContext } from './limit-context-loader.js'
 import {
+  buildLimitBaselines,
   getConfigDefaults,
   resolveEffectiveLimits,
+  type LimitBaselines,
+  type LimitContext,
 } from './limit-resolution-service.js'
-import type { LimitContext } from './limit-resolution-service.js'
+import { loadOperatorLimitsIntoContext } from './operator-limit-settings-service.js'
 
 type LimitScopeType = 'namespace' | 'app' | 'developer'
+
+function resolveBaselines(config: ServerConfig, baselines?: LimitBaselines): LimitBaselines {
+  return baselines ?? buildLimitBaselines()
+}
 
 function sanitizePatch(patch: LimitOverrides): LimitOverrides {
   const sanitized: LimitOverrides = {}
@@ -41,9 +48,26 @@ function sanitizePatch(patch: LimitOverrides): LimitOverrides {
   return patchLimitOverridesSchema.parse(sanitized)
 }
 
-function formatLimitsResponse(ctx: LimitContext, config: ServerConfig) {
-  const effective = resolveEffectiveLimits(ctx, config)
-  const configDefaults = getConfigDefaults(config)
+function withoutScopeOverride(ctx: LimitContext, scopeType: LimitScopeType): LimitContext {
+  switch (scopeType) {
+    case 'namespace':
+      return { ...ctx, namespace: ctx.namespace ? { ...ctx.namespace, limit_overrides: null } : null }
+    case 'app':
+      return { ...ctx, app: ctx.app ? { ...ctx.app, limit_overrides: null } : null }
+    case 'developer':
+      return { ...ctx, developer: ctx.developer ? { ...ctx.developer, limit_overrides: null } : null }
+  }
+}
+
+async function formatLimitsResponse(
+  ctx: LimitContext,
+  config: ServerConfig,
+  scopeType?: LimitScopeType,
+  baselines?: LimitBaselines,
+) {
+  const resolvedBaselines = resolveBaselines(config, baselines)
+  const effective = resolveEffectiveLimits(ctx, config, resolvedBaselines)
+  const inheritCtx = scopeType ? withoutScopeOverride(ctx, scopeType) : ctx
 
   return {
     effective: Object.fromEntries(
@@ -56,8 +80,16 @@ function formatLimitsResponse(ctx: LimitContext, config: ServerConfig) {
       namespace: parseLimitOverrides(ctx.namespace?.limit_overrides),
       app: parseLimitOverrides(ctx.app?.limit_overrides),
       developer: parseLimitOverrides(ctx.developer?.limit_overrides),
+      operator: ctx.operator ?? null,
     },
-    configDefaults,
+    configDefaults: resolvedBaselines.yaml,
+    envDefaults: resolvedBaselines.env,
+    inheritDefaults: Object.fromEntries(
+      LIMIT_OVERRIDE_KEYS.map((key) => [
+        key,
+        resolveEffectiveLimits(inheritCtx, config, resolvedBaselines)[key].value,
+      ]),
+    ) as Record<LimitOverrideKey, number>,
   }
 }
 
@@ -107,6 +139,7 @@ export async function getNamespaceLimits(
   pool: DbPool,
   config: ServerConfig,
   namespacePublicId: string,
+  baselines?: LimitBaselines,
 ) {
   const namespace = await findNamespaceByPublicId(pool, namespacePublicId)
   if (!namespace) {
@@ -114,7 +147,7 @@ export async function getNamespaceLimits(
   }
 
   const ctx = await loadLimitContext(pool, { namespace })
-  return formatLimitsResponse(ctx, config)
+  return formatLimitsResponse(ctx, config, 'namespace', baselines)
 }
 
 export async function patchNamespaceLimits(
@@ -122,6 +155,7 @@ export async function patchNamespaceLimits(
   config: ServerConfig,
   namespacePublicId: string,
   patch: LimitOverrides,
+  baselines?: LimitBaselines,
 ) {
   const namespace = await findNamespaceByPublicId(pool, namespacePublicId)
   if (!namespace) {
@@ -129,17 +163,17 @@ export async function patchNamespaceLimits(
   }
 
   await patchScopeOverrides(pool, 'namespace', namespace.id, 'namespaces', 'id', patch)
-  return getNamespaceLimits(pool, config, namespacePublicId)
+  return getNamespaceLimits(pool, config, namespacePublicId, baselines)
 }
 
-export async function getAppLimits(pool: DbPool, config: ServerConfig, appId: string) {
+export async function getAppLimits(pool: DbPool, config: ServerConfig, appId: string, baselines?: LimitBaselines) {
   const app = await findAppByPublicId(pool, appId)
   if (!app) {
     throw new AppError(403, 'APP_NOT_FOUND', 'Application is not registered')
   }
 
   const ctx = await loadLimitContext(pool, { app })
-  return formatLimitsResponse(ctx, config)
+  return formatLimitsResponse(ctx, config, 'app', baselines)
 }
 
 export async function patchAppLimits(
@@ -147,6 +181,7 @@ export async function patchAppLimits(
   config: ServerConfig,
   appId: string,
   patch: LimitOverrides,
+  baselines?: LimitBaselines,
 ) {
   const app = await findAppByPublicId(pool, appId)
   if (!app) {
@@ -154,21 +189,23 @@ export async function patchAppLimits(
   }
 
   await patchScopeOverrides(pool, 'app', app.id, 'apps', 'id', patch)
-  return getAppLimits(pool, config, appId)
+  return getAppLimits(pool, config, appId, baselines)
 }
 
 export async function getDeveloperLimits(
   pool: DbPool,
   config: ServerConfig,
   developerId: string,
+  baselines?: LimitBaselines,
 ) {
   const developer = await findDeveloperByUuid(pool, developerId)
   if (!developer) {
     throw new AppError(404, 'NOT_FOUND', 'Developer not found')
   }
 
-  const ctx: LimitContext = { developer }
-  return formatLimitsResponse(ctx, config)
+  const operator = await loadOperatorLimitsIntoContext(pool)
+  const ctx: LimitContext = { developer, operator }
+  return formatLimitsResponse(ctx, config, 'developer', baselines)
 }
 
 export async function patchDeveloperLimits(
@@ -176,6 +213,7 @@ export async function patchDeveloperLimits(
   config: ServerConfig,
   developerId: string,
   patch: LimitOverrides,
+  baselines?: LimitBaselines,
 ) {
   const developer = await findDeveloperByUuid(pool, developerId)
   if (!developer) {
@@ -183,5 +221,7 @@ export async function patchDeveloperLimits(
   }
 
   await patchScopeOverrides(pool, 'developer', developer.id, 'developers', 'id', patch)
-  return getDeveloperLimits(pool, config, developerId)
+  return getDeveloperLimits(pool, config, developerId, baselines)
 }
+
+export { getConfigDefaults }

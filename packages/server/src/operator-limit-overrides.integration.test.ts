@@ -56,19 +56,20 @@ describe('Operator limit overrides (integration)', () => {
       return
     }
 
-    const baseConfig = loadConfig({
+    const env = {
       ESR_DATABASE_URL: container.getConnectionUri(),
       ESR_ADMIN_TOKEN: ADMIN_TOKEN,
       ESR_ON_LIMIT_MODE: 'block',
       ESR_DEFAULT_FREE_DEVICE_LIMIT: '2',
       ESR_PAIRING_PER_HOUR: '100',
-    })
+    }
 
+    const baseConfig = loadConfig(env)
     const config = withAppRegistryConfig(baseConfig)
     const db = createPool(config)
     await runMigrations(db)
     await seedAppsFromConfig(db, config)
-    app = await buildApp({ config, db })
+    app = await buildApp({ config, db, env })
     await app.ready()
   }, 120_000)
 
@@ -220,5 +221,52 @@ describe('Operator limit overrides (integration)', () => {
     expect(limitsResponse.statusCode).toBe(200)
     expect(limitsResponse.json().effective.freeDeviceLimit).toBe(9)
     expect(limitsResponse.json().sources.freeDeviceLimit).toBe('app')
+  })
+
+  it.skipIf(!container || !app)('operator global override applies when no entity override', async () => {
+    const namespaceId = await createNamespace()
+
+    await app!.inject({
+      method: 'PATCH',
+      url: '/v1/admin/settings/limits',
+      headers: { ...adminAuth(), 'content-type': 'application/json' },
+      payload: { recoverPerHour: 2 },
+    })
+
+    const limitsResponse = await app!.inject({
+      method: 'GET',
+      url: `/v1/admin/namespaces/${namespaceId}/limits`,
+      headers: adminAuth(),
+    })
+
+    expect(limitsResponse.statusCode).toBe(200)
+    expect(limitsResponse.json().effective.recoverPerHour).toBe(2)
+    expect(limitsResponse.json().sources.recoverPerHour).toBe('operator')
+  })
+
+  it.skipIf(!container || !app)('app override wins over operator global override', async () => {
+    await app!.inject({
+      method: 'PATCH',
+      url: '/v1/admin/settings/limits',
+      headers: { ...adminAuth(), 'content-type': 'application/json' },
+      payload: { namespacesPerDay: 2 },
+    })
+
+    await app!.inject({
+      method: 'PATCH',
+      url: '/v1/admin/apps/esr_app_limit_test/limits',
+      headers: { ...adminAuth(), 'content-type': 'application/json' },
+      payload: { namespacesPerDay: 5 },
+    })
+
+    const limitsResponse = await app!.inject({
+      method: 'GET',
+      url: '/v1/admin/apps/esr_app_limit_test/limits',
+      headers: adminAuth(),
+    })
+
+    expect(limitsResponse.statusCode).toBe(200)
+    expect(limitsResponse.json().effective.namespacesPerDay).toBe(5)
+    expect(limitsResponse.json().sources.namespacesPerDay).toBe('app')
   })
 })

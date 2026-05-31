@@ -19,6 +19,7 @@ import {
   getAppLimits,
   patchAppLimits,
 } from '../services/operator-limit-service.js'
+import { getRuntimeLimitBaselines } from '../services/limit-resolution-service.js'
 import { patchLimitOverridesSchema } from '../types/limit-overrides.js'
 import type { AppContext } from '../types/context.js'
 
@@ -91,6 +92,7 @@ const bundleIdParamSchema = appIdParamSchema.extend({
 
 export async function registerAdminAppRoutes(app: FastifyInstance, ctx: AppContext) {
   const requireAdminAuth = createRequireAdminAuth(ctx)
+  const limitBaselines = getRuntimeLimitBaselines(ctx.config)
 
   app.get('/admin/apps', { preHandler: requireAdminAuth }, async (request) => {
     const query = paginationQuerySchema.parse(request.query)
@@ -162,12 +164,12 @@ export async function registerAdminAppRoutes(app: FastifyInstance, ctx: AppConte
 
   app.get('/admin/apps/:appId/limits', { preHandler: requireAdminAuth }, async (request) => {
     const { appId } = appIdParamSchema.parse(request.params)
-    return getAppLimits(ctx.db, ctx.config, appId)
+    return getAppLimits(ctx.db, ctx.config, appId, limitBaselines)
   })
 
   app.patch('/admin/apps/:appId/limits', { preHandler: requireAdminAuth }, async (request) => {
     const { appId } = appIdParamSchema.parse(request.params)
     const body = patchLimitOverridesSchema.parse(request.body ?? {})
-    return patchAppLimits(ctx.db, ctx.config, appId, body)
+    return patchAppLimits(ctx.db, ctx.config, appId, body, limitBaselines)
   })
 }

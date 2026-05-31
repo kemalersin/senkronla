@@ -187,7 +187,7 @@ components:
           type: object
           additionalProperties:
             type: string
-            enum: [namespace, app, developer, row, config]
+            enum: [namespace, app, developer, operator, row, env, config]
         overrides:
           type: object
           properties:
@@ -197,7 +197,17 @@ components:
               $ref: '#/components/schemas/LimitOverrides'
             developer:
               $ref: '#/components/schemas/LimitOverrides'
+            operator:
+              $ref: '#/components/schemas/LimitOverrides'
         configDefaults:
+          type: object
+          additionalProperties:
+            type: integer
+        envDefaults:
+          type: object
+          additionalProperties:
+            type: integer
+        inheritDefaults:
           type: object
           additionalProperties:
             type: integer
@@ -1256,6 +1266,40 @@ paths:
           $ref: '#/components/responses/Error400'
         '404':
           $ref: '#/components/responses/Error404'
+
+  /admin/settings/limits:
+    get:
+      tags: [Admin]
+      summary: Get deployment-wide operator limit overrides
+      security:
+        - AdminToken: []
+      responses:
+        '200':
+          description: Effective global limits with cascade sources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveLimitsResponse'
+    patch:
+      tags: [Admin]
+      summary: Merge deployment-wide operator limit overrides
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitOverrides'
+      responses:
+        '200':
+          description: Updated global limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveLimitsResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
 
   /admin/settings/mail:
     get:

@@ -12,7 +12,14 @@ export const LIMIT_OVERRIDE_KEYS = [
 
 export type LimitOverrideKey = (typeof LIMIT_OVERRIDE_KEYS)[number]
 
-export type LimitOverrideSource = 'namespace' | 'app' | 'developer' | 'row' | 'config'
+export type LimitOverrideSource =
+  | 'namespace'
+  | 'app'
+  | 'developer'
+  | 'operator'
+  | 'row'
+  | 'env'
+  | 'config'
 
 const positiveInt = z.number().int().positive()
 const nonNegativeInt = z.number().int().min(0)

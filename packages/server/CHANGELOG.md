@@ -11,6 +11,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Added
 
+- Deployment-wide operator limit overrides stored in `operator_settings` (`key=limits`); admin `GET/PATCH /v1/admin/settings/limits`; cascade precedence app → developer → operator → env → config (namespace and row fallbacks unchanged)
 - Admin API `POST /v1/admin/danger/purge-all-records` — permanently delete all relay operational data (requires `{ "confirm": "purge-all-records" }`); preserves operator mail settings overrides; removes blob namespace directories
 - Rate limits for developer auth mail — `developer_auth_mail` per IP (`limits.rateLimit.developerAuthMailPerHourPerIp`, default 20/h) and per developer account (`apps.developerPortal.authMailPerHourPerDeveloper`, default 5/h); per-developer cap returns success without sending mail; IP cap returns `429`
 

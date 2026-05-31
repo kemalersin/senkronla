@@ -10,6 +10,7 @@ import {
   getDeveloperLimits,
   patchDeveloperLimits,
 } from '../services/operator-limit-service.js'
+import { getRuntimeLimitBaselines } from '../services/limit-resolution-service.js'
 import { patchLimitOverridesSchema } from '../types/limit-overrides.js'
 import type { AppContext } from '../types/context.js'
 
@@ -35,6 +36,7 @@ const updateDeveloperBodySchema = z
 
 export async function registerAdminDeveloperRoutes(app: FastifyInstance, ctx: AppContext) {
   const requireAdminAuth = createRequireAdminAuth(ctx)
+  const limitBaselines = getRuntimeLimitBaselines(ctx.config)
 
   app.get('/admin/developers', { preHandler: requireAdminAuth }, async (request) => {
     const query = paginationQuerySchema.parse(request.query)
@@ -54,12 +56,12 @@ export async function registerAdminDeveloperRoutes(app: FastifyInstance, ctx: Ap
 
   app.get('/admin/developers/:developerId/limits', { preHandler: requireAdminAuth }, async (request) => {
     const { developerId } = developerIdParamSchema.parse(request.params)
-    return getDeveloperLimits(ctx.db, ctx.config, developerId)
+    return getDeveloperLimits(ctx.db, ctx.config, developerId, limitBaselines)
   })
 
   app.patch('/admin/developers/:developerId/limits', { preHandler: requireAdminAuth }, async (request) => {
     const { developerId } = developerIdParamSchema.parse(request.params)
     const body = patchLimitOverridesSchema.parse(request.body ?? {})
-    return patchDeveloperLimits(ctx.db, ctx.config, developerId, body)
+    return patchDeveloperLimits(ctx.db, ctx.config, developerId, body, limitBaselines)
   })
 }
