@@ -9,8 +9,16 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- Operator settings — dangerous operations panel to permanently delete all relay records (namespaces, devices, documents, unlock data, apps, developers); requires typing `purge-all-records` and a confirmation dialog; SMTP overrides are preserved
+- Brand favicon and Apple touch icon: relay hub with bidirectional sync arcs on accent teal gradient
+
 ### Changed
 
+- Operator settings drawer uses tabs (Mail, Dangerous operations) instead of a single scrollable page
+- Operator Developers tab self-service prerequisites callout can be dismissed (preference saved in browser)
+- Drawer loading spinners are vertically centered in the drawer body
 - Operator panel list tables center numeric columns (CSS specificity fix); zero-value app and namespace counts are plain text instead of navigation links
 
 ## [0.1.9]
