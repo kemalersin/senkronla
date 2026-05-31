@@ -28,6 +28,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Fixed
 
+- Operator limit override clear control is an × inside the input (no separate row button or undo)
 - Operator console no longer flashes the full panel before the admin token sign-in screen when session is still loading
 
 ## [0.1.9]

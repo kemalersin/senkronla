@@ -270,7 +270,7 @@ export function OperatorLimitsSection({
                     </td>
                     <td>{sourceLabel(data.sources[key])}</td>
                     <td className="operator-table-col-numeric">
-                      <div className="operator-limits-override-cell">
+                      <div className="operator-limits-input-wrap">
                         <input
                           type="text"
                           inputMode="numeric"
@@ -282,7 +282,6 @@ export function OperatorLimitsSection({
                           }
                           aria-label={t('columns.overrideFor', { key: t(`keys.${key}`) })}
                           value={draft[key] ?? ''}
-                          disabled={willClear}
                           onChange={(event) => {
                             const value = event.target.value
                             setDraft((current) => ({ ...current, [key]: value }))
@@ -296,20 +295,13 @@ export function OperatorLimitsSection({
                             }
                           }}
                         />
-                        {(hasScopeOverride || willClear) && (
+                        {hasScopeOverride && !willClear && (
                           <button
                             type="button"
-                            className="btn btn-secondary btn-sm operator-limits-clear"
+                            className="operator-limits-input-clear"
+                            aria-label={t('clearOverride')}
                             disabled={saving}
                             onClick={() => {
-                              if (willClear) {
-                                setPendingClear((current) => {
-                                  const next = { ...current }
-                                  delete next[key]
-                                  return next
-                                })
-                                return
-                              }
                               setPendingClear((current) => ({ ...current, [key]: true }))
                               setDraft((current) => {
                                 const next = { ...current }
@@ -318,7 +310,7 @@ export function OperatorLimitsSection({
                               })
                             }}
                           >
-                            {willClear ? t('undoClearOverride') : t('clearOverride')}
+                            ×
                           </button>
                         )}
                       </div>
