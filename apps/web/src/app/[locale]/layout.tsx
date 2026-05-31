@@ -6,6 +6,7 @@ import { SiteHeader } from '@/components/site-header'
 import { hasDeveloperSessionCookie } from '@/lib/developer-auth'
 import { isDeveloperPortalEnabled } from '@/lib/developer-portal-status'
 import { routing } from '@/i18n/routing'
+import { createRootLayoutMetadata } from '@/lib/page-metadata'
 import type { Locale } from '@/i18n/config'
 import '../globals.css'
 
@@ -20,12 +21,7 @@ interface LayoutProps {
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: 'meta' })
-
-  return {
-    title: t('title'),
-    description: t('description'),
-  }
+  return createRootLayoutMetadata(locale)
 }
 
 export default async function LocaleLayout({ children, params }: LayoutProps) {

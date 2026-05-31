@@ -6,9 +6,15 @@ import { DocsLayout } from '@/components/docs-layout'
 import { Link } from '@/i18n/navigation'
 import { AGENT_API_PATHS, AGENT_DOC_PATHS, AGENT_SDK_PATHS, LLMS_TXT_PATH } from '@/lib/site-links'
 import { withDocRich } from '@/lib/doc-rich-text'
+import { createPageMetadata } from '@/lib/page-metadata'
 
 interface PageProps {
   params: Promise<{ locale: string }>
+}
+
+export async function generateMetadata({ params }: PageProps) {
+  const { locale } = await params
+  return createPageMetadata(locale, 'guidesAgents')
 }
 
 const sectionKeys = ['overview', 'standards', 'files', 'usage', 'scope', 'next'] as const

@@ -11,9 +11,18 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Added
 
-- Operator panel — limit override modal for namespaces, apps, and developers
+- Locale-aware page titles and meta descriptions for every public route (guides, SDK, API, operator, developer portal)
 
 ### Changed
+
+- Reference docs (guides, SDK, API) use full content column width aligned with site layout
+
+### Fixed
+
+- Reference docs on mobile stay within the viewport; wide tables and code scroll inside their containers
+- Developer portal tab title shows panel name after sign-in instead of staying on “Sign in”
+
+- Operator panel — limit override modal for namespaces, apps, and developers
 
 - Operator unlock-code form — wider Namespace ID and note fields, narrower device-slot input
 

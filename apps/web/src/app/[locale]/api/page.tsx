@@ -11,6 +11,7 @@ import { Link } from '@/i18n/navigation'
 import { createApiSnippets } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
 import { POSTMAN_ARTIFACT_PATHS } from '@/lib/postman-artifacts'
+import { createPageMetadata } from '@/lib/page-metadata'
 import {
   getPublicApiOrigin,
   getRelayApiBaseUrl,
@@ -19,6 +20,11 @@ import {
 
 interface PageProps {
   params: Promise<{ locale: string }>
+}
+
+export async function generateMetadata({ params }: PageProps) {
+  const { locale } = await params
+  return createPageMetadata(locale, 'api')
 }
 
 const sectionKeys = [

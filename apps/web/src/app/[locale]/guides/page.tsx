@@ -8,10 +8,16 @@ import { DocsTable } from '@/components/docs-table'
 import { Link } from '@/i18n/navigation'
 import { createGuideSnippets } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
+import { createPageMetadata } from '@/lib/page-metadata'
 import { getRelayApiBaseUrl } from '@/lib/public-api-url'
 
 interface PageProps {
   params: Promise<{ locale: string }>
+}
+
+export async function generateMetadata({ params }: PageProps) {
+  const { locale } = await params
+  return createPageMetadata(locale, 'guides')
 }
 
 const sectionKeys = [
