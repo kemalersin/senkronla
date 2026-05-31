@@ -36,7 +36,20 @@ function formatShortcut(isMac: boolean): string {
   return isMac ? '⌘K' : 'Ctrl+K'
 }
 
-export function DocSearchTrigger() {
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-3-3" />
+    </svg>
+  )
+}
+
+interface DocSearchTriggerProps {
+  variant?: 'default' | 'icon'
+}
+
+export function DocSearchTrigger({ variant = 'default' }: DocSearchTriggerProps) {
   const t = useTranslations('search')
   const [isMac, setIsMac] = useState(true)
 
@@ -46,6 +59,19 @@ export function DocSearchTrigger() {
 
   function openDialog() {
     window.dispatchEvent(new Event(DOC_SEARCH_OPEN_EVENT))
+  }
+
+  if (variant === 'icon') {
+    return (
+      <button
+        type="button"
+        className="doc-search-trigger doc-search-trigger-icon"
+        onClick={openDialog}
+        aria-label={t('triggerLabel')}
+      >
+        <SearchIcon />
+      </button>
+    )
   }
 
   return (

@@ -17,6 +17,8 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
+- Mobile site header shows doc search in the navbar; mobile menu places GitHub, theme, and locale controls on the same row as Sign in
+- Mobile operator panel header aligns API origin and action buttons to the right
 - Operator global limits open from a header **Limits** button (modal) instead of the settings drawer tab; settings drawer tabs are Mail and Dangerous operations only
 - Operator admin token sign-in screen layout aligned with the developer portal auth card
 - Operator limit overrides: per-row Clear button removes scope override without typing inherit

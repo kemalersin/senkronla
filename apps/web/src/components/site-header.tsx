@@ -96,7 +96,7 @@ export function SiteHeader({
     return pathname === href || (href !== '/' && pathname.startsWith(href))
   }
 
-  function renderNav(className: string, onNavigate?: () => void) {
+  function renderNavLinks(className: string, onNavigate?: () => void) {
     return (
       <nav className={className} aria-label="Main">
         {links.map((link) => (
@@ -109,34 +109,48 @@ export function SiteHeader({
             {link.label}
           </Link>
         ))}
-        {developerPortalEnabled &&
-          (!developerAuthenticated ? (
-            <Link
-              href="/developer"
-              className="header-login-link"
-              data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
-              onClick={onNavigate}
-            >
-              {t('login')}
-            </Link>
-          ) : (
-            <Link
-              href="/developer"
-              className="header-login-link"
-              data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
-              onClick={onNavigate}
-            >
-              {t('panel')}
-            </Link>
-          ))}
       </nav>
     )
   }
 
-  function renderUtilities() {
+  function renderLoginLink(onNavigate?: () => void) {
+    if (!developerPortalEnabled) {
+      return null
+    }
+
+    return (
+      <Link
+        href="/developer"
+        className="header-login-link"
+        data-active={pathname.startsWith('/developer') ? 'true' : 'false'}
+        onClick={onNavigate}
+      >
+        {developerAuthenticated ? t('panel') : t('login')}
+      </Link>
+    )
+  }
+
+  function renderDesktopNav(className: string) {
+    return (
+      <nav className={className} aria-label="Main">
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            data-active={isLinkActive(link.href) ? 'true' : 'false'}
+          >
+            {link.label}
+          </Link>
+        ))}
+        {renderLoginLink()}
+      </nav>
+    )
+  }
+
+  function renderUtilities({ includeSearch = true }: { includeSearch?: boolean } = {}) {
     return (
       <>
-        <DocSearchTrigger />
+        {includeSearch && <DocSearchTrigger />}
         <a
           href={GITHUB_REPO_URL}
           className="header-github-link"
@@ -173,11 +187,12 @@ export function SiteHeader({
           senkron<span>la</span>
         </Link>
 
-        {renderNav('nav site-header-nav')}
+        {renderDesktopNav('nav site-header-nav')}
 
         <div className="header-actions site-header-utilities">{renderUtilities()}</div>
 
         <div className="header-mobile-controls">
+          <DocSearchTrigger variant="icon" />
           <button
             type="button"
             className="header-menu-toggle"
@@ -208,9 +223,12 @@ export function SiteHeader({
                 aria-label={t('menuOpen')}
               >
                 <div className="container site-header-mobile-menu-inner">
-                  {renderNav('nav site-header-mobile-nav', () => setMenuOpen(false))}
-                  <div className="header-actions site-header-mobile-utilities">
-                    {renderUtilities()}
+                  {renderNavLinks('nav site-header-mobile-nav', () => setMenuOpen(false))}
+                  <div className="site-header-mobile-actions-row">
+                    {renderLoginLink(() => setMenuOpen(false))}
+                    <div className="header-actions site-header-mobile-utilities">
+                      {renderUtilities({ includeSearch: false })}
+                    </div>
                   </div>
                 </div>
               </div>
