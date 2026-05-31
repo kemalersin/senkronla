@@ -41,10 +41,16 @@ describe('@senkronla/server health', () => {
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({
       status: 'ok',
+      version: '0.1.8',
       database: { status: 'ok', mode: 'external' },
       blob: { status: 'ok' },
+      websocket: expect.any(Boolean),
       developerPortal: { enabled: false },
-      apps: { nativeRequireClientSecret: false },
+      apps: {
+        enabled: false,
+        requireRegistration: true,
+        nativeRequireClientSecret: false,
+      },
     })
 
     await app.close()
@@ -82,6 +88,39 @@ describe('@senkronla/server health', () => {
     expect(response.json()).toMatchObject({
       status: 'degraded',
       blob: { status: 'error' },
+    })
+
+    await app.close()
+  })
+
+  it('returns all HealthStatus fields when apps registry is enabled', async () => {
+    const config = loadConfig({
+      ESR_DATABASE_URL: 'postgresql://user:pass@localhost:5432/esr',
+      ESR_BLOB_PATH: await mkdtemp(join(tmpdir(), 'senkronla-blob-')),
+      ESR_APPS__ENABLED: 'true',
+      ESR_APPS__REQUIRE_REGISTRATION: 'false',
+      ESR_APPS__REGISTRATION_MODE: 'self_service',
+      ESR_DEVELOPER_JWT_SECRET: 'x'.repeat(32),
+      ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET: 'true',
+      ESR_WEBSOCKET__ENABLED: 'true',
+    })
+
+    const app = await buildApp({ config, db: createMockPool() })
+    const response = await app.inject({ method: 'GET', url: '/health' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({
+      status: 'ok',
+      version: '0.1.8',
+      database: { status: 'ok', mode: 'external' },
+      blob: { status: 'ok', path: config.blob.filesystem.path },
+      websocket: true,
+      developerPortal: { enabled: true },
+      apps: {
+        enabled: true,
+        requireRegistration: false,
+        nativeRequireClientSecret: true,
+      },
     })
 
     await app.close()

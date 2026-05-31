@@ -7,8 +7,8 @@ info:
     Full specification: docs/envelope-sync-relay/README.md
 
     **v1.3.1:** App list search (`q`) matches app ID, name, and registered bundle ID; `/health`
-    exposes `developerPortal.enabled` and `apps.nativeRequireClientSecret`; operator developer
-    accounts API (`/admin/developers`).
+    exposes `developerPortal.enabled`, `apps.enabled`, `apps.requireRegistration`, and
+    `apps.nativeRequireClientSecret`; operator developer accounts API (`/admin/developers`).
 
     **v1.3:** Application registry — `X-ESR-App-Id`, namespace–app binding, operator admin API,
     developer self-service portal, origin verification, pairing `allowedAppIds`.
@@ -472,9 +472,13 @@ components:
         apps:
           type: object
           properties:
+            enabled:
+              type: boolean
+            requireRegistration:
+              type: boolean
             nativeRequireClientSecret:
               type: boolean
-          description: When true, native API calls need X-ESR-Client-Secret for confidential apps
+          description: App registry flags for client and portal discovery
 
     PairingTokenResult:
       type: object
@@ -568,7 +572,8 @@ paths:
           description: Production (root)
       description: |
         No authentication. Returns `503` when database or blob storage checks fail (`status: degraded`).
-        Use `developerPortal.enabled` and `apps.nativeRequireClientSecret` to configure portal UI.
+        Use `developerPortal.enabled`, `apps.enabled`, `apps.requireRegistration`, and
+        `apps.nativeRequireClientSecret` to configure portal UI and client app headers.
       responses:
         '200':
           description: OK

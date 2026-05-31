@@ -3,6 +3,7 @@ import type { ServerConfig } from '../config/schema.js'
 import { checkBlobStorage } from '../blob/filesystem.js'
 import { checkDatabase, type DbPool } from '../db/pool.js'
 import { isDeveloperPortalEnabled } from '../lib/developer-portal.js'
+import { SERVER_VERSION } from '../version.js'
 
 export interface HealthCheckResult {
   status: 'ok' | 'degraded'
@@ -22,6 +23,8 @@ export interface HealthCheckResult {
     enabled: boolean
   }
   apps: {
+    enabled: boolean
+    requireRegistration: boolean
     nativeRequireClientSecret: boolean
   }
 }
@@ -64,7 +67,7 @@ export async function runHealthChecks(
 
   return {
     status: isHealthy ? 'ok' : 'degraded',
-    version: '0.1.0',
+    version: SERVER_VERSION,
     database: databaseStatus,
     blob: blobStatus,
     websocket: config.websocket.enabled,
@@ -72,6 +75,8 @@ export async function runHealthChecks(
       enabled: isDeveloperPortalEnabled(config),
     },
     apps: {
+      enabled: config.apps.enabled,
+      requireRegistration: config.apps.requireRegistration,
       nativeRequireClientSecret: config.apps.native.requireClientSecret,
     },
   }

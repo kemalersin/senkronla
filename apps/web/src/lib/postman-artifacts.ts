@@ -263,6 +263,8 @@ function buildQuickStartItems(): PostmanItem[] {
         '    const json = pm.response.json();',
         "    pm.expect(json.status).to.eql('ok');",
         "    pm.expect(json.developerPortal).to.have.property('enabled');",
+        "    pm.expect(json.apps).to.have.property('enabled');",
+        "    pm.expect(json.apps).to.have.property('requireRegistration');",
         "    pm.expect(json.apps).to.have.property('nativeRequireClientSecret');",
         '});',
       ],

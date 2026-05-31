@@ -462,9 +462,16 @@ Authorization: Bearer dvt_...
       request: `GET ${origin}/health`,
       response: `{
   "status": "ok",
-  "version": "1.0.0",
-  "db": "ok",
-  "blob": "ok"
+  "version": "0.1.8",
+  "database": { "status": "ok", "mode": "external" },
+  "blob": { "status": "ok", "path": "/var/lib/senkronla/blobs" },
+  "websocket": true,
+  "developerPortal": { "enabled": false },
+  "apps": {
+    "enabled": false,
+    "requireRegistration": true,
+    "nativeRequireClientSecret": false
+  }
 }`,
     } satisfies HttpExamplePair,
 
