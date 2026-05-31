@@ -1,7 +1,68 @@
 {
   "meta": {
-    "title": "Senkronla — Uygulamanız için senkron API ve SDK",
-    "description": "Açık kaynak, self-hosted senkron relay — ürününüze çok cihazlı senkron ekleyin. SDK rehberleri, REST API referansı ve entegrasyon kontrol listeleri."
+    "siteName": "Senkronla",
+    "pages": {
+      "home": {
+        "title": "Senkronla — Uygulamanız için senkron API ve SDK",
+        "description": "Açık kaynak, self-hosted senkron relay — ürününüze çok cihazlı senkron ekleyin. SDK rehberleri, REST API referansı ve entegrasyon kontrol listeleri."
+      },
+      "guides": {
+        "title": "Entegrasyon rehberleri",
+        "description": "Adım adım Senkronla entegrasyonu: temel kavramlar, kontrol listesi, eşleştirme, kurtarma, çevrimdışı çakışmalar ve SDK ile REST seçimi."
+      },
+      "guidesEsr": {
+        "title": "ESR kurulum rehberi",
+        "description": "Self-hosted Envelope Sync Relay kurulumu: Docker Compose, Postgres, gizliler, rate limitler ve üretim kontrol listesi."
+      },
+      "guidesAgents": {
+        "title": "Agents rehberi",
+        "description": "Cursor, Copilot ve otomasyon için Senkronla agent dokümantasyonunu indirin — yapay zeka destekli entegrasyon için odaklı bağlam."
+      },
+      "sdk": {
+        "title": "İstemci SDK referansı",
+        "description": "@senkronla/client API referansı: EsrSync.connect, DocumentAdapter, eşleştirme, çakışmalar, zarf şifrelemesi ve senkron yaşam döngüsü."
+      },
+      "api": {
+        "title": "REST API referansı",
+        "description": "Senkronla relay HTTP API: namespace, belgeler, cihazlar, uygulama kaydı başlıkları, WebSocket bildirimleri, kotalar ve hata kodları."
+      },
+      "quickStart": {
+        "title": "Hızlı başlangıç",
+        "description": "Senkronla'ya hızlı giriş — uygulamanıza çok cihazlı senkron eklemek için entegrasyon kontrol listesine yönlendirir."
+      },
+      "howTo": {
+        "title": "Nasıl yapılır rehberleri",
+        "description": "Senkronla nasıl yapılır dokümantasyonu — entegrasyon rehberleri, kurulum ve senkron relay API referansları."
+      },
+      "operator": {
+        "title": "Operatör paneli",
+        "description": "Relay sağlığı, kayıtlı uygulamalar, namespace'ler, limit geçersiz kılmaları, SMTP ve geliştirici hesaplarını yönetin."
+      },
+      "developer": {
+        "title": "Geliştirici portalı — Giriş",
+        "description": "Uygulama kaydı, HTTPS origin veya native bundle doğrulama ve ESR App Registry yönetimi için giriş yapın."
+      },
+      "developerPanel": {
+        "title": "Geliştirici portalı",
+        "description": "Uygulama kaydedin, HTTPS origin veya native bundle doğrulayın ve ESR App Registry kayıtlarınızı yönetin."
+      },
+      "developerRegister": {
+        "title": "Geliştirici portalı — Kayıt",
+        "description": "Relay'iniz geliştirici portalını açtığında self-service uygulama kaydı için hesap oluşturun."
+      },
+      "developerForgotPassword": {
+        "title": "Şifremi unuttum",
+        "description": "Senkronla geliştirici hesabınız için şifre sıfırlama bağlantısı isteyin."
+      },
+      "developerResetPassword": {
+        "title": "Şifre sıfırlama",
+        "description": "Sıfırlama bağlantınızla Senkronla geliştirici hesabınız için yeni bir şifre belirleyin."
+      },
+      "developerVerify": {
+        "title": "E-posta doğrulama",
+        "description": "Geliştirici hesabınızın e-postasını doğrulayın; ardından Senkronla uygulama kaydı portalına giriş yapabilirsiniz."
+      }
+    }
   },
   "nav": {
     "home": "Ana sayfa",
@@ -294,13 +355,18 @@
       "docker": "Docker",
       "local": "Yerel geliştirme",
       "config": "Yapılandırma",
+      "rateLimits": "Rate limitler",
       "verify": "Doğrulama",
       "production": "Üretim",
       "next": "Sonraki adımlar"
     },
     "table": {
       "variable": "Değişken",
-      "purpose": "Amaç"
+      "purpose": "Amaç",
+      "quota": "Kota",
+      "default": "Varsayılan",
+      "scope": "Kapsam",
+      "window": "Pencere"
     },
     "sections": {
       "overview": {
@@ -385,6 +451,70 @@
           "appsNativeSecret": "<tag>ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET</tag> — kimlik doğrulamasız rotalarda <tag>X-ESR-Client-Secret</tag> zorunlu",
           "appsNativeReview": "<tag>ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW</tag> — native bundle'lar uygulama <tag>active</tag> olmadan önce operatör onayı (varsayılan true)",
           "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 karakter; self-service <tag>/developer</tag> portalı için"
+        }
+      },
+      "rateLimits": {
+        "title": "Rate limitler",
+        "p1": "Relay, paylaşılan altyapıyı PostgreSQL'de tutulan kayan pencere kotalarıyla korur. Limitler varsayılan olarak açıktır (<tag>limits.rateLimit.enabled: true</tag>). Kota dolduğunda API <tag>429 RATE_LIMIT_EXCEEDED</tag> döner.",
+        "p2": "Genel IP kotasından muaf: <tag>/health</tag>, <tag>/metrics</tag> ve WebSocket <tag>.../notifications</tag>. <tag>/v1/admin</tag> altındaki rotalar rate limit'e tabi değildir.",
+        "defaultsTitle": "Varsayılan kotalar",
+        "configTitle": "Yapılandırma",
+        "configP1": "Değerleri <tag>packages/server/config.example.yaml</tag> içinde <tag>limits.rateLimit</tag> altında ayarlayın veya ortam değişkenleriyle geçersiz kılın:",
+        "trustTitle": "Reverse proxy",
+        "trustBody": "Genel IP kotası istemci adresine göre sayılır. nginx, Caddy veya bulut yük dengeleyicisi arkasında <tag>server.trustProxy: true</tag> veya <tag>ESR_TRUST_PROXY=true</tag> açın; sayaçlar proxy IP'si yerine gerçek istemci IP'sini görsün.",
+        "appsTitle": "Uygulama başına limitler (app registry)",
+        "appsP1": "<tag>apps.enabled</tag> açıkken <tag>POST /v1/namespaces</tag> ayrı bir <tag>namespace_create</tag> kotası uygular (varsayılan <tag>100 / gün / uygulama</tag>). <tag>apps.limits.perApp</tag> altındaki YAML, namespace düzeyinde override'lardan önce recover ve pairing-token oranlarını da sınırlayabilir.",
+        "overridesTitle": "Operatör override'ları",
+        "overridesP1": "Operatör panelinde bir namespace, uygulama veya geliştirici için <tag>Limitler</tag> düğmesiyle tek tek kotaları relay'i yeniden başlatmadan değiştirebilirsiniz. Etkin değer sırası: namespace → uygulama → geliştirici → config. Tam spec: <limitsSpecLink>17-OPERATOR-LIMIT-OVERRIDES</limitsSpecLink>.",
+        "monitorTitle": "İzleme",
+        "monitorP1": "Operatör konsolundaki <tag>Rate limit</tag> sekmesi, son isabetleri işleme göre gruplar (<tag>put_document</tag>, <tag>recover</tag>, <tag>pair_device</tag>, <tag>namespace_create</tag> vb.) — namespace, cihaz ve IP bağlamıyla.",
+        "clientTitle": "İstemci yanıtları",
+        "clientP1": "Uygulama entegrasyonları <tag>Retry-After</tag>, <tag>RateLimit-*</tag> başlıklarını ve isteğe bağlı JSON <tag>rateLimits</tag> nesnelerini dikkate almalıdır. Başlık adları, gövde şekilleri ve örnekler için <apiLink>REST API — Relay kotaları</apiLink> bölümüne bakın.",
+        "rows": {
+          "general": "Tüm <tag>/v1</tag> istekleri",
+          "push": "Belge push",
+          "pair": "Misafir eşleştirme redeem",
+          "pairingToken": "Eşleştirme kodu üretimi",
+          "recover": "Kurtarma ifadesi",
+          "namespaceCreate": "Namespace oluşturma"
+        },
+        "defaults": {
+          "general": "300 / dakika",
+          "push": "120 / saat",
+          "pair": "20 / saat",
+          "pairingToken": "30 / saat",
+          "recover": "5 / saat",
+          "namespaceCreate": "100 / gün"
+        },
+        "scopes": {
+          "general": "İstemci IP",
+          "push": "Cihaz",
+          "pair": "Namespace",
+          "pairingToken": "Namespace",
+          "recover": "Namespace",
+          "namespaceCreate": "Uygulama + istemci IP"
+        },
+        "windows": {
+          "general": "1 dakika",
+          "push": "1 saat",
+          "pair": "1 saat",
+          "pairingToken": "1 saat",
+          "recover": "1 saat",
+          "namespaceCreate": "24 saat"
+        },
+        "configRows": {
+          "enabled": "Ana anahtar — yalnızca izole test ortamlarında <tag>false</tag> yapın",
+          "recoverPerHour": "Namespace başına saatlik kurtarma denemesi",
+          "pairingPerHour": "Namespace başına saatlik misafir eşleştirme redeem",
+          "pairingTokensPerHour": "Namespace başına saatlik eşleştirme kodu üretimi",
+          "pushPerHourPerDevice": "Cihaz başına saatlik belge push (her başarılı PUT sayılır)",
+          "generalPerMinutePerIp": "İstemci IP başına dakikada toplam <tag>/v1</tag> isteği",
+          "trustProxy": "Reverse proxy arkasında <tag>X-Forwarded-For</tag>'a güven"
+        },
+        "appConfigRows": {
+          "namespacesPerDay": "Uygulama başına günlük namespace oluşturma (<tag>namespace_create</tag>)",
+          "recoverPerHour": "İsteğe bağlı uygulama başına kurtarma üst sınırı (cascade'de global varsayılandan düşükse geçerli)",
+          "pairingTokensPerHour": "İsteğe bağlı uygulama başına eşleştirme kodu üst sınırı"
         }
       },
       "verify": {
@@ -1191,6 +1321,8 @@
     "loggingIn": "Giriş yapılıyor…",
     "loginFailed": "Geçersiz yönetici token veya admin API devre dışı.",
     "logout": "Çıkış",
+    "settingsButton": "Ayarlar",
+    "closeSettings": "Ayarları kapat",
     "loading": "Yükleniyor…",
     "loadFailed": "Relay'den veri yüklenemedi.",
     "unlock": "Açılış kodu üret",
@@ -1219,9 +1351,15 @@
     "pagination": "Sayfa {page} / {total} · {count} kayıt",
     "searchLabel": "Ara",
     "searchPlaceholder": "Namespace, kod, cihaz, IP…",
+    "searchPlaceholderNamespacesWithApps": "Namespace, uygulama, geliştirici, kod, cihaz, IP…",
     "filterByAction": "İşlem",
     "filterAllActions": "Tüm işlemler",
     "noResults": "Filtrelere uyan kayıt yok.",
+    "viewNamespaces": "Bu uygulamanın namespace'lerini gör",
+    "viewApps": "Bu geliştiricinin uygulamalarını gör",
+    "namespaceAppFilter": "Uygulama: {app}",
+    "appsDeveloperFilter": "Geliştirici: {email}",
+    "clearFilter": "Filtreyi temizle",
     "tabs": {
       "overview": "Özet",
       "namespaces": "Namespace'ler",
@@ -1229,7 +1367,8 @@
       "developers": "Geliştiriciler",
       "unlockCodes": "Açılış kodları",
       "unlockEvents": "Açılış geçmişi",
-      "rateLimits": "Rate limit"
+      "rateLimits": "Rate limit",
+      "settings": "Ayarlar"
     },
     "stats": {
       "namespaces": "Namespace",
@@ -1242,10 +1381,12 @@
     "columns": {
       "namespace": "Namespace",
       "label": "Etiket",
+      "app": "Uygulama",
+      "developer": "Geliştirici",
       "devices": "Cihaz",
       "slots": "Slot",
       "document": "Doküman",
-      "documentCount": "Doküman sayısı",
+      "documentCount": "Doküman",
       "primaryHead": "Primary zarfı",
       "created": "Oluşturulma",
       "code": "Kod",
@@ -1256,14 +1397,86 @@
       "device": "Cihaz",
       "ip": "IP",
       "period": "Periyot",
-      "count": "İstek"
+      "count": "İstek",
+      "actions": "İşlemler"
     },
     "rateLimitActions": {
       "global_ip": "Genel (IP)",
       "recover": "Kurtarma",
       "pair_device": "Cihaz eşleştirme",
       "pairing_token": "Pairing token",
-      "put_document": "Belge PUT"
+      "put_document": "Belge PUT",
+      "namespace_create": "Namespace oluşturma"
+    },
+    "namespaces": {
+      "closeDetail": "Kapat"
+    },
+    "limits": {
+      "title": "Limit geçersiz kılma",
+      "openButton": "Limitler",
+      "closeModal": "Kapat",
+      "hint": "Bu kapsamda geçersiz kılmak için değer girin. inherit yazarak override'ı silin ve cascade'e dönün.",
+      "loading": "Limitler yükleniyor…",
+      "loadFailed": "Limitler yüklenemedi.",
+      "saveFailed": "Limitler kaydedilemedi.",
+      "save": "Limitleri kaydet",
+      "saving": "Kaydediliyor…",
+      "saved": "Kaydedildi",
+      "invalidValue": "{key} için geçersiz değer",
+      "inheritHint": "inherit = sil",
+      "columns": {
+        "key": "Limit",
+        "effective": "Etkin",
+        "source": "Kaynak",
+        "override": "Override",
+        "overrideFor": "{key} override"
+      },
+      "sources": {
+        "namespace": "Namespace",
+        "app": "Uygulama",
+        "developer": "Geliştirici",
+        "row": "Namespace satırı",
+        "config": "Config varsayılanı"
+      },
+      "keys": {
+        "recoverPerHour": "Kurtarma / saat",
+        "pairingPerHour": "Cihaz eşleme / saat",
+        "pairingTokensPerHour": "Eşleme kodu / saat",
+        "pushPerHourPerDevice": "Belge PUT / saat / cihaz",
+        "namespacesPerDay": "Namespace / gün / uygulama",
+        "freeDeviceLimit": "Ücretsiz cihaz slotu",
+        "purchasedSlots": "Satın alınmış slot"
+      }
+    },
+    "mail": {
+      "title": "E-posta (SMTP)",
+      "hint": "Panelden girilen değerler dosya ve ortam değişkenlerini geçersiz kılar.",
+      "loading": "Mail ayarları yükleniyor…",
+      "loadFailed": "Mail ayarları yüklenemedi.",
+      "saveFailed": "Mail ayarları kaydedilemedi.",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor…",
+      "saved": "Kaydedildi",
+      "passwordKeepPlaceholder": "Değiştirmek için yeni parola",
+      "statusEnabled": "Açık",
+      "statusDisabled": "Kapalı",
+      "passwordConfigured": "SMTP parolası yapılandırıldı",
+      "passwordMissing": "SMTP parolası eksik",
+      "sections": {
+        "general": "Genel",
+        "smtp": "SMTP sunucusu"
+      },
+      "fields": {
+        "enabled": "Gönderim",
+        "from": "Gönderen e-posta",
+        "fromName": "Gönderen adı",
+        "webBaseUrl": "Web uygulaması kökeni",
+        "smtpHost": "Sunucu",
+        "smtpPort": "Port",
+        "smtpSecure": "TLS",
+        "smtpUser": "Kullanıcı",
+        "smtpPassword": "Parola"
+      }
     },
     "apps": {
       "listTitle": "Kayıtlı uygulamalar",
@@ -1343,7 +1556,7 @@
       "suspend": "Askıya al",
       "activate": "Etkinleştir",
       "archive": "Arşivle",
-      "searchPlaceholder": "App ID, ad veya bundle ID…"
+      "searchPlaceholder": "App ID, ad, geliştirici e-postası veya bundle ID…"
     },
     "developers": {
       "title": "Geliştirici hesapları",
@@ -1425,6 +1638,27 @@
     "authEmailNotVerified": "E-posta adresiniz henüz doğrulanmamış.",
     "authAccountDisabled": "Hesabınız devre dışı bırakılmış.",
     "registerPendingVerification": "Hesabınız oluşturuldu. E-posta doğrulamasından sonra giriş yapabilirsiniz.",
+    "forgotPasswordLink": "Parolamı unuttum",
+    "forgotPasswordTitle": "Parola sıfırlama",
+    "forgotPasswordIntro": "E-posta adresinize sıfırlama bağlantısı göndeririz.",
+    "sendResetLink": "Sıfırlama bağlantısı gönder",
+    "resetEmailSent": "Bağlantı gönderildiyse birkaç dakika içinde e-postanızda olacaktır.",
+    "resetRequestFailed": "Sıfırlama isteği gönderilemedi.",
+    "resetPasswordTitle": "Yeni parola",
+    "resetPasswordIntro": "Hesabınız için yeni bir parola belirleyin.",
+    "resetPassword": "Parolayı sıfırla",
+    "resetFailed": "Parola sıfırlanamadı.",
+    "resetMissingToken": "Geçersiz veya eksik sıfırlama bağlantısı.",
+    "resetInvalidToken": "Bağlantı geçersiz veya süresi dolmuş.",
+    "verifyTitle": "E-posta doğrulama",
+    "verifySuccess": "E-posta adresiniz doğrulandı. Giriş yapabilirsiniz.",
+    "verifyFailed": "E-posta doğrulanamadı.",
+    "verifyMissingToken": "Doğrulama bağlantısı eksik.",
+    "backToLogin": "Giriş sayfasına dön",
+    "resendVerification": "Doğrulama e-postasını yeniden gönder",
+    "resendSuccess": "Doğrulama e-postası gönderildi (yapılandırıldıysa).",
+    "resendFailed": "Doğrulama e-postası gönderilemedi.",
+    "resendNeedsEmail": "E-posta adresinizi girin.",
     "loading": "Yükleniyor…",
     "searchLabel": "Ara",
     "searchPlaceholder": "Uygulama adı, ID veya bundle ID…"

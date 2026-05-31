@@ -11,6 +11,23 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Added
+
+- **web:** Locale-aware page titles and meta descriptions on all public routes
+
+### Changed
+
+- **web:** Reference doc pages use full content width aligned with site layout
+
+### Fixed
+
+- **web:** Reference docs fit mobile viewport without horizontal page overflow
+- **web:** Developer portal tab title after sign-in no longer stays on “Sign in”
+
+- **server:** Operator limit overrides (DB cascade, admin API, enforcement)
+- **web:** Operator limits UI for namespaces, apps, and developers
+- **docs:** Operator limit overrides spec (doc 17)
+
 ## [0.1.8]
 
 ### Changed

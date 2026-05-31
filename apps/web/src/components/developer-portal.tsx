@@ -1,14 +1,19 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 import { DeveloperAccountPanel } from '@/components/developer-account-panel'
 import { notifyDeveloperSessionChanged } from '@/hooks/use-developer-session'
-import { useRouter } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 import { OperatorAppsPanel } from '@/components/operator-apps-panel'
 import { OperatorSegmentedField } from '@/components/operator-segmented-field'
 import { OperatorSpinner } from '@/components/operator-spinner'
+import {
+  developerPageMetaKey,
+  formatBrowserPageTitle,
+  type DeveloperAuthMetaMode,
+} from '@/lib/page-metadata'
 import { getPublicApiOrigin } from '@/lib/public-api-url'
 
 interface ApiErrorBody {
@@ -56,6 +61,8 @@ export function DeveloperPortal({
   nativeRequireClientSecret?: boolean
 }) {
   const t = useTranslations('developer')
+  const tMeta = useTranslations('meta')
+  const locale = useLocale()
   const router = useRouter()
   const apiOrigin = getPublicApiOrigin()
 
@@ -68,6 +75,7 @@ export function DeveloperPortal({
   const [authError, setAuthError] = useState<string | null>(null)
   const [authNotice, setAuthNotice] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
   const [profileEmail, setProfileEmail] = useState<string | null>(null)
   const [page, setPage] = useState(0)
 
@@ -88,6 +96,21 @@ export function DeveloperPortal({
   useEffect(() => {
     void checkSession()
   }, [checkSession])
+
+  useEffect(() => {
+    if (authState === 'loading') {
+      return
+    }
+
+    const metaKey = developerPageMetaKey(
+      authState === 'authenticated',
+      authMode as DeveloperAuthMetaMode,
+    )
+    const pageTitle = tMeta(`pages.${metaKey}.title`)
+    const siteName = tMeta('siteName')
+
+    document.title = formatBrowserPageTitle(pageTitle, siteName)
+  }, [authState, authMode, tMeta])
 
   useEffect(() => {
     setAuthMode(initialAuthMode)
@@ -114,7 +137,11 @@ export function DeveloperPortal({
       const response = await fetch(path, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          ...(authMode === 'register' ? { locale } : {}),
+        }),
       })
 
       const body = await readJson<{ ok?: boolean; token?: string }>(response)
@@ -138,6 +165,36 @@ export function DeveloperPortal({
       setAuthError(t('authFailed'))
     } finally {
       setAuthLoading(false)
+    }
+  }
+
+  async function handleResendVerification() {
+    if (!email.trim()) {
+      setAuthError(t('resendNeedsEmail'))
+      return
+    }
+
+    setResendLoading(true)
+    setAuthError(null)
+
+    try {
+      const response = await fetch('/api/developer/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), locale }),
+      })
+
+      if (!response.ok) {
+        const body = await readJson<ApiErrorBody>(response)
+        setAuthError(body.error?.message ?? t('resendFailed'))
+        return
+      }
+
+      setAuthNotice(t('resendSuccess'))
+    } catch {
+      setAuthError(t('resendFailed'))
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -196,7 +253,14 @@ export function DeveloperPortal({
             </div>
 
             <div className="form-field">
-              <label htmlFor="developer-password">{t('password')}</label>
+              <div className="form-field-label-row">
+                <label htmlFor="developer-password">{t('password')}</label>
+                {authMode === 'login' && (
+                  <Link className="form-field-link" href="/developer/forgot-password">
+                    {t('forgotPasswordLink')}
+                  </Link>
+                )}
+              </div>
               <input
                 id="developer-password"
                 type="password"
@@ -228,7 +292,17 @@ export function DeveloperPortal({
 
           {authError && (
             <div className="developer-auth-error" role="alert">
-              {authError}
+              <p>{authError}</p>
+              {authError === t('authEmailNotVerified') && authMode === 'login' && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  disabled={resendLoading}
+                  onClick={() => void handleResendVerification()}
+                >
+                  {resendLoading ? t('submitting') : t('resendVerification')}
+                </button>
+              )}
             </div>
           )}
 

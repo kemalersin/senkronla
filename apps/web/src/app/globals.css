@@ -17,13 +17,13 @@
   --font-serif: 'Source Serif 4', Georgia, serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --max-width: 1180px;
-  --docs-shell-width: min(1200px, 100%);
-  --docs-sidebar-width: 240px;
+  --docs-shell-width: min(var(--max-width), 100% - 2rem);
+  --docs-sidebar-width: 220px;
   --docs-shell-padding-top: 2rem;
   --site-header-height: 3.75rem;
   --docs-sidebar-top: calc(var(--site-header-height) + var(--docs-shell-padding-top));
   --docs-anchor-offset: calc(var(--site-header-height) + 1.25rem);
-  --doc-prose-width: min(70ch, 100%);
+  --doc-prose-width: 100%;
   --shadow-sm: 0 1px 2px rgba(27, 35, 48, 0.06);
   --shadow-md: 0 8px 30px rgba(27, 35, 48, 0.08);
 }
@@ -103,13 +103,17 @@ pre {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .code-block-body {
   padding: 1rem 1.25rem;
   max-width: 100%;
-  overflow-x: visible;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .code-block-body pre,
@@ -628,12 +632,13 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 .docs-shell {
   display: grid;
   grid-template-columns: var(--docs-sidebar-width) minmax(0, 1fr);
-  gap: 2rem;
+  gap: 1.75rem;
   width: min(100%, var(--docs-shell-width));
   max-width: 100%;
-  margin: 0 auto;
-  padding: var(--docs-shell-padding-top) 1rem 4rem;
-  padding-inline: max(1rem, env(safe-area-inset-left, 0px)) max(1rem, env(safe-area-inset-right, 0px));
+  min-width: 0;
+  margin-inline: auto;
+  padding: var(--docs-shell-padding-top) 0 4rem;
+  padding-inline: max(0px, env(safe-area-inset-left, 0px)) max(0px, env(safe-area-inset-right, 0px));
   box-sizing: border-box;
 }
 
@@ -709,7 +714,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 .docs-main {
   min-width: 0;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 .docs-header h1 {
@@ -751,7 +756,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   color: var(--text-muted);
   max-width: var(--doc-prose-width);
   min-width: 0;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 .doc-section-body > .code-block,
@@ -821,7 +826,8 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 .docs-table-wrap {
   max-width: 100%;
   min-width: 0;
-  overflow-x: visible;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-card);
@@ -848,7 +854,12 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 .docs-table td:first-child {
   font-family: var(--font-mono);
-  white-space: nowrap;
+}
+
+@media (min-width: 901px) {
+  .docs-table td:first-child {
+    white-space: nowrap;
+  }
 }
 
 .card {
@@ -1069,14 +1080,6 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 .operator-mail-settings-header h2 {
   margin: 0 0 0.35rem;
-}
-
-.operator-mail-effective {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
 }
 
 .operator-mail-form {
@@ -1502,10 +1505,6 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   margin: 0 0 1rem;
   font-size: 0.875rem;
   line-height: 1.5;
-}
-
-.operator-mail-settings--drawer .operator-mail-effective {
-  margin-bottom: 1.25rem;
 }
 
 .operator-tabs {
@@ -3027,20 +3026,32 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 @media (max-width: 900px) {
   .docs-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
     max-width: 100%;
-    padding-inline: max(0.75rem, env(safe-area-inset-left, 0px)) max(0.75rem, env(safe-area-inset-right, 0px));
+    padding-inline: max(1rem, env(safe-area-inset-left, 0px)) max(1rem, env(safe-area-inset-right, 0px));
     gap: 1.25rem;
+  }
+
+  .docs-sidebar-slot,
+  .docs-main,
+  .docs-content,
+  .docs-header,
+  .docs-intro,
+  .doc-section,
+  .doc-section-body,
+  .doc-callout,
+  .doc-endpoint-heading {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .docs-sidebar-slot {
     width: auto;
-    max-width: 100%;
   }
 
   .docs-nav {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .docs-nav-link {
@@ -3051,6 +3062,15 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   .docs-header h1 {
     font-size: 1.75rem;
     overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .docs-intro,
+  .doc-section-body p,
+  .doc-list,
+  .doc-callout-body {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .doc-tag {
@@ -3059,17 +3079,27 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
     word-break: break-word;
   }
 
+  .doc-endpoint-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .doc-endpoint-heading .doc-tag {
-    white-space: nowrap;
+    white-space: normal;
+    flex-shrink: 1;
+  }
+
+  .doc-endpoint-path {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .doc-method-name .doc-tag {
+    white-space: normal;
   }
 
   .compare-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .code-block-body {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   .code-block-body pre,
@@ -3079,11 +3109,6 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
     overflow-wrap: normal;
   }
 
-  .docs-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
   .docs-table-wrap .docs-table {
     width: max-content;
     min-width: 100%;
@@ -3091,20 +3116,26 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
   .docs-table-wrap .docs-table th,
   .docs-table-wrap .docs-table td {
-    white-space: nowrap;
     vertical-align: top;
   }
 
-  .docs-table-wrap .docs-table td:last-child {
+  .docs-table-wrap .docs-table th,
+  .docs-table-wrap .docs-table td:first-child {
+    white-space: nowrap;
+  }
+
+  .docs-table-wrap .docs-table td:not(:first-child) {
     white-space: normal;
-    min-width: 10rem;
-    max-width: 16rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 8rem;
+    max-width: 14rem;
   }
 
   .docs-table-wrap .doc-tag {
-    white-space: nowrap;
-    word-break: normal;
-    overflow-wrap: normal;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
 

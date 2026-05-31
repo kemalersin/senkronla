@@ -1,7 +1,68 @@
 {
   "meta": {
-    "title": "Senkronla — Sync API & SDK for your app",
-    "description": "Open-source, self-hosted sync relay — add multi-device sync to your product. SDK guides, REST API reference, and integration checklists."
+    "siteName": "Senkronla",
+    "pages": {
+      "home": {
+        "title": "Senkronla — Sync API & SDK for your app",
+        "description": "Open-source, self-hosted sync relay — add multi-device sync to your product. SDK guides, REST API reference, and integration checklists."
+      },
+      "guides": {
+        "title": "Integration guides",
+        "description": "Step-by-step Senkronla integration: core concepts, checklist, pairing, recovery, offline conflicts, and choosing SDK vs REST."
+      },
+      "guidesEsr": {
+        "title": "ESR deployment guide",
+        "description": "Deploy the self-hosted Envelope Sync Relay with Docker Compose, Postgres, secrets, rate limits, and a production checklist."
+      },
+      "guidesAgents": {
+        "title": "Agents guide",
+        "description": "Download and use Senkronla agent documentation for Cursor, Copilot, and automation — scoped context for AI-assisted integration."
+      },
+      "sdk": {
+        "title": "Client SDK reference",
+        "description": "@senkronla/client API reference: EsrSync.connect, DocumentAdapter, pairing, conflicts, envelope encryption, and sync lifecycle."
+      },
+      "api": {
+        "title": "REST API reference",
+        "description": "Senkronla relay HTTP API: namespaces, documents, devices, app registry headers, WebSocket notifications, quotas, and error codes."
+      },
+      "quickStart": {
+        "title": "Quick start",
+        "description": "Fast path into Senkronla — opens the integration checklist to wire multi-device sync into your app."
+      },
+      "howTo": {
+        "title": "How-to guides",
+        "description": "Senkronla how-to documentation — integration guides, deployment, and API references for your sync relay."
+      },
+      "operator": {
+        "title": "Operator console",
+        "description": "Manage relay health, registered apps, namespaces, limit overrides, SMTP, and developer accounts on your Senkronla instance."
+      },
+      "developer": {
+        "title": "Developer portal — Sign in",
+        "description": "Sign in to register apps, verify HTTPS origins or native bundles, and manage ESR App Registry entries."
+      },
+      "developerPanel": {
+        "title": "Developer portal",
+        "description": "Register apps, verify HTTPS origins or native bundles, and manage your ESR App Registry entries."
+      },
+      "developerRegister": {
+        "title": "Developer portal — Register",
+        "description": "Create a developer account for self-service app registration when your relay enables the developer portal."
+      },
+      "developerForgotPassword": {
+        "title": "Forgot password",
+        "description": "Request a password reset link for your Senkronla developer account."
+      },
+      "developerResetPassword": {
+        "title": "Reset password",
+        "description": "Choose a new password for your Senkronla developer account using your reset link."
+      },
+      "developerVerify": {
+        "title": "Email verification",
+        "description": "Confirm your developer account email to sign in and use the Senkronla app registry portal."
+      }
+    }
   },
   "nav": {
     "home": "Home",
@@ -294,13 +355,18 @@
       "docker": "Docker",
       "local": "Local dev",
       "config": "Configuration",
+      "rateLimits": "Rate limits",
       "verify": "Verify",
       "production": "Production",
       "next": "Next steps"
     },
     "table": {
       "variable": "Variable",
-      "purpose": "Purpose"
+      "purpose": "Purpose",
+      "quota": "Quota",
+      "default": "Default",
+      "scope": "Scope",
+      "window": "Window"
     },
     "sections": {
       "overview": {
@@ -385,6 +451,70 @@
           "appsNativeSecret": "<tag>ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET</tag> — require <tag>X-ESR-Client-Secret</tag> on unauthenticated routes",
           "appsNativeReview": "<tag>ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW</tag> — operator must approve native bundles before app becomes <tag>active</tag> (default true)",
           "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 chars; required for <tag>/developer</tag> portal when self-service"
+        }
+      },
+      "rateLimits": {
+        "title": "Rate limits",
+        "p1": "The relay protects shared infrastructure with sliding-window quotas stored in PostgreSQL. Limits are on by default (<tag>limits.rateLimit.enabled: true</tag>). When a quota is exhausted the API returns <tag>429 RATE_LIMIT_EXCEEDED</tag>.",
+        "p2": "Exempt from the general IP quota: <tag>/health</tag>, <tag>/metrics</tag>, and WebSocket <tag>.../notifications</tag>. Routes under <tag>/v1/admin</tag> are not rate-limited.",
+        "defaultsTitle": "Default quotas",
+        "configTitle": "Configuration",
+        "configP1": "Set values in <tag>packages/server/config.example.yaml</tag> under <tag>limits.rateLimit</tag>, or override with environment variables:",
+        "trustTitle": "Reverse proxy",
+        "trustBody": "The general IP quota uses the client address. Behind nginx, Caddy, or a cloud load balancer, enable <tag>server.trustProxy: true</tag> or <tag>ESR_TRUST_PROXY=true</tag> so counters see the real client IP — not the proxy hop.",
+        "appsTitle": "Per-app limits (app registry)",
+        "appsP1": "When <tag>apps.enabled</tag> is true, <tag>POST /v1/namespaces</tag> enforces a separate <tag>namespace_create</tag> quota (default <tag>100 / day / app</tag>). Per-app YAML under <tag>apps.limits.perApp</tag> can also cap recover and pairing-token rates before namespace-level overrides apply.",
+        "overridesTitle": "Operator overrides",
+        "overridesP1": "In the operator portal, use the <tag>Limits</tag> action on a namespace, app, or developer to override individual quotas without restarting the relay. Effective value resolution: namespace → app → developer → config. Full spec: <limitsSpecLink>17-OPERATOR-LIMIT-OVERRIDES</limitsSpecLink>.",
+        "monitorTitle": "Monitoring",
+        "monitorP1": "The operator console <tag>Rate limits</tag> tab groups recent hits by action (<tag>put_document</tag>, <tag>recover</tag>, <tag>pair_device</tag>, <tag>namespace_create</tag>, etc.) with namespace, device, and IP context.",
+        "clientTitle": "Client-facing responses",
+        "clientP1": "App integrators should honor <tag>Retry-After</tag>, <tag>RateLimit-*</tag> headers, and optional JSON <tag>rateLimits</tag> objects on success responses. See the <apiLink>REST API — Relay quotas</apiLink> section for header names, body shapes, and examples.",
+        "rows": {
+          "general": "All <tag>/v1</tag> requests",
+          "push": "Document push",
+          "pair": "Guest pairing redeem",
+          "pairingToken": "Pairing code generation",
+          "recover": "Recovery phrase",
+          "namespaceCreate": "Namespace create"
+        },
+        "defaults": {
+          "general": "300 / minute",
+          "push": "120 / hour",
+          "pair": "20 / hour",
+          "pairingToken": "30 / hour",
+          "recover": "5 / hour",
+          "namespaceCreate": "100 / day"
+        },
+        "scopes": {
+          "general": "Client IP",
+          "push": "Device",
+          "pair": "Namespace",
+          "pairingToken": "Namespace",
+          "recover": "Namespace",
+          "namespaceCreate": "App + client IP"
+        },
+        "windows": {
+          "general": "1 minute",
+          "push": "1 hour",
+          "pair": "1 hour",
+          "pairingToken": "1 hour",
+          "recover": "1 hour",
+          "namespaceCreate": "24 hours"
+        },
+        "configRows": {
+          "enabled": "Master switch — set <tag>false</tag> only for isolated test environments",
+          "recoverPerHour": "Recovery attempts per namespace per hour",
+          "pairingPerHour": "Guest pairing redeems per namespace per hour",
+          "pairingTokensPerHour": "Pairing codes generated per namespace per hour",
+          "pushPerHourPerDevice": "Document pushes per device per hour (every successful PUT counts)",
+          "generalPerMinutePerIp": "Total <tag>/v1</tag> requests per client IP per minute",
+          "trustProxy": "Trust <tag>X-Forwarded-For</tag> when behind a reverse proxy"
+        },
+        "appConfigRows": {
+          "namespacesPerDay": "Namespace creates per app per day (<tag>namespace_create</tag>)",
+          "recoverPerHour": "Optional per-app cap on recovery (overrides global default when lower in cascade)",
+          "pairingTokensPerHour": "Optional per-app cap on pairing codes"
         }
       },
       "verify": {
@@ -1190,6 +1320,8 @@
     "loggingIn": "Signing in…",
     "loginFailed": "Invalid admin token or admin API is disabled.",
     "logout": "Sign out",
+    "settingsButton": "Settings",
+    "closeSettings": "Close settings",
     "loading": "Loading…",
     "loadFailed": "Failed to load data from the relay.",
     "unlock": "Generate unlock code",
@@ -1218,9 +1350,15 @@
     "pagination": "Page {page} of {total} · {count} records",
     "searchLabel": "Search",
     "searchPlaceholder": "Namespace, code, device, IP…",
+    "searchPlaceholderNamespacesWithApps": "Namespace, app, developer, code, device, IP…",
     "filterByAction": "Action",
     "filterAllActions": "All actions",
     "noResults": "No records match your filters.",
+    "viewNamespaces": "View this app's namespaces",
+    "viewApps": "View this developer's apps",
+    "namespaceAppFilter": "App: {app}",
+    "appsDeveloperFilter": "Developer: {email}",
+    "clearFilter": "Clear filter",
     "tabs": {
       "overview": "Overview",
       "namespaces": "Namespaces",
@@ -1228,7 +1366,8 @@
       "developers": "Developers",
       "unlockCodes": "Unlock codes",
       "unlockEvents": "Unlock history",
-      "rateLimits": "Rate limits"
+      "rateLimits": "Rate limits",
+      "settings": "Settings"
     },
     "stats": {
       "namespaces": "Namespaces",
@@ -1241,6 +1380,8 @@
     "columns": {
       "namespace": "Namespace",
       "label": "Label",
+      "app": "App",
+      "developer": "Developer",
       "devices": "Devices",
       "slots": "Slots",
       "document": "Document",
@@ -1255,14 +1396,86 @@
       "device": "Device",
       "ip": "IP",
       "period": "Period",
-      "count": "Requests"
+      "count": "Requests",
+      "actions": "Actions"
     },
     "rateLimitActions": {
       "global_ip": "General (IP)",
       "recover": "Recovery",
       "pair_device": "Pair device",
       "pairing_token": "Pairing token",
-      "put_document": "Document PUT"
+      "put_document": "Document PUT",
+      "namespace_create": "Namespace create"
+    },
+    "namespaces": {
+      "closeDetail": "Close"
+    },
+    "limits": {
+      "title": "Limit overrides",
+      "openButton": "Limits",
+      "closeModal": "Close",
+      "hint": "Set a value to override at this scope. Type inherit to clear an override and fall back to the cascade.",
+      "loading": "Loading limits…",
+      "loadFailed": "Failed to load limits.",
+      "saveFailed": "Failed to save limits.",
+      "save": "Save limits",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "invalidValue": "Invalid value for {key}",
+      "inheritHint": "inherit clears",
+      "columns": {
+        "key": "Limit",
+        "effective": "Effective",
+        "source": "Source",
+        "override": "Override",
+        "overrideFor": "Override {key}"
+      },
+      "sources": {
+        "namespace": "Namespace",
+        "app": "App",
+        "developer": "Developer",
+        "row": "Namespace row",
+        "config": "Config default"
+      },
+      "keys": {
+        "recoverPerHour": "Recovery / hour",
+        "pairingPerHour": "Pair device / hour",
+        "pairingTokensPerHour": "Pairing tokens / hour",
+        "pushPerHourPerDevice": "Document PUT / hour / device",
+        "namespacesPerDay": "Namespaces / day / app",
+        "freeDeviceLimit": "Free device slots",
+        "purchasedSlots": "Purchased slots"
+      }
+    },
+    "mail": {
+      "title": "Outbound mail (SMTP)",
+      "hint": "Values saved here override file and environment settings.",
+      "loading": "Loading mail settings…",
+      "loadFailed": "Could not load mail settings.",
+      "saveFailed": "Could not save mail settings.",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "passwordKeepPlaceholder": "New password to change",
+      "statusEnabled": "On",
+      "statusDisabled": "Off",
+      "passwordConfigured": "SMTP password configured",
+      "passwordMissing": "SMTP password missing",
+      "sections": {
+        "general": "General",
+        "smtp": "SMTP server"
+      },
+      "fields": {
+        "enabled": "Outbound mail",
+        "from": "From address",
+        "fromName": "From name",
+        "webBaseUrl": "Web app base URL",
+        "smtpHost": "Host",
+        "smtpPort": "Port",
+        "smtpSecure": "TLS",
+        "smtpUser": "Username",
+        "smtpPassword": "Password"
+      }
     },
     "apps": {
       "listTitle": "Registered applications",
@@ -1342,7 +1555,7 @@
       "suspend": "Suspend",
       "activate": "Activate",
       "archive": "Archive",
-      "searchPlaceholder": "App ID, name, or bundle ID…"
+      "searchPlaceholder": "App ID, name, developer email, or bundle ID…"
     },
     "developers": {
       "title": "Developer accounts",
@@ -1424,6 +1637,27 @@
     "authEmailNotVerified": "Your email address is not verified yet.",
     "authAccountDisabled": "Your account has been disabled.",
     "registerPendingVerification": "Account created. You can sign in after email verification.",
+    "forgotPasswordLink": "Forgot password?",
+    "forgotPasswordTitle": "Reset password",
+    "forgotPasswordIntro": "We will email you a reset link if an account exists.",
+    "sendResetLink": "Send reset link",
+    "resetEmailSent": "If an account exists, you will receive an email shortly.",
+    "resetRequestFailed": "Could not send reset request.",
+    "resetPasswordTitle": "Choose a new password",
+    "resetPasswordIntro": "Set a new password for your developer account.",
+    "resetPassword": "Reset password",
+    "resetFailed": "Could not reset password.",
+    "resetMissingToken": "Invalid or missing reset link.",
+    "resetInvalidToken": "This reset link is invalid or expired.",
+    "verifyTitle": "Email verification",
+    "verifySuccess": "Your email is verified. You can sign in now.",
+    "verifyFailed": "Email verification failed.",
+    "verifyMissingToken": "Verification link is missing.",
+    "backToLogin": "Back to sign in",
+    "resendVerification": "Resend verification email",
+    "resendSuccess": "Verification email sent (when mail is configured).",
+    "resendFailed": "Could not resend verification email.",
+    "resendNeedsEmail": "Enter your email address first.",
     "loading": "Loading…",
     "searchLabel": "Search",
     "searchPlaceholder": "App name, ID, or bundle ID…"
