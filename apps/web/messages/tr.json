@@ -1423,7 +1423,6 @@
       "saving": "Kaydediliyor…",
       "saved": "Kaydedildi",
       "invalidValue": "{key} için geçersiz değer",
-      "inheritHint": "inherit = sil",
       "columns": {
         "key": "Limit",
         "effective": "Etkin",

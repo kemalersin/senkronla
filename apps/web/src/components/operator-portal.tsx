@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 
 import { OperatorAppsPanel } from '@/components/operator-apps-panel'
@@ -11,6 +11,8 @@ import {
 } from '@/components/operator-limits-modal'
 import { OperatorSettingsDrawer } from '@/components/operator-settings-drawer'
 import { OperatorSpinner } from '@/components/operator-spinner'
+import { dedupedGet, fetchJson, invalidateDedupedGet } from '@/lib/deduped-fetch'
+import { fetchOperatorSession, invalidateOperatorSessionCache } from '@/lib/auth-session-client'
 import { getPublicApiOrigin } from '@/lib/public-api-url'
 
 type Tab = 'overview' | 'namespaces' | 'unlockCodes' | 'unlockEvents' | 'rateLimits' | 'apps' | 'developers'
@@ -204,22 +206,27 @@ export function OperatorPortal() {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const tRef = useRef(t)
+  tRef.current = t
 
   const checkSession = useCallback(async () => {
-    const response = await fetch('/api/operator/auth/session')
-    setAuthState(response.ok ? 'authenticated' : 'guest')
+    const authenticated = await fetchOperatorSession()
+    setAuthState(authenticated ? 'authenticated' : 'guest')
   }, [])
 
-  const loadHealth = useCallback(async () => {
-    const healthResponse = await fetch('/api/operator/health')
-    if (healthResponse.status === 401) {
+  const loadHealth = useCallback(async (options?: { dedupe?: boolean }) => {
+    const url = '/api/operator/health'
+    const { response, body: rawBody } = options?.dedupe
+      ? await dedupedGet(url, { cacheMs: 5_000 })
+      : await fetchJson(url)
+
+    if (response.status === 401) {
       setAuthState('guest')
       return
     }
 
-    if (healthResponse.ok) {
-      const healthBody = await readJson<HealthResponse>(healthResponse)
-      setHealth(healthBody)
+    if (response.ok) {
+      setHealth(rawBody as HealthResponse)
     }
   }, [])
 
@@ -229,7 +236,7 @@ export function OperatorPortal() {
 
   useEffect(() => {
     if (authState === 'authenticated') {
-      void loadHealth()
+      void loadHealth({ dedupe: true })
     }
   }, [authState, loadHealth])
 
@@ -254,44 +261,40 @@ export function OperatorPortal() {
   }, [searchQuery])
 
   useEffect(() => {
-    if (authState !== 'authenticated' || tab === 'overview') {
+    if (authState !== 'authenticated' || tab === 'overview' || tab === 'apps' || tab === 'developers') {
       return
     }
 
     setPage(0)
   }, [debouncedSearch, rateLimitAction, namespaceAppFilter?.appId, authState, tab])
 
-  const loadOverview = useCallback(async () => {
+  const loadOverview = useCallback(async (options?: { dedupe?: boolean }) => {
     setLoading(true)
     setError(null)
 
     try {
-      const [overviewResponse, healthResponse] = await Promise.all([
-        fetch('/api/operator/overview'),
-        fetch('/api/operator/health'),
-      ])
+      const url = '/api/operator/overview'
+      const { response, body: rawBody } = options?.dedupe
+        ? await dedupedGet(url, { cacheMs: 5_000 })
+        : await fetchJson(url)
+      const overviewBody = rawBody as Overview & ApiErrorBody
 
-      if (overviewResponse.status === 401 || healthResponse.status === 401) {
+      if (response.status === 401) {
         setAuthState('guest')
         return
       }
 
-      const overviewBody = await readJson<Overview>(overviewResponse)
-
-      if (!overviewResponse.ok) {
-        throw new Error(overviewBody.error?.message ?? t('loadFailed'))
+      if (!response.ok) {
+        throw new Error(overviewBody.error?.message ?? tRef.current('loadFailed'))
       }
 
       setOverview(overviewBody)
-      if (healthResponse.ok) {
-        setHealth(await readJson<HealthResponse>(healthResponse))
-      }
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('loadFailed'))
+      setError(loadError instanceof Error ? loadError.message : tRef.current('loadFailed'))
     } finally {
       setLoading(false)
     }
-  }, [t])
+  }, [])
 
   const loadPaginated = useCallback(
     async (path: string, pageIndex: number, options: ListFetchOptions = {}) => {
@@ -316,17 +319,16 @@ export function OperatorPortal() {
           params.set('appId', options.appId)
         }
 
-        const response = await fetch(`${path}?${params.toString()}`)
+        const { response, body: rawBody } = await fetchJson(`${path}?${params.toString()}`)
+        const body = rawBody as Paginated<unknown> & ApiErrorBody
 
         if (response.status === 401) {
           setAuthState('guest')
           return null
         }
 
-        const body = await readJson<Paginated<unknown>>(response)
-
         if (!response.ok) {
-          throw new Error(body.error?.message ?? t('loadFailed'))
+          throw new Error(body.error?.message ?? tRef.current('loadFailed'))
         }
 
         return body as Paginated<NamespaceRow> &
@@ -334,27 +336,32 @@ export function OperatorPortal() {
           Paginated<UnlockEventRow> &
           Paginated<RateLimitGroupRow>
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : t('loadFailed'))
+        setError(loadError instanceof Error ? loadError.message : tRef.current('loadFailed'))
         return null
       } finally {
         setLoading(false)
       }
     },
-    [t],
+    [],
   )
 
   useEffect(() => {
-    if (authState !== 'authenticated') {
+    if (authState !== 'authenticated' || tab !== 'overview') {
       return
     }
 
     setError(null)
     setLoading(true)
+    void loadOverview({ dedupe: true })
+  }, [authState, loadOverview, tab])
 
-    if (tab === 'overview') {
-      void loadOverview()
+  useEffect(() => {
+    if (authState !== 'authenticated' || tab === 'overview' || tab === 'apps' || tab === 'developers') {
       return
     }
+
+    setError(null)
+    setLoading(true)
 
     void (async () => {
       const listOptions: ListFetchOptions = {
@@ -373,7 +380,7 @@ export function OperatorPortal() {
         setRateLimits((await loadPaginated('/api/operator/rate-limit-events', page, listOptions)) as Paginated<RateLimitGroupRow> | null)
       }
     })()
-  }, [authState, tab, page, debouncedSearch, rateLimitAction, appsEnabled, namespaceAppFilter?.appId, loadOverview, loadPaginated])
+  }, [authState, tab, page, debouncedSearch, rateLimitAction, appsEnabled, namespaceAppFilter?.appId, loadPaginated])
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -395,6 +402,7 @@ export function OperatorPortal() {
       }
 
       setLoginToken('')
+      invalidateOperatorSessionCache()
       setAuthState('authenticated')
     } catch {
       setLoginError(t('loginFailed'))
@@ -405,6 +413,9 @@ export function OperatorPortal() {
 
   async function handleLogout() {
     await fetch('/api/operator/auth/logout', { method: 'POST' })
+    invalidateOperatorSessionCache()
+    invalidateDedupedGet('/api/operator/health')
+    invalidateDedupedGet('/api/operator/overview')
     setAuthState('guest')
     setOverview(null)
     setHealth(null)
@@ -413,6 +424,15 @@ export function OperatorPortal() {
     setUnlockEvents(null)
     setRateLimits(null)
   }
+
+  const handleUnauthorized = useCallback(() => {
+    setAuthState('guest')
+  }, [])
+
+  const handleSettingsUnauthorized = useCallback(() => {
+    setSettingsOpen(false)
+    setAuthState('guest')
+  }, [])
 
   async function handleGenerateUnlock(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -929,9 +949,12 @@ export function OperatorPortal() {
           page={page}
           developerIdFilter={appsDeveloperFilter?.developerId ?? null}
           developerFilterLabel={appsDeveloperFilter?.email ?? null}
-          onClearDeveloperFilter={() => setAppsDeveloperFilter(null)}
+          onClearDeveloperFilter={() => {
+            setAppsDeveloperFilter(null)
+            setPage(0)
+          }}
           onNavigateToNamespaces={navigateToAppNamespaces}
-          onUnauthorized={() => setAuthState('guest')}
+          onUnauthorized={handleUnauthorized}
           onPageChange={setPage}
         />
       )
@@ -943,7 +966,7 @@ export function OperatorPortal() {
           authState={authState}
           page={page}
           onNavigateToApps={navigateToDeveloperApps}
-          onUnauthorized={() => setAuthState('guest')}
+          onUnauthorized={handleUnauthorized}
           onPageChange={setPage}
         />
       )
@@ -1018,17 +1041,14 @@ export function OperatorPortal() {
       <OperatorLimitsModal
         target={limitsTarget}
         onClose={() => setLimitsTarget(null)}
-        onUnauthorized={() => setAuthState('guest')}
+        onUnauthorized={handleUnauthorized}
       />
 
       <OperatorSettingsDrawer
         open={settingsOpen}
         authState={authState}
         onClose={() => setSettingsOpen(false)}
-        onUnauthorized={() => {
-          setSettingsOpen(false)
-          setAuthState('guest')
-        }}
+        onUnauthorized={handleSettingsUnauthorized}
       />
     </div>
   )

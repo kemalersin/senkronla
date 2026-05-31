@@ -1422,7 +1422,6 @@
       "saving": "Saving…",
       "saved": "Saved",
       "invalidValue": "Invalid value for {key}",
-      "inheritHint": "inherit clears",
       "columns": {
         "key": "Limit",
         "effective": "Effective",

@@ -19,6 +19,11 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Fixed
 
+- Remove redundant per-input inherit hint from operator limits modal
+- Stop apps and developers lists from reloading when operator settings drawer opens
+- Deduplicate operator apps, developers, and mail settings list fetches (coalesce concurrent GETs under React Strict Mode)
+- Deduplicate operator portal bootstrap and developer session checks on initial page load (shared session promise per endpoint)
+- Improve selected-state contrast for segmented controls with a neutral track background
 - Keep doc tags, badges, and status labels on a single line instead of breaking mid-label on mobile and in lists
 - Syntax highlighting after locale switch (server docs layout, baked Shiki colors, full locale navigation)
 - Restore code block colors by removing legacy Shiki CSS overrides that cleared inline token colors

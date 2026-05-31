@@ -9,6 +9,7 @@ import { Link, useRouter } from '@/i18n/navigation'
 import { OperatorAppsPanel } from '@/components/operator-apps-panel'
 import { OperatorSegmentedField } from '@/components/operator-segmented-field'
 import { OperatorSpinner } from '@/components/operator-spinner'
+import { fetchDeveloperSession } from '@/lib/auth-session-client'
 import {
   developerPageMetaKey,
   formatBrowserPageTitle,
@@ -79,17 +80,16 @@ export function DeveloperPortal({
   const [profileEmail, setProfileEmail] = useState<string | null>(null)
   const [page, setPage] = useState(0)
 
-  const checkSession = useCallback(async () => {
-    const response = await fetch('/api/developer/auth/session')
+  const checkSession = useCallback(async (fresh = false) => {
+    const session = await fetchDeveloperSession(fresh ? { fresh: true } : undefined)
 
-    if (!response.ok) {
+    if (!session.authenticated) {
       setAuthState('guest')
       setProfileEmail(null)
       return
     }
 
-    const body = await readJson<{ email?: string }>(response)
-    setProfileEmail(body.email ?? null)
+    setProfileEmail(session.email)
     setAuthState('authenticated')
   }, [])
 
@@ -159,7 +159,7 @@ export function DeveloperPortal({
       }
 
       setPassword('')
-      await checkSession()
+      await checkSession(true)
       notifyDeveloperSessionChanged()
     } catch {
       setAuthError(t('authFailed'))
