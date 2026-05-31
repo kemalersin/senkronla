@@ -426,13 +426,12 @@ export function OperatorPortal() {
   }
 
   const handleUnauthorized = useCallback(() => {
+    setSettingsOpen(false)
+    setLimitsTarget(null)
     setAuthState('guest')
   }, [])
 
-  const handleSettingsUnauthorized = useCallback(() => {
-    setSettingsOpen(false)
-    setAuthState('guest')
-  }, [])
+  const handleSettingsUnauthorized = handleUnauthorized
 
   const handleRecordsPurged = useCallback(() => {
     invalidateDedupedGet('/api/operator/overview')
@@ -1035,6 +1034,18 @@ export function OperatorPortal() {
           <span className="operator-api-origin">{apiOrigin}</span>
           {authState === 'authenticated' && (
             <div className="operator-header-buttons">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() =>
+                  setLimitsTarget({
+                    scope: 'settings',
+                    title: t('limits.globalTitle'),
+                  })
+                }
+              >
+                {t('settingsTabs.limits')}
+              </button>
               <button
                 type="button"
                 className="btn btn-secondary"

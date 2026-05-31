@@ -11,15 +11,24 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Added
 
+- Operator header **Limits** button opens a modal to set deployment-wide limit overrides (app and developer overrides still take precedence)
 - Operator settings — dangerous operations panel to permanently delete all relay records (namespaces, devices, documents, unlock data, apps, developers); requires typing `purge-all-records` and a confirmation dialog; SMTP overrides are preserved
 - Brand favicon and Apple touch icon: relay hub with bidirectional sync arcs on accent teal gradient
 
 ### Changed
 
+- Operator global limits open from a header **Limits** button (modal) instead of the settings drawer tab; settings drawer tabs are Mail and Dangerous operations only
+- Operator admin token sign-in screen layout aligned with the developer portal auth card
+- Operator limit overrides: per-row Clear button removes scope override without typing inherit
 - Operator settings drawer uses tabs (Mail, Dangerous operations) instead of a single scrollable page
 - Operator Developers tab self-service prerequisites callout can be dismissed (preference saved in browser)
 - Drawer loading spinners are vertically centered in the drawer body
 - Operator panel list tables center numeric columns (CSS specificity fix); zero-value app and namespace counts are plain text instead of navigation links
+- Limit overrides modal table vertically centers all columns
+
+### Fixed
+
+- Operator console no longer flashes the full panel before the admin token sign-in screen when session is still loading
 
 ## [0.1.9]
 
@@ -33,7 +42,6 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Fixed
 
-- Remove redundant per-input inherit hint from operator limits modal
 - Stop apps and developers lists from reloading when operator settings drawer opens
 - Deduplicate operator apps, developers, and mail settings list fetches (coalesce concurrent GETs under React Strict Mode)
 - Deduplicate operator portal bootstrap and developer session checks on initial page load (shared session promise per endpoint)

@@ -6,14 +6,20 @@ import { createPortal } from 'react-dom'
 import { OperatorLimitsSection } from '@/components/operator-limits-section'
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
 
-type LimitScope = 'namespaces' | 'apps' | 'developers'
+type ScopedLimitScope = 'namespaces' | 'apps' | 'developers'
 
-export interface OperatorLimitsTarget {
-  scope: LimitScope
-  scopeId: string
-  title: string
-  subtitle?: string
-}
+export type OperatorLimitsTarget =
+  | {
+      scope: 'settings'
+      title: string
+      subtitle?: string
+    }
+  | {
+      scope: ScopedLimitScope
+      scopeId: string
+      title: string
+      subtitle?: string
+    }
 
 interface OperatorLimitsModalProps {
   target: OperatorLimitsTarget | null
@@ -49,7 +55,9 @@ export function OperatorLimitsModal({
           <div>
             <h3 id="operator-limits-modal-title">{target.title}</h3>
             {target.subtitle ? <p className="operator-muted">{target.subtitle}</p> : null}
-            <p className="operator-muted">{t('hint')}</p>
+            <p className="operator-muted">
+              {target.scope === 'settings' ? t('globalHint') : t('hint')}
+            </p>
           </div>
           <button
             type="button"
@@ -64,7 +72,7 @@ export function OperatorLimitsModal({
         <div className="operator-modal-body">
           <OperatorLimitsSection
             scope={target.scope}
-            scopeId={target.scopeId}
+            scopeId={target.scope === 'settings' ? undefined : target.scopeId}
             apiBase={apiBase}
             showHeader={false}
             onUnauthorized={onUnauthorized}
