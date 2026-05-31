@@ -55,9 +55,14 @@ export function OperatorLimitsModal({
           <div>
             <h3 id="operator-limits-modal-title">{target.title}</h3>
             {target.subtitle ? <p className="operator-muted">{target.subtitle}</p> : null}
-            <p className="operator-muted">
-              {target.scope === 'settings' ? t('globalHint') : t('hint')}
-            </p>
+            {target.scope === 'settings' ? (
+              <p className="operator-muted">{t('globalHint')}</p>
+            ) : (
+              <div className="operator-limits-hint">
+                <p className="operator-muted">{t('hintLine1')}</p>
+                <p className="operator-muted">{t('hintLine2')}</p>
+              </div>
+            )}
           </div>
           <button
             type="button"

@@ -241,7 +241,14 @@ export function OperatorLimitsSection({
       {showHeader && (
         <header className="operator-limits-header">
           <h4>{scope === 'settings' ? t('globalTitle') : t('title')}</h4>
-          <p className="operator-muted">{scope === 'settings' ? t('globalHint') : t('hint')}</p>
+          {scope === 'settings' ? (
+            <p className="operator-muted">{t('globalHint')}</p>
+          ) : (
+            <div className="operator-limits-hint">
+              <p className="operator-muted">{t('hintLine1')}</p>
+              <p className="operator-muted">{t('hintLine2')}</p>
+            </div>
+          )}
         </header>
       )}
 

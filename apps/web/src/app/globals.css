@@ -1379,6 +1379,10 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   font-size: 0.8125rem;
 }
 
+.operator-limits-hint .operator-muted + .operator-muted {
+  margin-top: 0.2rem;
+}
+
 .operator-modal-close {
   flex-shrink: 0;
   width: 2rem;
@@ -1429,7 +1433,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 }
 
 .operator-modal--limits {
-  width: min(52rem, 100%);
+  width: min(44rem, 100%);
 }
 
 .operator-table-col-actions {
@@ -1460,13 +1464,17 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   font-weight: 600;
 }
 
+.operator-limits-table th:last-child,
 .operator-limits-table td:last-child {
+  width: 1%;
   white-space: nowrap;
 }
 
 .operator-limits-input-wrap {
   position: relative;
-  display: inline-block;
+  display: block;
+  width: 5.5rem;
+  max-width: 100%;
 }
 
 .operator-limits-input-wrap .operator-limits-input {
@@ -1509,9 +1517,10 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 .operator-limits-input {
   display: block;
-  width: auto;
-  min-width: 6rem;
-  max-width: none;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);

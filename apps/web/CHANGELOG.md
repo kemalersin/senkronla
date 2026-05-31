@@ -25,6 +25,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 - Drawer loading spinners are vertically centered in the drawer body
 - Operator panel list tables center numeric columns (CSS specificity fix); zero-value app and namespace counts are plain text instead of navigation links
 - Limit overrides modal table vertically centers all columns
+- Limit overrides modal max width reduced (44rem); Override column and inputs use a fixed narrow width
 
 ### Fixed
 
