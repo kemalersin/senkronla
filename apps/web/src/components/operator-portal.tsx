@@ -434,6 +434,21 @@ export function OperatorPortal() {
     setAuthState('guest')
   }, [])
 
+  const handleRecordsPurged = useCallback(() => {
+    invalidateDedupedGet('/api/operator/overview')
+    invalidateDedupedGet('/api/operator/namespaces')
+    invalidateDedupedGet('/api/operator/unlock-codes')
+    invalidateDedupedGet('/api/operator/unlock-events')
+    invalidateDedupedGet('/api/operator/rate-limit-events')
+    setOverview(null)
+    setNamespaces(null)
+    setUnlockCodes(null)
+    setUnlockEvents(null)
+    setRateLimits(null)
+    setPage(0)
+    void loadOverview()
+  }, [loadOverview])
+
   async function handleGenerateUnlock(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setGenerateLoading(true)
@@ -1051,6 +1066,7 @@ export function OperatorPortal() {
         authState={authState}
         onClose={() => setSettingsOpen(false)}
         onUnauthorized={handleSettingsUnauthorized}
+        onRecordsPurged={handleRecordsPurged}
       />
     </div>
   )

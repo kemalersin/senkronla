@@ -1322,6 +1322,10 @@
     "logout": "Sign out",
     "settingsButton": "Settings",
     "closeSettings": "Close settings",
+    "settingsTabs": {
+      "mail": "Mail",
+      "danger": "Dangerous operations"
+    },
     "loading": "Loading…",
     "loadFailed": "Failed to load data from the relay.",
     "unlock": "Generate unlock code",
@@ -1448,7 +1452,6 @@
     },
     "mail": {
       "title": "Outbound mail (SMTP)",
-      "hint": "Values saved here override file and environment settings.",
       "loading": "Loading mail settings…",
       "loadFailed": "Could not load mail settings.",
       "saveFailed": "Could not save mail settings.",
@@ -1475,6 +1478,30 @@
         "smtpUser": "Username",
         "smtpPassword": "Password"
       }
+    },
+    "danger": {
+      "title": "Dangerous operations",
+      "hint": "Irreversible actions. Use only in test or full-reset environments.",
+      "loading": "Loading…",
+      "purgeTitle": "Delete all records",
+      "purgeWarning": "Permanently deletes all operational relay data. This cannot be undone.",
+      "purgeItems": {
+        "namespaces": "Namespaces and pairing tokens",
+        "devices": "Device records",
+        "documents": "Document heads and blob files",
+        "unlock": "Unlock codes and history",
+        "rateLimits": "Rate limit events",
+        "apps": "Registered apps, origins, and bundles",
+        "developers": "Developer accounts"
+      },
+      "purgeKept": "Operator mail settings (SMTP overrides) are kept.",
+      "confirmLabel": "Confirmation phrase",
+      "confirmHint": "Type {phrase} to continue.",
+      "confirmDialog": "All relay records will be permanently deleted. Are you sure?",
+      "purgeButton": "Delete all records",
+      "purging": "Deleting…",
+      "purgeFailed": "Could not delete records.",
+      "purgeSuccess": "Deleted — removed {namespaces} namespaces."
     },
     "apps": {
       "listTitle": "Registered applications",
@@ -1562,6 +1589,7 @@
       "emptyTitle": "No developer accounts",
       "emptyHint": "Accounts appear here when self-service registration is enabled and developers sign up.",
       "prerequisitesTitle": "Self-service prerequisites",
+      "dismissPrerequisites": "Dismiss prerequisites notice",
       "prerequisitesP1": "Enable the developer portal with relay <tag>apps.enabled: true</tag>, <tag>apps.registrationMode: self_service</tag>, and <tag>ESR_DEVELOPER_JWT_SECRET</tag> (min 32 chars). Developers register at <developerLink>/developer</developerLink>. Web apps need a verified HTTPS origin; native apps need bundle approval in this panel when <tag>requireManualReview</tag> is enabled.",
       "closeDetail": "Close",
       "email": "Email",

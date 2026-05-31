@@ -1,25 +1,37 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
+import { OperatorDangerPanel } from '@/components/operator-danger-panel'
 import { OperatorMailSettingsPanel } from '@/components/operator-mail-settings-panel'
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
+
+type SettingsTab = 'mail' | 'danger'
 
 export function OperatorSettingsDrawer({
   open,
   authState,
   onClose,
   onUnauthorized,
+  onRecordsPurged,
 }: {
   open: boolean
   authState: 'loading' | 'guest' | 'authenticated'
   onClose: () => void
   onUnauthorized: () => void
+  onRecordsPurged?: () => void
 }) {
   const t = useTranslations('operator')
+  const [tab, setTab] = useState<SettingsTab>('mail')
 
   usePageScrollLock(open, 'operator-settings-drawer')
+
+  useEffect(() => {
+    if (!open) {
+      setTab('mail')
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) {
@@ -39,6 +51,11 @@ export function OperatorSettingsDrawer({
   if (!open) {
     return null
   }
+
+  const tabs: { id: SettingsTab; label: string }[] = [
+    { id: 'mail', label: t('settingsTabs.mail') },
+    { id: 'danger', label: t('settingsTabs.danger') },
+  ]
 
   return (
     <>
@@ -68,12 +85,53 @@ export function OperatorSettingsDrawer({
           </button>
         </header>
 
+        <nav className="operator-settings-tabs" aria-label={t('settingsButton')}>
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              id={`operator-settings-tab-${item.id}`}
+              className="operator-tab"
+              data-active={tab === item.id ? 'true' : 'false'}
+              aria-selected={tab === item.id}
+              aria-controls={`operator-settings-panel-${item.id}`}
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
         <div className="operator-apps-drawer-body">
-          <OperatorMailSettingsPanel
-            variant="drawer"
-            authState={authState}
-            onUnauthorized={onUnauthorized}
-          />
+          {tab === 'mail' && (
+            <div
+              role="tabpanel"
+              id="operator-settings-panel-mail"
+              aria-labelledby="operator-settings-tab-mail"
+            >
+              <OperatorMailSettingsPanel
+                variant="drawer"
+                authState={authState}
+                onUnauthorized={onUnauthorized}
+              />
+            </div>
+          )}
+
+          {tab === 'danger' && (
+            <div
+              role="tabpanel"
+              id="operator-settings-panel-danger"
+              aria-labelledby="operator-settings-tab-danger"
+            >
+              <OperatorDangerPanel
+                variant="drawer"
+                authState={authState}
+                onUnauthorized={onUnauthorized}
+                onPurged={onRecordsPurged}
+              />
+            </div>
+          )}
         </div>
       </aside>
     </>

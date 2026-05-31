@@ -36,6 +36,7 @@ interface ApiErrorBody {
 }
 
 const PAGE_SIZE = 20
+const DEVELOPERS_PREREQUISITES_DISMISSED_KEY = 'senkronla-operator-developers-prerequisites-dismissed'
 
 const DEVELOPER_FILTERS = ['all', 'verified', 'unverified', 'disabled'] as const
 type DeveloperFilter = (typeof DEVELOPER_FILTERS)[number]
@@ -105,6 +106,8 @@ export function OperatorDevelopersPanel({
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
+  const [prerequisitesDismissed, setPrerequisitesDismissed] = useState(false)
+  const [prerequisitesReady, setPrerequisitesReady] = useState(false)
   const loadDevelopersRequestId = useRef(0)
   const tRef = useRef(t)
   tRef.current = t
@@ -112,6 +115,26 @@ export function OperatorDevelopersPanel({
   onUnauthorizedRef.current = onUnauthorized
   const listQueryRef = useRef({ debouncedSearch, filter, page })
   listQueryRef.current = { debouncedSearch, filter, page }
+
+  useEffect(() => {
+    try {
+      setPrerequisitesDismissed(localStorage.getItem(DEVELOPERS_PREREQUISITES_DISMISSED_KEY) === '1')
+    } catch {
+      setPrerequisitesDismissed(false)
+    }
+
+    setPrerequisitesReady(true)
+  }, [])
+
+  const dismissPrerequisites = useCallback(() => {
+    setPrerequisitesDismissed(true)
+
+    try {
+      localStorage.setItem(DEVELOPERS_PREREQUISITES_DISMISSED_KEY, '1')
+    } catch {
+      // ignore storage errors
+    }
+  }, [])
 
   const filterLabel = useCallback(
     (value: DeveloperFilter) => {
@@ -499,14 +522,21 @@ export function OperatorDevelopersPanel({
 
   return (
     <div className={`operator-apps-panel${selectedDeveloper ? ' has-drawer' : ''}`}>
-      <DocCallout variant="info" title={t('developers.prerequisitesTitle')}>
-        <p>
-          {t.rich('developers.prerequisitesP1', {
-            ...withDocRich(),
-            developerLink: (chunks) => <Link href="/developer">{chunks}</Link>,
-          })}
-        </p>
-      </DocCallout>
+      {prerequisitesReady && !prerequisitesDismissed && (
+        <DocCallout
+          variant="info"
+          title={t('developers.prerequisitesTitle')}
+          dismissLabel={t('developers.dismissPrerequisites')}
+          onDismiss={dismissPrerequisites}
+        >
+          <p>
+            {t.rich('developers.prerequisitesP1', {
+              ...withDocRich(),
+              developerLink: (chunks) => <Link href="/developer">{chunks}</Link>,
+            })}
+          </p>
+        </DocCallout>
+      )}
 
       <div className="operator-list-toolbar">
         <div className="form-field operator-search-field">

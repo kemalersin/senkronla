@@ -17,6 +17,7 @@ import {
   getNamespaceLimits,
   patchNamespaceLimits,
 } from '../services/operator-limit-service.js'
+import { purgeAllRecords } from '../services/admin-purge-service.js'
 import { getMailSettings, patchMailSettings } from '../services/mail-settings-service.js'
 import { patchLimitOverridesSchema } from '../types/limit-overrides.js'
 import { mailSettingsOverrideSchema } from '../types/mail-settings.js'
@@ -44,6 +45,10 @@ const namespaceListQuerySchema = listQuerySchema.extend({
     .transform(normalizeAppId)
     .refine((value) => APP_ID_PATTERN.test(value), { message: APP_ID_VALIDATION_MESSAGE })
     .optional(),
+})
+
+const purgeAllRecordsBodySchema = z.object({
+  confirm: z.literal('purge-all-records'),
 })
 
 const rateLimitListQuerySchema = listQuerySchema.extend({
@@ -117,5 +122,10 @@ export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext)
   app.patch('/admin/settings/mail', { preHandler: requireAdminAuth }, async (request) => {
     const body = mailSettingsOverrideSchema.parse(request.body ?? {})
     return patchMailSettings(ctx.db, ctx.config, body)
+  })
+
+  app.post('/admin/danger/purge-all-records', { preHandler: requireAdminAuth }, async (request) => {
+    purgeAllRecordsBodySchema.parse(request.body ?? {})
+    return purgeAllRecords(ctx.db, ctx.config.blob.filesystem.path)
   })
 }

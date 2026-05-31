@@ -1323,6 +1323,10 @@
     "logout": "Çıkış",
     "settingsButton": "Ayarlar",
     "closeSettings": "Ayarları kapat",
+    "settingsTabs": {
+      "mail": "E-posta",
+      "danger": "Tehlikeli işlemler"
+    },
     "loading": "Yükleniyor…",
     "loadFailed": "Relay'den veri yüklenemedi.",
     "unlock": "Açılış kodu üret",
@@ -1449,7 +1453,6 @@
     },
     "mail": {
       "title": "E-posta (SMTP)",
-      "hint": "Panelden girilen değerler dosya ve ortam değişkenlerini geçersiz kılar.",
       "loading": "Mail ayarları yükleniyor…",
       "loadFailed": "Mail ayarları yüklenemedi.",
       "saveFailed": "Mail ayarları kaydedilemedi.",
@@ -1476,6 +1479,30 @@
         "smtpUser": "Kullanıcı",
         "smtpPassword": "Parola"
       }
+    },
+    "danger": {
+      "title": "Tehlikeli işlemler",
+      "hint": "Geri alınamaz işlemler. Yalnızca test veya tam sıfırlama ortamlarında kullanın.",
+      "loading": "Yükleniyor…",
+      "purgeTitle": "Tüm kayıtları sil",
+      "purgeWarning": "Bu işlem relay'deki tüm operasyonel veriyi kalıcı olarak siler. Geri alınamaz.",
+      "purgeItems": {
+        "namespaces": "Namespace'ler ve eşleştirme token'ları",
+        "devices": "Cihaz kayıtları",
+        "documents": "Doküman başlıkları ve blob dosyaları",
+        "unlock": "Açılış kodları ve geçmişi",
+        "rateLimits": "Rate limit olayları",
+        "apps": "Kayıtlı uygulamalar, origin'ler ve bundle'lar",
+        "developers": "Geliştirici hesapları"
+      },
+      "purgeKept": "Operatör mail ayarları (SMTP override'ları) korunur.",
+      "confirmLabel": "Onay ifadesi",
+      "confirmHint": "Devam etmek için {phrase} yazın.",
+      "confirmDialog": "Tüm relay kayıtları kalıcı olarak silinecek. Emin misiniz?",
+      "purgeButton": "Tüm kayıtları sil",
+      "purging": "Siliniyor…",
+      "purgeFailed": "Kayıtlar silinemedi.",
+      "purgeSuccess": "Silindi — {namespaces} namespace kaldırıldı."
     },
     "apps": {
       "listTitle": "Kayıtlı uygulamalar",
@@ -1563,6 +1590,7 @@
       "emptyTitle": "Geliştirici hesabı yok",
       "emptyHint": "Self-service kayıt açıkken geliştiriciler kayıt olduğunda burada listelenir.",
       "prerequisitesTitle": "Self-service önkoşulları",
+      "dismissPrerequisites": "Önkoşul uyarısını kapat",
       "prerequisitesP1": "Geliştirici portalını açmak için relay'de <tag>apps.enabled: true</tag>, <tag>apps.registrationMode: self_service</tag> ve <tag>ESR_DEVELOPER_JWT_SECRET</tag> (min 32 karakter) ayarlayın. Geliştiriciler <developerLink>/developer</developerLink> üzerinden kayıt olur. Web uygulamaları doğrulanmış HTTPS origin; native uygulamalar <tag>requireManualReview</tag> açıkken bu panelden bundle onayı gerektirir.",
       "closeDetail": "Kapat",
       "email": "E-posta",

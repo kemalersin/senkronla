@@ -252,11 +252,8 @@ export function OperatorMailSettingsPanel({
       {variant === 'page' && (
         <header className="operator-mail-settings-header">
           <h2>{t('title')}</h2>
-          <p className="operator-muted">{t('hint')}</p>
         </header>
       )}
-
-      {variant === 'drawer' && <p className="operator-muted operator-mail-drawer-intro">{t('hint')}</p>}
 
       <form className="operator-mail-form" onSubmit={(event) => void handleSave(event)}>
         <fieldset className="operator-mail-section">

@@ -1314,6 +1314,33 @@ paths:
         '200':
           description: Updated mail settings
 
+  /admin/danger/purge-all-records:
+    post:
+      tags: [Admin]
+      summary: Delete all relay operational records (dangerous)
+      description: |
+        Permanently removes namespaces, devices, documents, unlock data, rate limit events,
+        apps, and developers. Operator mail settings overrides are preserved.
+        Requires body `{ "confirm": "purge-all-records" }`.
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: string
+                  enum: [purge-all-records]
+      responses:
+        '200':
+          description: Deleted record counts
+        '400':
+          description: Invalid confirmation phrase
+
   /admin/unlock-events:
     get:
       tags: [Admin]
