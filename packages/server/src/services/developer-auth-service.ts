@@ -10,6 +10,7 @@ import {
   sendDeveloperPasswordResetEmail,
   sendDeveloperVerificationEmail,
 } from './developer-mail-service.js'
+import { enforceDeveloperAuthMailIpRateLimit } from './developer-auth-mail-rate-limit.js'
 import { getEffectiveMailConfig, isMailConfigured } from './mail-settings-service.js'
 
 export interface DeveloperRow {
@@ -115,7 +116,7 @@ function issueToken(config: ServerConfig, developer: DeveloperRow): string {
 export async function registerDeveloper(
   pool: DbPool,
   config: ServerConfig,
-  input: { email: string; password: string; locale?: MailLocale },
+  input: { email: string; password: string; locale?: MailLocale; clientIp?: string },
 ): Promise<DeveloperAuthResult> {
   requirePortalConfig(config)
 
@@ -142,15 +143,12 @@ export async function registerDeveloper(
     if (config.apps.developerPortal.requireEmailVerification) {
       const mail = await getEffectiveMailConfig(pool, config)
       if (isMailConfigured(mail)) {
-        try {
-          await sendDeveloperVerificationEmail(pool, config, {
-            developerUuid: developer.id,
-            email: developer.email,
-            locale,
-          })
-        } catch {
-          // Account is created even if outbound mail fails; user can resend later.
-        }
+        await enforceDeveloperAuthMailIpRateLimit(pool, config, input.clientIp)
+        await sendDeveloperVerificationEmail(pool, config, {
+          developerUuid: developer.id,
+          email: developer.email,
+          locale,
+        })
       }
 
       return {
@@ -329,9 +327,11 @@ export async function verifyDeveloperEmail(
 export async function resendDeveloperVerification(
   pool: DbPool,
   config: ServerConfig,
-  input: { email: string; locale?: MailLocale },
+  input: { email: string; locale?: MailLocale; clientIp?: string },
 ): Promise<{ ok: true }> {
   requirePortalConfig(config)
+
+  await enforceDeveloperAuthMailIpRateLimit(pool, config, input.clientIp)
 
   if (!config.apps.developerPortal.requireEmailVerification) {
     return { ok: true }
@@ -362,9 +362,11 @@ export async function resendDeveloperVerification(
 export async function requestDeveloperPasswordReset(
   pool: DbPool,
   config: ServerConfig,
-  input: { email: string; locale?: MailLocale },
+  input: { email: string; locale?: MailLocale; clientIp?: string },
 ): Promise<{ ok: true }> {
   requirePortalConfig(config)
+
+  await enforceDeveloperAuthMailIpRateLimit(pool, config, input.clientIp)
 
   const email = normalizeEmail(input.email)
   const locale = input.locale ?? 'en'

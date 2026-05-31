@@ -39,6 +39,7 @@ limits:
     pairingTokensPerHour: 30
     pushPerHourPerDevice: 120
     generalPerMinutePerIp: 300
+    developerAuthMailPerHourPerIp: 20
 
 pairing:
   codeTtlSeconds: 600
@@ -84,6 +85,7 @@ apps:
     requireEmailVerification: true
     emailVerifyTtlSeconds: 86400
     passwordResetTtlSeconds: 3600
+    authMailPerHourPerDeveloper: 5
   seed: []
 
 mail:

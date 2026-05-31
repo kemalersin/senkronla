@@ -9,6 +9,7 @@ export const RATE_LIMIT_ACTION = {
   putDocument: 'put_document',
   namespaceCreate: 'namespace_create',
   globalIp: 'global_ip',
+  developerAuthMail: 'developer_auth_mail',
 } as const
 
 export type RateLimitAction = (typeof RATE_LIMIT_ACTION)[keyof typeof RATE_LIMIT_ACTION]
@@ -224,6 +225,15 @@ export function getGlobalIpRateLimitRule(config: ServerConfig): RateLimitRule {
     limit: config.limits.rateLimit.generalPerMinutePerIp,
     windowSeconds: 60,
     message: 'Request rate limit exceeded',
+  }
+}
+
+export function getDeveloperAuthMailIpRateLimitRule(config: ServerConfig): RateLimitRule {
+  return {
+    action: RATE_LIMIT_ACTION.developerAuthMail,
+    limit: config.limits.rateLimit.developerAuthMailPerHourPerIp,
+    windowSeconds: 3600,
+    message: 'Developer auth mail rate limit exceeded',
   }
 }
 

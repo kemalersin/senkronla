@@ -105,7 +105,10 @@ export async function registerDeveloperRoutes(app: FastifyInstance, ctx: AppCont
 
   app.post('/developer/register', { preHandler: requireDeveloperPortal }, async (request, reply) => {
     const body = registerBodySchema.parse(request.body)
-    const result = await registerDeveloper(ctx.db, ctx.config, body)
+    const result = await registerDeveloper(ctx.db, ctx.config, {
+      ...body,
+      clientIp: request.ip,
+    })
 
     if (!result.token) {
       return reply.code(201).send({
@@ -143,12 +146,18 @@ export async function registerDeveloperRoutes(app: FastifyInstance, ctx: AppCont
 
   app.post('/developer/resend-verification', { preHandler: requireDeveloperPortal }, async (request) => {
     const body = emailLocaleBodySchema.parse(request.body)
-    return resendDeveloperVerification(ctx.db, ctx.config, body)
+    return resendDeveloperVerification(ctx.db, ctx.config, {
+      ...body,
+      clientIp: request.ip,
+    })
   })
 
   app.post('/developer/request-password-reset', { preHandler: requireDeveloperPortal }, async (request) => {
     const body = emailLocaleBodySchema.parse(request.body)
-    return requestDeveloperPasswordReset(ctx.db, ctx.config, body)
+    return requestDeveloperPasswordReset(ctx.db, ctx.config, {
+      ...body,
+      clientIp: request.ip,
+    })
   })
 
   app.post('/developer/reset-password', { preHandler: requireDeveloperPortal }, async (request) => {

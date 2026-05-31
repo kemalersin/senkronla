@@ -11,6 +11,16 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Added
+
+- **server:** Rate limits for developer verification and password-reset mail (per IP and per developer account)
+
+### Changed
+
+- **web:** Operator panel list tables center numeric columns; zero-value counts are not navigation links
+- **server:** Developer verification and password-reset mail is dispatched in the background so API responses are not blocked on SMTP delivery
+- **server:** Developer auth emails use branded HTML templates aligned with the web portal
+
 ## [0.1.9]
 
 ### Added

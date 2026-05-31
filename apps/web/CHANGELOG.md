@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Changed
+
+- Operator panel list tables center numeric columns (CSS specificity fix); zero-value app and namespace counts are plain text instead of navigation links
+
 ## [0.1.9]
 
 ### Added

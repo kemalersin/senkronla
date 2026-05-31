@@ -63,6 +63,7 @@ export const serverConfigSchema = z.object({
           pairingTokensPerHour: z.coerce.number().int().positive().default(30),
           pushPerHourPerDevice: z.coerce.number().int().positive().default(120),
           generalPerMinutePerIp: z.coerce.number().int().positive().default(300),
+          developerAuthMailPerHourPerIp: z.coerce.number().int().positive().default(20),
         })
         .default({}),
     })
@@ -134,6 +135,7 @@ export const serverConfigSchema = z.object({
           requireEmailVerification: z.coerce.boolean().default(true),
           emailVerifyTtlSeconds: z.coerce.number().int().positive().default(86_400),
           passwordResetTtlSeconds: z.coerce.number().int().positive().default(3600),
+          authMailPerHourPerDeveloper: z.coerce.number().int().positive().default(5),
         })
         .default({}),
       seed: z

@@ -7,6 +7,7 @@ const ACTION_HEADER_SUFFIX: Partial<Record<RateLimitAction, string>> = {
   recover: 'Recover',
   pair_device: 'Pair',
   pairing_token: 'PairingToken',
+  developer_auth_mail: 'DeveloperAuthMail',
 }
 
 export function rateLimitHeaderPrefix(action: RateLimitAction): string {
@@ -84,4 +85,7 @@ export const RATE_LIMIT_EXPOSED_HEADERS = [
   'RateLimit-PairingToken-Limit',
   'RateLimit-PairingToken-Remaining',
   'RateLimit-PairingToken-Reset',
+  'RateLimit-DeveloperAuthMail-Limit',
+  'RateLimit-DeveloperAuthMail-Remaining',
+  'RateLimit-DeveloperAuthMail-Reset',
 ] as const

@@ -571,7 +571,7 @@ export function OperatorDevelopersPanel({
                         className="operator-table-col-numeric"
                         onClick={(event) => event.stopPropagation()}
                       >
-                        {onNavigateToApps ? (
+                        {onNavigateToApps && row.appCount > 0 ? (
                           <button
                             type="button"
                             className="operator-table-nav-link"

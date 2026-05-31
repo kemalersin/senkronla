@@ -3,9 +3,27 @@ import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
 import { isDeveloperPortalEnabled } from '../lib/developer-portal.js'
 import { createDeveloperAuthToken } from './developer-auth-token-service.js'
+import { isDeveloperAuthMailPerDeveloperLimitReached } from './developer-auth-mail-rate-limit.js'
 import { getEffectiveMailConfig, isMailConfigured } from './mail-settings-service.js'
 import { sendDeveloperMail, type DeveloperMailKind } from './mail-service.js'
-import type { MailLocale } from '../types/mail-settings.js'
+import type { MailConfig, MailLocale } from '../types/mail-settings.js'
+
+function dispatchDeveloperMail(
+  mail: MailConfig,
+  input: {
+    to: string
+    locale: MailLocale
+    kind: DeveloperMailKind
+    token: string
+  },
+): void {
+  void sendDeveloperMail(mail, input).catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(
+      `[senkronla] Failed to send developer ${input.kind} mail to ${input.to}: ${message}`,
+    )
+  })
+}
 
 async function sendDeveloperAuthMail(
   pool: DbPool,
@@ -28,14 +46,26 @@ async function sendDeveloperAuthMail(
     throw new AppError(503, 'MAIL_NOT_CONFIGURED', 'Outbound mail is not configured')
   }
 
+  const purpose = input.kind === 'email_verify' ? 'email_verify' : 'password_reset'
+  if (
+    await isDeveloperAuthMailPerDeveloperLimitReached(
+      pool,
+      config,
+      input.developerUuid,
+      purpose,
+    )
+  ) {
+    return
+  }
+
   const token = await createDeveloperAuthToken(pool, {
     developerUuid: input.developerUuid,
-    purpose: input.kind === 'email_verify' ? 'email_verify' : 'password_reset',
+    purpose,
     locale: input.locale,
     ttlSeconds: input.ttlSeconds,
   })
 
-  await sendDeveloperMail(mail, {
+  dispatchDeveloperMail(mail, {
     to: input.email,
     locale: input.locale,
     kind: input.kind,

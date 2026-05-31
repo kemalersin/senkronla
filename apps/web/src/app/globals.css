@@ -2175,9 +2175,21 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   white-space: nowrap;
 }
 
-.operator-table-col-numeric {
+.operator-table th.operator-table-col-numeric,
+.operator-table td.operator-table-col-numeric {
   text-align: center;
+  vertical-align: middle;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.operator-table th.operator-table-col-numeric,
+.operator-table td.operator-table-col-numeric code {
+  font-variant-numeric: tabular-nums;
+}
+
+.operator-limits-table td.operator-table-col-numeric .operator-limits-input {
+  margin-inline: auto;
 }
 
 .operator-table-col-date {
@@ -2186,11 +2198,6 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 .operator-table-col-status {
   white-space: nowrap;
-}
-
-.operator-table--apps th.operator-table-col-numeric,
-.operator-table--apps td.operator-table-col-numeric {
-  text-align: center;
 }
 
 .operator-apps-drawer-backdrop {

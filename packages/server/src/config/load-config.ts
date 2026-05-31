@@ -134,7 +134,7 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
             },
           }
         : {}),
-      ...(env.ESR_RATE_LIMIT_ENABLED || env.ESR_RECOVER_PER_HOUR || env.ESR_PAIRING_PER_HOUR || env.ESR_PAIRING_TOKENS_PER_HOUR || env.ESR_PUSH_PER_HOUR_PER_DEVICE || env.ESR_GENERAL_PER_MINUTE_PER_IP
+      ...(env.ESR_RATE_LIMIT_ENABLED || env.ESR_RECOVER_PER_HOUR || env.ESR_PAIRING_PER_HOUR || env.ESR_PAIRING_TOKENS_PER_HOUR || env.ESR_PUSH_PER_HOUR_PER_DEVICE || env.ESR_GENERAL_PER_MINUTE_PER_IP || env.ESR_DEVELOPER_AUTH_MAIL_PER_HOUR_PER_IP
         ? {
             rateLimit: {
               ...(env.ESR_RATE_LIMIT_ENABLED !== undefined
@@ -145,6 +145,9 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
               ...(env.ESR_PAIRING_TOKENS_PER_HOUR ? { pairingTokensPerHour: env.ESR_PAIRING_TOKENS_PER_HOUR } : {}),
               ...(env.ESR_PUSH_PER_HOUR_PER_DEVICE ? { pushPerHourPerDevice: env.ESR_PUSH_PER_HOUR_PER_DEVICE } : {}),
               ...(env.ESR_GENERAL_PER_MINUTE_PER_IP ? { generalPerMinutePerIp: env.ESR_GENERAL_PER_MINUTE_PER_IP } : {}),
+              ...(env.ESR_DEVELOPER_AUTH_MAIL_PER_HOUR_PER_IP
+                ? { developerAuthMailPerHourPerIp: env.ESR_DEVELOPER_AUTH_MAIL_PER_HOUR_PER_IP }
+                : {}),
             },
           }
         : {}),
@@ -180,7 +183,8 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
     env.ESR_DEVELOPER_JWT_SECRET ||
     env.ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY ||
     env.ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR ||
-    env.ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR
+    env.ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR ||
+    env.ESR_DEVELOPER_AUTH_MAIL_PER_HOUR
   ) {
     const developerJwtSecret = env.ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET ?? env.ESR_DEVELOPER_JWT_SECRET
     const perAppLimits =
@@ -213,6 +217,13 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
           }
         : undefined
 
+    const developerPortalOverrides = {
+      ...(developerJwtSecret ? { jwtSecret: developerJwtSecret } : {}),
+      ...(env.ESR_DEVELOPER_AUTH_MAIL_PER_HOUR
+        ? { authMailPerHourPerDeveloper: env.ESR_DEVELOPER_AUTH_MAIL_PER_HOUR }
+        : {}),
+    }
+
     overrides.apps = {
       ...(overrides.apps as RawConfig),
       ...(env.ESR_APPS__ENABLED !== undefined ? { enabled: parseEnvBoolean(env.ESR_APPS__ENABLED) } : {}),
@@ -227,12 +238,8 @@ function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
         ? { legacyDefaultAppId: env.ESR_APPS__LEGACY_DEFAULT_APP_ID }
         : {}),
       ...(nativeOverrides ? { native: nativeOverrides } : {}),
-      ...(developerJwtSecret
-        ? {
-            developerPortal: {
-              jwtSecret: developerJwtSecret,
-            },
-          }
+      ...(Object.keys(developerPortalOverrides).length > 0
+        ? { developerPortal: developerPortalOverrides }
         : {}),
       ...(perAppLimits
         ? {

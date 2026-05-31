@@ -204,9 +204,9 @@ export function OperatorLimitsSection({
             <thead>
               <tr>
                 <th>{t('columns.key')}</th>
-                <th>{t('columns.effective')}</th>
+                <th className="operator-table-col-numeric">{t('columns.effective')}</th>
                 <th>{t('columns.source')}</th>
-                <th>{t('columns.override')}</th>
+                <th className="operator-table-col-numeric">{t('columns.override')}</th>
               </tr>
             </thead>
             <tbody>
@@ -221,11 +221,11 @@ export function OperatorLimitsSection({
                 return (
                   <tr key={key}>
                     <td>{t(`keys.${key}`)}</td>
-                    <td>
+                    <td className="operator-table-col-numeric">
                       <code>{data.effective[key]}</code>
                     </td>
                     <td>{sourceLabel(data.sources[key])}</td>
-                    <td>
+                    <td className="operator-table-col-numeric">
                       <input
                         type="text"
                         inputMode="numeric"

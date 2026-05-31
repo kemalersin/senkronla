@@ -1,40 +1,11 @@
 import nodemailer from 'nodemailer'
 import type { MailConfig, MailLocale } from '../types/mail-settings.js'
+import {
+  buildDeveloperMailTemplate,
+  type DeveloperMailKind,
+} from './mail-templates.js'
 
-export type DeveloperMailKind = 'email_verify' | 'password_reset'
-
-interface MailTemplate {
-  subject: string
-  text: string
-  html: string
-}
-
-const TEMPLATES: Record<MailLocale, Record<DeveloperMailKind, (link: string) => MailTemplate>> = {
-  en: {
-    email_verify: (link) => ({
-      subject: 'Verify your developer account',
-      text: `Verify your email address by opening this link:\n\n${link}\n\nIf you did not create this account, you can ignore this message.`,
-      html: `<p>Verify your email address by opening this link:</p><p><a href="${link}">${link}</a></p><p>If you did not create this account, you can ignore this message.</p>`,
-    }),
-    password_reset: (link) => ({
-      subject: 'Reset your developer password',
-      text: `Reset your password by opening this link:\n\n${link}\n\nIf you did not request a reset, you can ignore this message.`,
-      html: `<p>Reset your password by opening this link:</p><p><a href="${link}">${link}</a></p><p>If you did not request a reset, you can ignore this message.</p>`,
-    }),
-  },
-  tr: {
-    email_verify: (link) => ({
-      subject: 'Geliştirici hesabınızı doğrulayın',
-      text: `E-posta adresinizi doğrulamak için bu bağlantıyı açın:\n\n${link}\n\nBu hesabı siz oluşturmadıysanız bu mesajı yok sayabilirsiniz.`,
-      html: `<p>E-posta adresinizi doğrulamak için bu bağlantıyı açın:</p><p><a href="${link}">${link}</a></p><p>Bu hesabı siz oluşturmadıysanız bu mesajı yok sayabilirsiniz.</p>`,
-    }),
-    password_reset: (link) => ({
-      subject: 'Geliştirici şifrenizi sıfırlayın',
-      text: `Şifrenizi sıfırlamak için bu bağlantıyı açın:\n\n${link}\n\nBu isteği siz yapmadıysanız bu mesajı yok sayabilirsiniz.`,
-      html: `<p>Şifrenizi sıfırlamak için bu bağlantıyı açın:</p><p><a href="${link}">${link}</a></p><p>Bu isteği siz yapmadıysanız bu mesajı yok sayabilirsiniz.</p>`,
-    }),
-  },
-}
+export type { DeveloperMailKind }
 
 function buildActionLink(
   mail: MailConfig,
@@ -61,7 +32,13 @@ export async function sendDeveloperMail(
   },
 ): Promise<void> {
   const link = buildActionLink(mail, input.locale, input.kind, input.token)
-  const template = TEMPLATES[input.locale][input.kind](link)
+  const template = buildDeveloperMailTemplate({
+    locale: input.locale,
+    kind: input.kind,
+    link,
+    brandName: mail.fromName || 'Senkronla',
+    webBaseUrl: mail.webBaseUrl,
+  })
 
   const transporter = nodemailer.createTransport({
     host: mail.smtp.host,

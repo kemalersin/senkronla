@@ -764,10 +764,10 @@ export function OperatorPortal() {
                       <th className="operator-table-col-sticky">{t('columns.namespace')}</th>
                       <th>{t('columns.label')}</th>
                       {showAppColumn && <th>{t('columns.app')}</th>}
-                      <th>{t('columns.devices')}</th>
-                      <th>{t('columns.slots')}</th>
-                      <th>{t('columns.documentCount')}</th>
-                      <th>{t('columns.created')}</th>
+                      <th className="operator-table-col-numeric">{t('columns.devices')}</th>
+                      <th className="operator-table-col-numeric">{t('columns.slots')}</th>
+                      <th className="operator-table-col-numeric">{t('columns.documentCount')}</th>
+                      <th className="operator-table-col-date">{t('columns.created')}</th>
                       <th>{t('columns.actions')}</th>
                     </tr>
                   </thead>
@@ -790,10 +790,12 @@ export function OperatorPortal() {
                             )}
                           </td>
                         )}
-                        <td>{row.activeDevices}</td>
-                        <td>{row.freeDeviceLimit + row.purchasedSlots}</td>
-                        <td>{row.documentCount}</td>
-                        <td>{formatDate(row.createdAt, locale)}</td>
+                        <td className="operator-table-col-numeric">{row.activeDevices}</td>
+                        <td className="operator-table-col-numeric">
+                          {row.freeDeviceLimit + row.purchasedSlots}
+                        </td>
+                        <td className="operator-table-col-numeric">{row.documentCount}</td>
+                        <td className="operator-table-col-date">{formatDate(row.createdAt, locale)}</td>
                         <td className="operator-table-col-actions">
                           <button
                             type="button"
@@ -835,10 +837,10 @@ export function OperatorPortal() {
                     <tr>
                       <th>{t('columns.code')}</th>
                       <th>{t('columns.namespace')}</th>
-                      <th>{t('columns.slots')}</th>
+                      <th className="operator-table-col-numeric">{t('columns.slots')}</th>
                       <th>{t('columns.status')}</th>
                       <th>{t('columns.note')}</th>
-                      <th>{t('columns.created')}</th>
+                      <th className="operator-table-col-date">{t('columns.created')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -846,10 +848,10 @@ export function OperatorPortal() {
                       <tr key={row.code}>
                         <td><code>{row.code}</code></td>
                         <td><code>{row.namespaceId}</code></td>
-                        <td>{row.slots}</td>
+                        <td className="operator-table-col-numeric">{row.slots}</td>
                         <td>{row.redeemedAt ? t('statusRedeemed') : t('statusPending')}</td>
                         <td>{row.note ?? '—'}</td>
-                        <td>{formatDate(row.createdAt, locale)}</td>
+                        <td className="operator-table-col-date">{formatDate(row.createdAt, locale)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -875,10 +877,10 @@ export function OperatorPortal() {
                     <tr>
                       <th>{t('columns.namespace')}</th>
                       <th>{t('columns.label')}</th>
-                      <th>{t('columns.slots')}</th>
+                      <th className="operator-table-col-numeric">{t('columns.slots')}</th>
                       <th>{t('columns.source')}</th>
                       <th>{t('columns.code')}</th>
-                      <th>{t('columns.created')}</th>
+                      <th className="operator-table-col-date">{t('columns.created')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -886,10 +888,10 @@ export function OperatorPortal() {
                       <tr key={row.id}>
                         <td><code>{row.namespaceId}</code></td>
                         <td>{row.namespaceLabel}</td>
-                        <td>{row.slotsAdded}</td>
+                        <td className="operator-table-col-numeric">{row.slotsAdded}</td>
                         <td>{row.source}</td>
                         <td>{row.unlockCode ? <code>{row.unlockCode}</code> : '—'}</td>
-                        <td>{formatDate(row.createdAt, locale)}</td>
+                        <td className="operator-table-col-date">{formatDate(row.createdAt, locale)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -918,7 +920,7 @@ export function OperatorPortal() {
                       <th>{t('columns.device')}</th>
                       <th>{t('columns.ip')}</th>
                       <th>{t('columns.period')}</th>
-                      <th>{t('columns.count')}</th>
+                      <th className="operator-table-col-numeric">{t('columns.count')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -929,7 +931,7 @@ export function OperatorPortal() {
                         <td>{row.clientDeviceId ?? '—'}</td>
                         <td>{row.clientIp ?? '—'}</td>
                         <td>{formatPeriod(row.periodStart, row.periodEnd, locale)}</td>
-                        <td>{row.count}</td>
+                        <td className="operator-table-col-numeric">{row.count}</td>
                       </tr>
                     ))}
                   </tbody>

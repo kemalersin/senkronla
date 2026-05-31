@@ -1328,7 +1328,7 @@ export function OperatorAppsPanel({
                         className="operator-table-col-numeric"
                         onClick={(event) => event.stopPropagation()}
                       >
-                        {mode === 'operator' && onNavigateToNamespaces ? (
+                        {mode === 'operator' && onNavigateToNamespaces && row.namespaceCount > 0 ? (
                           <button
                             type="button"
                             className="operator-table-nav-link"

@@ -9,6 +9,15 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- Rate limits for developer auth mail — `developer_auth_mail` per IP (`limits.rateLimit.developerAuthMailPerHourPerIp`, default 20/h) and per developer account (`apps.developerPortal.authMailPerHourPerDeveloper`, default 5/h); per-developer cap returns success without sending mail; IP cap returns `429`
+
+### Changed
+
+- Developer verification and password-reset mail is dispatched in the background so API responses are not blocked on SMTP delivery
+- Developer auth emails use branded HTML templates aligned with the web portal (Senkronla colors, typography, CTA button, plain-text fallback)
+
 ## [0.1.9]
 
 ### Added
