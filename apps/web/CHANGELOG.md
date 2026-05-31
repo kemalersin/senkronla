@@ -13,7 +13,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 - Operator header **Limits** button opens a modal to set deployment-wide limit overrides (app and developer overrides still take precedence)
 - Operator settings — dangerous operations panel to permanently delete all relay records (namespaces, devices, documents, unlock data, apps, developers); requires typing `purge-all-records` and a confirmation dialog; SMTP overrides are preserved
-- Brand favicon and Apple touch icon: lowercase **s** in DM Sans Bold on flat accent teal (SVG, PNG, ICO)
+- Brand favicon and Apple touch icon: lowercase **s** in DM Sans Bold on accent teal gradient (SVG, PNG, ICO)
 
 ### Changed
 
