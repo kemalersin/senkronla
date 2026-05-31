@@ -1,4 +1,5 @@
 import type { CodeBlockLanguage } from '@/lib/code-block-types'
+import { readDocumentShikiTheme, type ShikiThemeId } from '@/lib/shiki-theme'
 
 type BundledHighlighter = Awaited<
   ReturnType<(typeof import('shiki/bundle/web'))['getSingletonHighlighter']>
@@ -15,7 +16,7 @@ async function getClientHighlighter() {
     const { getSingletonHighlighter } = await import('shiki/bundle/web')
     highlighterPromise = getSingletonHighlighter({
       themes: ['github-light', 'github-dark'],
-      langs: ['typescript', 'javascript', 'bash', 'http', 'jsonc', 'plaintext'],
+      langs: ['typescript', 'javascript', 'bash', 'http', 'jsonc', 'yaml', 'plaintext'],
     })
   }
   return highlighterPromise
@@ -24,6 +25,7 @@ async function getClientHighlighter() {
 export async function highlightCodeClient(
   code: string,
   language: CodeBlockLanguage,
+  theme: ShikiThemeId = readDocumentShikiTheme(),
 ): Promise<string> {
   const highlighter = await getClientHighlighter()
   const lang = toShikiLang(language)
@@ -32,10 +34,6 @@ export async function highlightCodeClient(
 
   return highlighter.codeToHtml(code, {
     lang: resolved,
-    themes: {
-      light: 'github-light',
-      dark: 'github-dark',
-    },
-    defaultColor: false,
+    theme,
   })
 }
