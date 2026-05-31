@@ -17,6 +17,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Fixed
 
+- Developer drawer truncates long email addresses with an ellipsis instead of overlapping the status badge
 - Drawer backdrop shows default cursor instead of pointer; page content no longer receives hover under open overlays
 - Operator limit override clear control is an × inside the input (no separate row button or undo)
 - Operator console no longer flashes the full panel before the admin token sign-in screen when session is still loading
