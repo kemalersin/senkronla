@@ -111,7 +111,7 @@ const document = createDocumentAdapter({
 })
 
 const sync = await EsrSync.connect({
-  relayUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.senkron.la/v1',
   appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
   document,
   storage: createLocalStorageAdapter('myapp'),
@@ -149,7 +149,7 @@ let appState = { notes: ['Welcome'] }
 let settings = { theme: 'light' as const }
 
 const sync = await EsrSync.connect({
-  relayUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.senkron.la/v1',
   appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
   storage: createMemoryStorageAdapter(),
   documents: [
@@ -239,7 +239,7 @@ Non-`primary` ids use envelope `schemaVersion: 2` (SDK handles this automaticall
 
 ```typescript
 const sync = await EsrSync.connect({
-  relayUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.senkron.la/v1',
   appId: 'esr_app_mynotes', // required when GET /health → apps.enabled is true
   document,
   storage: createLocalStorageAdapter('myapp'),
@@ -302,7 +302,7 @@ sync.senkron.la
 ```typescript
 // Web SPA
 await EsrSync.connect({
-  relayUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.senkron.la/v1',
   appId: 'esr_app_mynotes',
   document,
   storage,
@@ -312,7 +312,7 @@ await EsrSync.connect({
 
 // Native / desktop
 await EsrSync.connect({
-  relayUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.senkron.la/v1',
   appId: 'esr_app_mynotes_mobile',
   appPlatform: 'desktop',
   bundleId: 'com.example.mynotes',

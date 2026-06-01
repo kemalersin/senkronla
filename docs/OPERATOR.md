@@ -220,7 +220,7 @@ Generate a code after manual payment or support verification.
 
 ```bash
 export ESR_ADMIN_TOKEN="your-admin-token"
-export ESR_PUBLIC_URL="https://sync.example.com"
+export ESR_PUBLIC_URL="https://sync.senkron.la"
 
 npx @senkronla/cli generate-unlock-code \
   --namespace-id 550e8400-e29b-41d4-a716-446655440000 \

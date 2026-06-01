@@ -32,7 +32,7 @@ import {
 const namespaceId = gsync.senkron.laId() // persist before ensureNamespace
 
 const sync = await EsrSync.connect({
-  relayUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.senkron.la/v1',
   appId: 'esr_app_myapp', // when relay GET /health → apps.enabled is true
   storage: createLocalStorageAdapter('myapp'),
   document: createDocumentAdapter({
@@ -75,7 +75,7 @@ Implement sync by:
 sync.senkron.la
 ```typescript
 const sync = await EsrSync.connect({
-  relayUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.senkron.la/v1',
   storage: createLocalStorageAdapter('myapp'),
   documents: [
     { adapter: mainAdapter },
