@@ -1358,7 +1358,7 @@ export function OperatorAppsPanel({
                         {mode === 'operator' && onNavigateToNamespaces && row.namespaceCount > 0 ? (
                           <button
                             type="button"
-                            className="operator-table-nav-link"
+                            className="btn btn-secondary btn-sm"
                             onClick={() => onNavigateToNamespaces(row.appId, row.name)}
                             title={t('viewNamespaces')}
                           >

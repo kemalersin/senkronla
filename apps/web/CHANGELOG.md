@@ -18,6 +18,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 ### Changed
 
 - ESR setup guide — document `ESR_REVISION_RETENTION_DAYS` and `ESR_REVISION_RETENTION_COUNT` in configuration table
+- Operator apps and developers tables — namespace and app count navigation uses secondary buttons instead of text links
 - REST API docs — revision retention subsection under relay quotas
 - Operator revision purge success — single-line message in a highlighted feedback card
 - Postman collection and API doc snippets — health response no longer includes `apps.requireRegistration`

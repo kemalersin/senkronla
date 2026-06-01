@@ -1,8 +1,11 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { NotificationClient } from './notification-client.js'
 import type { RelayClient } from './relay-client.js'
+import type { HeadMeta } from './types.js'
 
-function mockRelayClient(getHeadMeta = vi.fn(async () => null)) {
+function mockRelayClient(
+  getHeadMeta = vi.fn(async (): Promise<HeadMeta | null> => null),
+) {
   return { getHeadMeta } as unknown as RelayClient
 }
 

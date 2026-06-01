@@ -619,7 +619,7 @@ export function OperatorDevelopersPanel({
                         {onNavigateToApps && row.appCount > 0 ? (
                           <button
                             type="button"
-                            className="operator-table-nav-link"
+                            className="btn btn-secondary btn-sm"
                             onClick={() => onNavigateToApps(row.id, row.email)}
                             title={t('viewApps')}
                           >
