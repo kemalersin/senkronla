@@ -1,6 +1,5 @@
 # Senkronla
 
-[![Version](https://img.shields.io/github/package-json/v/kemalersin/senkronla?label=version)](package.json)
 [![npm client](https://img.shields.io/npm/v/@senkronla/client?label=%40senkronla%2Fclient)](https://www.npmjs.com/package/@senkronla/client)
 [![npm protocol](https://img.shields.io/npm/v/@senkronla/protocol?label=%40senkronla%2Fprotocol)](https://www.npmjs.com/package/@senkronla/protocol)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-339933)](https://nodejs.org/)
