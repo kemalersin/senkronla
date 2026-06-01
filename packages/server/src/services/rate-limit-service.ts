@@ -29,42 +29,30 @@ export interface RateLimitQuota {
   windowSeconds: number
 }
 
-function buildRateLimitQuery(
-  action: RateLimitAction,
-  scope: RateLimitScope,
-  windowSeconds: number,
-) {
+/** Longest rate-limit window (namespace_create per day) + buffer for bucket retention. */
+const USAGE_BUCKET_RETENTION_SECONDS = 90_000
+
+type ScopeQuery = { whereSql: string; params: (string | null)[] }
+
+function buildScopeQuery(action: RateLimitAction, scope: RateLimitScope): ScopeQuery {
   if (scope.deviceUuid) {
     return {
-      sql: `SELECT COUNT(*)::text AS count, MIN(created_at) AS oldest_at
-            FROM rate_limit_events
-            WHERE device_uuid = $1
-              AND action = $2
-              AND created_at > now() - ($3 || ' seconds')::interval`,
-      params: [scope.deviceUuid, action, String(windowSeconds)],
+      whereSql: 'device_uuid = $1 AND action = $2',
+      params: [scope.deviceUuid, action],
     }
   }
 
   if (scope.appUuid && scope.clientIp) {
     return {
-      sql: `SELECT COUNT(*)::text AS count, MIN(created_at) AS oldest_at
-            FROM rate_limit_events
-            WHERE app_uuid = $1
-              AND client_ip = $2
-              AND action = $3
-              AND created_at > now() - ($4 || ' seconds')::interval`,
-      params: [scope.appUuid, scope.clientIp, action, String(windowSeconds)],
+      whereSql: 'app_uuid = $1 AND client_ip = $2 AND action = $3',
+      params: [scope.appUuid, scope.clientIp, action],
     }
   }
 
   if (scope.clientIp && !scope.namespaceUuid && !scope.deviceUuid) {
     return {
-      sql: `SELECT COUNT(*)::text AS count, MIN(created_at) AS oldest_at
-            FROM rate_limit_events
-            WHERE client_ip = $1
-              AND action = $2
-              AND created_at > now() - ($3 || ' seconds')::interval`,
-      params: [scope.clientIp, action, String(windowSeconds)],
+      whereSql: 'client_ip = $1 AND action = $2',
+      params: [scope.clientIp, action],
     }
   }
 
@@ -73,12 +61,8 @@ function buildRateLimitQuery(
   }
 
   return {
-    sql: `SELECT COUNT(*)::text AS count, MIN(created_at) AS oldest_at
-          FROM rate_limit_events
-          WHERE namespace_uuid = $1
-            AND action = $2
-            AND created_at > now() - ($3 || ' seconds')::interval`,
-    params: [scope.namespaceUuid, action, String(windowSeconds)],
+    whereSql: 'namespace_uuid = $1 AND action = $2',
+    params: [scope.namespaceUuid, action],
   }
 }
 
@@ -90,22 +74,72 @@ function computeRetryAfterSeconds(oldestAt: Date | null, windowSeconds: number):
   return Math.max(1, Math.ceil((oldestAt.getTime() + windowSeconds * 1000 - Date.now()) / 1000))
 }
 
-async function queryRateLimitUsage(
+async function queryBucketUsage(
   pool: DbPool,
   action: RateLimitAction,
   scope: RateLimitScope,
   windowSeconds: number,
 ): Promise<{ used: number; resetAfterSeconds: number }> {
-  const query = buildRateLimitQuery(action, scope, windowSeconds)
+  const scopeQuery = buildScopeQuery(action, scope)
+  const windowParamIndex = scopeQuery.params.length + 1
+
   const result = await pool.query<{ count: string; oldest_at: Date | null }>(
-    query.sql,
-    query.params,
+    `SELECT COALESCE(SUM(hit_count), 0)::text AS count, MIN(bucket_at) AS oldest_at
+     FROM rate_limit_usage_buckets
+     WHERE ${scopeQuery.whereSql}
+       AND bucket_at > now() - ($${windowParamIndex} || ' seconds')::interval`,
+    [...scopeQuery.params, String(windowSeconds)],
   )
 
   return {
     used: Number(result.rows[0]?.count ?? 0),
     resetAfterSeconds: computeRetryAfterSeconds(result.rows[0]?.oldest_at ?? null, windowSeconds),
   }
+}
+
+async function incrementUsageBucket(
+  pool: DbPool,
+  action: RateLimitAction,
+  scope: RateLimitScope,
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO rate_limit_usage_buckets (
+       action, namespace_uuid, device_uuid, client_ip, app_uuid, bucket_at, hit_count
+     ) VALUES ($1, $2, $3, $4, $5, date_trunc('minute', now()), 1)
+     ON CONFLICT (
+       action, namespace_uuid, device_uuid, client_ip, app_uuid, bucket_at
+     )
+     DO UPDATE SET hit_count = rate_limit_usage_buckets.hit_count + 1`,
+    [
+      action,
+      scope.namespaceUuid ?? null,
+      scope.deviceUuid ?? null,
+      scope.clientIp ?? null,
+      scope.appUuid ?? null,
+    ],
+  )
+}
+
+let lastUsageBucketPurgeAt = 0
+
+export async function purgeStaleRateLimitUsageBuckets(pool: DbPool): Promise<number> {
+  const result = await pool.query(
+    `DELETE FROM rate_limit_usage_buckets
+     WHERE bucket_at < now() - ($1 || ' seconds')::interval`,
+    [String(USAGE_BUCKET_RETENTION_SECONDS)],
+  )
+
+  return result.rowCount ?? 0
+}
+
+async function maybePurgeStaleUsageBuckets(pool: DbPool): Promise<void> {
+  const now = Date.now()
+  if (now - lastUsageBucketPurgeAt < 60_000) {
+    return
+  }
+
+  lastUsageBucketPurgeAt = now
+  await purgeStaleRateLimitUsageBuckets(pool)
 }
 
 export async function getRateLimitStatus(
@@ -118,7 +152,7 @@ export async function getRateLimitStatus(
     return null
   }
 
-  const { used, resetAfterSeconds } = await queryRateLimitUsage(
+  const { used, resetAfterSeconds } = await queryBucketUsage(
     pool,
     rule.action,
     scope,
@@ -150,6 +184,8 @@ export async function assertRateLimit(
     return
   }
 
+  await recordRateLimitViolation(pool, input.action, input.scope)
+
   throw new AppError(429, 'RATE_LIMIT_EXCEEDED', input.message, {
     retryAfterSeconds: status.resetAfterSeconds,
     action: input.action,
@@ -157,7 +193,7 @@ export async function assertRateLimit(
   })
 }
 
-export async function recordRateLimitEvent(
+export async function recordRateLimitViolation(
   pool: DbPool,
   action: RateLimitAction,
   scope: RateLimitScope,
@@ -174,6 +210,9 @@ export async function recordRateLimitEvent(
     ],
   )
 }
+
+/** @deprecated Use recordRateLimitViolation — kept for tests importing the old name. */
+export const recordRateLimitEvent = recordRateLimitViolation
 
 export interface RateLimitRule {
   action: RateLimitAction
@@ -249,10 +288,6 @@ export async function assertRecoverRateLimit(
   })
 }
 
-export async function recordRecoverAttempt(pool: DbPool, namespaceUuid: string): Promise<void> {
-  await recordRateLimitEvent(pool, RATE_LIMIT_ACTION.recover, { namespaceUuid })
-}
-
 export async function enforceRateLimit(
   pool: DbPool,
   config: ServerConfig,
@@ -265,6 +300,7 @@ export async function enforceRateLimit(
   }
 
   if (status.remaining <= 0) {
+    await recordRateLimitViolation(pool, rule.action, scope)
     throw new AppError(429, 'RATE_LIMIT_EXCEEDED', rule.message, {
       retryAfterSeconds: status.resetAfterSeconds,
       action: rule.action,
@@ -273,7 +309,8 @@ export async function enforceRateLimit(
     })
   }
 
-  await recordRateLimitEvent(pool, rule.action, scope)
+  await incrementUsageBucket(pool, rule.action, scope)
+  void maybePurgeStaleUsageBuckets(pool)
 
   return {
     ...status,

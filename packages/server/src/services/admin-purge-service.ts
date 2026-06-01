@@ -24,6 +24,7 @@ export async function purgeAllRecords(pool: DbPool, blobRoot: string): Promise<P
     const unlockEvents = (await client.query('DELETE FROM unlock_events')).rowCount ?? 0
     const unlockCodes = (await client.query('DELETE FROM unlock_codes')).rowCount ?? 0
     const rateLimitEvents = (await client.query('DELETE FROM rate_limit_events')).rowCount ?? 0
+    await client.query('DELETE FROM rate_limit_usage_buckets')
     const operatorLimitAudit = (await client.query('DELETE FROM operator_limit_audit')).rowCount ?? 0
     const namespaces = (await client.query('DELETE FROM namespaces')).rowCount ?? 0
     const developerAuthTokens = (await client.query('DELETE FROM developer_auth_tokens')).rowCount ?? 0

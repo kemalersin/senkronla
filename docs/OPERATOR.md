@@ -240,7 +240,9 @@ Override via config or env (`ESR_RECOVER_PER_HOUR`, `ESR_PAIRING_PER_HOUR`, etc.
 
 Exceeded limits return **429** `RATE_LIMIT_EXCEEDED` with a `Retry-After` header.
 
-**Operator portal — Rate limits tab:** lists grouped events with namespace, device, and client IP when recorded. IP comes from the API’s `request.ip`. With nginx or Cloudflare in front, set `ESR_TRUST_PROXY=true` so the stored address is the end-user IP, not the proxy hop. Events before a server upgrade that records IPs may still show `—` for IP.
+**Operator portal — Rate limits tab:** lists **429 violations only** (`rate_limit_events`). Quota counters live in `rate_limit_usage_buckets` (one row per scope × minute, auto-purged after ~25 hours) — not shown in the panel.
+
+**IPv4 vs IPv6:** Clients on IPv6-only or dual-stack networks may appear as IPv6 (e.g. `2400:…`). Cloudflare’s `CF-Connecting-IP` and `X-Forwarded-For` preserve whichever protocol the client used. The same user can show different addresses when switching Wi‑Fi, mobile data, or VPN — that is expected, not a proxy misconfiguration.
 
 ## Unlock codes
 

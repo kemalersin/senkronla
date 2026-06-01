@@ -581,7 +581,7 @@
         "overridesTitle": "Operator overrides",
         "overridesP1": "In the operator portal, use the <tag>Limits</tag> action on a namespace, app, or developer to override individual quotas without restarting the relay. Effective value resolution: namespace → app → developer → config. Full spec: <limitsSpecLink>17-OPERATOR-LIMIT-OVERRIDES</limitsSpecLink>.",
         "monitorTitle": "Monitoring",
-        "monitorP1": "The operator console <tag>Rate limits</tag> tab groups recent hits by action (<tag>put_document</tag>, <tag>recover</tag>, <tag>pair_device</tag>, <tag>namespace_create</tag>, etc.) with namespace, device, and IP context.",
+        "monitorP1": "The operator console <tag>Rate limits</tag> tab lists <tag>429</tag> violations only (<tag>rate_limit_events</tag>). Quota counters use <tag>rate_limit_usage_buckets</tag> (bounded minute buckets, not shown here). IPv6 client addresses are normal on dual-stack or Cloudflare.",
         "clientTitle": "Client-facing responses",
         "clientP1": "App integrators should honor <tag>Retry-After</tag>, <tag>RateLimit-*</tag> headers, and optional JSON <tag>rateLimits</tag> objects on success responses. See the <apiLink>REST API — Relay quotas</apiLink> section for header names, body shapes, and examples.",
         "rows": {
@@ -1509,7 +1509,7 @@
       "documents": "Documents",
       "pendingCodes": "Pending codes",
       "unlockEvents": "Unlock events",
-      "rateLimitEvents": "Rate limit hits"
+      "rateLimitEvents": "Rate limit violations"
     },
     "columns": {
       "namespace": "Namespace",

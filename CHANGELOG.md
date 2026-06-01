@@ -11,14 +11,19 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Changed
+
+- **server:** Rate limit counters in `rate_limit_usage_buckets` (minute buckets, auto-purged); `rate_limit_events` stores 429 violations only
+
 ### Fixed
 
-- **server:** Operator rate limits panel — record and list client IPs on rate limit events
+- **server:** Operator rate limits panel — record and list client IPs on violations
 
 ## [0.1.13]
 
 ### Changed
 
+- **server:** Rate limit operator panel — log and list **429 violations only** (via `exceeded` flag; superseded by usage buckets in unreleased)
 - **docs:** `.env.example` — document `ESR_TRUST_PROXY` for production reverse-proxy deployments
 - **docs:** OPERATOR guide — single repo-root `.env`, live service updates, nginx reverse proxy (Cloudflare, TLS); server config docs (EN/TR) aligned with Compose env model
 - **web:** ESR setup guide — configuration table (POSTGRES_*, ESR_COMPOSE_DATABASE_URL, publish ports), **Updating live services** and **Reverse proxy** sections; compose alias and update snippets

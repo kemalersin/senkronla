@@ -47,6 +47,12 @@ async function main() {
 
     const { seedAppsFromConfig } = await import('./services/app-registry-service.js')
     await seedAppsFromConfig(db, config)
+
+    const { purgeStaleRateLimitUsageBuckets } = await import('./services/rate-limit-service.js')
+    const purgedBuckets = await purgeStaleRateLimitUsageBuckets(db)
+    if (purgedBuckets > 0) {
+      console.info(`Purged ${purgedBuckets} stale rate-limit usage bucket(s)`)
+    }
   } catch (error) {
     console.error('Database migration failed — startup aborted')
     console.error(error)

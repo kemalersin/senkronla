@@ -48,7 +48,7 @@ function createMockPool(): DbPool {
         return { rows: [{ '?column?': 1 }] }
       }
 
-      if (sql.includes('rate_limit_events')) {
+      if (sql.includes('rate_limit_usage_buckets') || sql.includes('rate_limit_events')) {
         return { rows: [{ count: '0', oldest_at: null }] }
       }
 

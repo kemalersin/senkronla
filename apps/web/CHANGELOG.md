@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Changed
+
+- ESR setup guide and operator labels — rate limits tab: violations only; quota in usage buckets
+
 ## [0.1.13]
 
 ### Fixed

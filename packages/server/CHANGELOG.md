@@ -9,6 +9,11 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Changed
+
+- Rate limit counters moved to `rate_limit_usage_buckets` (minute buckets, bounded size); `rate_limit_events` stores **429 violations only**
+- Rate limit operator log — panel lists violations only (no quota rows)
+
 ### Fixed
 
 - Operator rate limits panel — persist `client_ip` on namespace/device rate limit events; include IP-only events (`global_ip`, `namespace_create`) in admin listing
