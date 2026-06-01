@@ -199,12 +199,13 @@ pnpm dev
 **Requires Postgres** for the API (migrations run on startup). Start bundled Postgres:
 
 ```bash
-cd docker && docker compose --profile bundled-db up postgres -d
+cp .env.example .env   # if you have not already
+docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up postgres -d
 ```
 
 Or point `ESR_DATABASE_URL` in `.env` to an existing instance.
 
-**Config:** copy `.env.example` to `.env`, or use `packages/server/config.example.yaml` as `config.yaml` with `ESR_CONFIG_PATH`.
+**Config:** copy `.env.example` to `.env` (used for both `pnpm dev` and Docker Compose), or use `packages/server/config.example.yaml` as `config.yaml` with `ESR_CONFIG_PATH`.
 
 ```bash
 pnpm --filter @senkronla/server migrate   # run migrations manually
@@ -213,20 +214,19 @@ pnpm --filter @senkronla/server migrate   # run migrations manually
 ### Docker — bundled Postgres
 
 ```bash
-cp docker/.env.example .env
-cd docker
-docker compose --profile bundled-db up --build
+cp .env.example .env
+docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up --build
 ```
 
 ### Docker — existing Postgres
 
-Set `ESR_DATABASE_URL` in `.env` to your instance, then start without the bundled profile:
+Set `ESR_COMPOSE_DATABASE_URL` in `.env` to your instance, then start without the bundled profile:
 
 ```bash
 # macOS/Windows — Postgres on host
-ESR_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr
+ESR_COMPOSE_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr
 
-docker compose up api web
+docker compose --project-directory . -f docker/docker-compose.yml --env-file .env up api web
 ```
 
 ## Documentation
