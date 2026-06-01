@@ -581,7 +581,7 @@
         "overridesTitle": "Operatör override'ları",
         "overridesP1": "Operatör panelinde bir namespace, uygulama veya geliştirici için <tag>Limitler</tag> düğmesiyle tek tek kotaları relay'i yeniden başlatmadan değiştirebilirsiniz. Etkin değer sırası: namespace → uygulama → geliştirici → config. Tam spec: <limitsSpecLink>17-OPERATOR-LIMIT-OVERRIDES</limitsSpecLink>.",
         "monitorTitle": "İzleme",
-        "monitorP1": "Operatör konsolundaki <tag>Rate limit</tag> sekmesi yalnızca <tag>429</tag> ihlallerini listeler (<tag>rate_limit_events</tag>). Kota sayaçları <tag>rate_limit_usage_buckets</tag> tablosunda tutulur (sınırlı dakika bucket'ları, panelde görünmez). IPv6 istemci adresleri dual-stack veya Cloudflare'de normaldir.",
+        "monitorP1": "Operatör konsolundaki <tag>Rate limit</tag> sekmesi <tag>rate_limit_usage_buckets</tag> tablosundan gruplanmış kullanımı gösterir (saatlik toplamlar; action, namespace, cihaz, IP). <tag>global_ip</tag> hariç tutulur. Veri yaklaşık son 25 saati kapsar.",
         "clientTitle": "İstemci yanıtları",
         "clientP1": "Uygulama entegrasyonları <tag>Retry-After</tag>, <tag>RateLimit-*</tag> başlıklarını ve isteğe bağlı JSON <tag>rateLimits</tag> nesnelerini dikkate almalıdır. Başlık adları, gövde şekilleri ve örnekler için <apiLink>REST API — Relay kotaları</apiLink> bölümüne bakın.",
         "rows": {
@@ -1501,7 +1501,7 @@
       "developers": "Geliştiriciler",
       "unlockCodes": "Açılış kodları",
       "unlockEvents": "Açılış geçmişi",
-      "rateLimits": "Rate limit",
+      "rateLimits": "Rate limit kullanımı",
       "settings": "Ayarlar"
     },
     "stats": {
@@ -1510,7 +1510,7 @@
       "documents": "Doküman",
       "pendingCodes": "Bekleyen kod",
       "unlockEvents": "Açılış olayı",
-      "rateLimitEvents": "Rate limit ihlali"
+      "rateLimitEvents": "Kullanım (24s, global_ip hariç)"
     },
     "columns": {
       "namespace": "Namespace",
@@ -1659,7 +1659,7 @@
         "devices": "Cihaz kayıtları",
         "documents": "Doküman başlıkları ve blob dosyaları",
         "unlock": "Açılış kodları ve geçmişi",
-        "rateLimits": "Rate limit olayları",
+        "rateLimits": "Rate limit kullanımı",
         "apps": "Kayıtlı uygulamalar, origin'ler ve bundle'lar",
         "developers": "Geliştirici hesapları"
       },

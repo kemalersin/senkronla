@@ -11,7 +11,8 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
-- ESR setup guide and operator labels — rate limits tab: violations only; quota in usage buckets
+- Operator rate limits tab — grouped usage via `/api/operator/rate-limit-usage`; overview stat shows 24h hits (excl. `global_ip`)
+- ESR setup guide and operator labels — rate limits monitoring text updated for usage buckets
 
 ## [0.1.13]
 

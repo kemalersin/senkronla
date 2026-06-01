@@ -19,7 +19,7 @@ function baseConfig() {
 }
 
 describe('rate-limit-service', () => {
-  it('uses minute buckets for counters and logs violations only to rate_limit_events', async () => {
+  it('uses minute buckets for counters without writing violations', async () => {
     const pool = {
       query: vi
         .fn()
@@ -28,8 +28,7 @@ describe('rate-limit-service', () => {
         .mockResolvedValueOnce({ rowCount: 0 })
         .mockResolvedValueOnce({ rows: [{ count: '1', oldest_at: new Date() }] })
         .mockResolvedValueOnce({ rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [{ count: '2', oldest_at: new Date() }] })
-        .mockResolvedValueOnce({ rowCount: 1 }),
+        .mockResolvedValueOnce({ rows: [{ count: '2', oldest_at: new Date() }] }),
     }
 
     const config = baseConfig()
@@ -56,10 +55,8 @@ describe('rate-limit-service', () => {
       expect.arrayContaining([RATE_LIMIT_ACTION.globalIp, null, null, '203.0.113.10', null]),
     )
 
-    expect(pool.query).toHaveBeenNthCalledWith(
-      7,
-      expect.stringContaining('INSERT INTO rate_limit_events'),
-      [null, null, '203.0.113.10', null, RATE_LIMIT_ACTION.globalIp],
-    )
+    expect(
+      pool.query.mock.calls.some(([sql]) => String(sql).includes('INSERT INTO rate_limit_events')),
+    ).toBe(false)
   })
 })

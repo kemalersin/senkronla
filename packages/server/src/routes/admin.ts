@@ -6,7 +6,7 @@ import { createRequireAdminAuth } from '../middleware/auth-admin.js'
 import {
   getAdminOverview,
   listAdminNamespaces,
-  listAdminRateLimitEvents,
+  listAdminRateLimitUsage,
   listAdminUnlockCodes,
   listAdminUnlockEvents,
 } from '../services/admin-dashboard-service.js'
@@ -112,7 +112,7 @@ const purgeRevisionsBodySchema = z
     }
   })
 
-const rateLimitListQuerySchema = listQuerySchema.extend({
+const rateLimitUsageListQuerySchema = listQuerySchema.extend({
   action: z
     .enum([
       RATE_LIMIT_ACTION.recover,
@@ -120,7 +120,6 @@ const rateLimitListQuerySchema = listQuerySchema.extend({
       RATE_LIMIT_ACTION.pairingToken,
       RATE_LIMIT_ACTION.putDocument,
       RATE_LIMIT_ACTION.namespaceCreate,
-      RATE_LIMIT_ACTION.globalIp,
     ])
     .optional(),
 })
@@ -148,9 +147,9 @@ export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext)
     return listAdminUnlockEvents(ctx.db, query)
   })
 
-  app.get('/admin/rate-limit-events', { preHandler: requireAdminAuth }, async (request) => {
-    const query = rateLimitListQuerySchema.parse(request.query)
-    return listAdminRateLimitEvents(ctx.db, query)
+  app.get('/admin/rate-limit-usage', { preHandler: requireAdminAuth }, async (request) => {
+    const query = rateLimitUsageListQuerySchema.parse(request.query)
+    return listAdminRateLimitUsage(ctx.db, query)
   })
 
   app.post('/admin/unlock-codes', { preHandler: requireAdminAuth }, async (request, reply) => {

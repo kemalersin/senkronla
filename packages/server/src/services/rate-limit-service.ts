@@ -184,35 +184,12 @@ export async function assertRateLimit(
     return
   }
 
-  await recordRateLimitViolation(pool, input.action, input.scope)
-
   throw new AppError(429, 'RATE_LIMIT_EXCEEDED', input.message, {
     retryAfterSeconds: status.resetAfterSeconds,
     action: input.action,
     rateLimit: status,
   })
 }
-
-export async function recordRateLimitViolation(
-  pool: DbPool,
-  action: RateLimitAction,
-  scope: RateLimitScope,
-): Promise<void> {
-  await pool.query(
-    `INSERT INTO rate_limit_events (namespace_uuid, device_uuid, client_ip, app_uuid, action)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [
-      scope.namespaceUuid ?? null,
-      scope.deviceUuid ?? null,
-      scope.clientIp ?? null,
-      scope.appUuid ?? null,
-      action,
-    ],
-  )
-}
-
-/** @deprecated Use recordRateLimitViolation — kept for tests importing the old name. */
-export const recordRateLimitEvent = recordRateLimitViolation
 
 export interface RateLimitRule {
   action: RateLimitAction
@@ -300,7 +277,6 @@ export async function enforceRateLimit(
   }
 
   if (status.remaining <= 0) {
-    await recordRateLimitViolation(pool, rule.action, scope)
     throw new AppError(429, 'RATE_LIMIT_EXCEEDED', rule.message, {
       retryAfterSeconds: status.resetAfterSeconds,
       action: rule.action,

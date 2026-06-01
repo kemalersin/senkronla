@@ -1487,10 +1487,10 @@ paths:
         '200':
           description: Paginated unlock events
 
-  /admin/rate-limit-events:
+  /admin/rate-limit-usage:
     get:
       tags: [Admin]
-      summary: List rate limit events
+      summary: List grouped rate limit usage (excludes global_ip)
       security:
         - AdminToken: []
       parameters:
@@ -1504,7 +1504,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Paginated rate limit events
+          description: Paginated grouped usage from rate_limit_usage_buckets
 
   /admin/unlock-codes:
     get:

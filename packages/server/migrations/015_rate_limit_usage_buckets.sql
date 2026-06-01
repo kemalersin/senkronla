@@ -1,4 +1,4 @@
--- Sliding-window counters in minute buckets; rate_limit_events = violations only.
+-- Sliding-window counters in minute buckets; rate_limit_events is legacy (optional purge).
 
 CREATE TABLE rate_limit_usage_buckets (
   action TEXT NOT NULL,

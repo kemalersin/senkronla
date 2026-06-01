@@ -13,11 +13,8 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Changed
 
-- **server:** Rate limit counters in `rate_limit_usage_buckets` (minute buckets, auto-purged); `rate_limit_events` stores 429 violations only
-
-### Fixed
-
-- **server:** Operator rate limits panel — record and list client IPs on violations
+- **server:** Operator rate limits tab — grouped usage only (no `global_ip`, no violation log)
+- **server:** Rate limit counters in `rate_limit_usage_buckets`; `rate_limit_events` no longer written on 429
 
 ## [0.1.13]
 

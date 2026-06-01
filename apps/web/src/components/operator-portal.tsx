@@ -383,7 +383,7 @@ export function OperatorPortal() {
       } else if (tab === 'unlockEvents') {
         setUnlockEvents((await loadPaginated('/api/operator/unlock-events', page, listOptions)) as Paginated<UnlockEventRow> | null)
       } else if (tab === 'rateLimits') {
-        setRateLimits((await loadPaginated('/api/operator/rate-limit-events', page, listOptions)) as Paginated<RateLimitGroupRow> | null)
+        setRateLimits((await loadPaginated('/api/operator/rate-limit-usage', page, listOptions)) as Paginated<RateLimitGroupRow> | null)
       }
     })()
   }, [authState, tab, page, debouncedSearch, rateLimitAction, appsEnabled, namespaceAppFilter?.appId, listRefreshKey, loadPaginated])

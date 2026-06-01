@@ -119,7 +119,9 @@ export async function getAdminOverview(pool: DbPool): Promise<AdminOverview> {
       (SELECT COUNT(*)::text FROM unlock_codes WHERE redeemed_at IS NULL) AS pending_unlock_codes,
       (SELECT COUNT(*)::text FROM unlock_codes WHERE redeemed_at IS NOT NULL) AS redeemed_unlock_codes,
       (SELECT COUNT(*)::text FROM unlock_events) AS unlock_events,
-      (SELECT COUNT(*)::text FROM rate_limit_events) AS rate_limit_events,
+      (SELECT COALESCE(SUM(hit_count), 0)::text FROM rate_limit_usage_buckets
+        WHERE action <> 'global_ip'
+          AND bucket_at > now() - interval '24 hours') AS rate_limit_events,
       (SELECT COUNT(*)::text FROM pairing_tokens
         WHERE redeemed_at IS NULL AND expires_at > now()) AS active_pairing_tokens
   `)
@@ -359,7 +361,7 @@ export async function listAdminUnlockEvents(
   }
 }
 
-export async function listAdminRateLimitEvents(
+export async function listAdminRateLimitUsage(
   pool: DbPool,
   input: ListQueryInput = {},
 ): Promise<PaginatedResult<AdminRateLimitGroupRow>> {
@@ -380,33 +382,28 @@ export async function listAdminRateLimitEvents(
     `
     WITH grouped AS (
       SELECT
-        rle.action,
+        rlub.action,
         COALESCE(n.namespace_id, n2.namespace_id) AS namespace_id,
         d.client_device_id,
-        rle.client_ip,
-        CASE
-          WHEN rle.action = 'global_ip' THEN date_trunc('minute', rle.created_at)
-          ELSE date_trunc('hour', rle.created_at)
-        END AS period_start,
-        COUNT(*)::int AS event_count
-      FROM rate_limit_events rle
-      LEFT JOIN namespaces n ON n.id = rle.namespace_uuid
-      LEFT JOIN devices d ON d.id = rle.device_uuid
+        rlub.client_ip,
+        date_trunc('hour', rlub.bucket_at) AS period_start,
+        SUM(rlub.hit_count)::int AS event_count
+      FROM rate_limit_usage_buckets rlub
+      LEFT JOIN namespaces n ON n.id = rlub.namespace_uuid
+      LEFT JOIN devices d ON d.id = rlub.device_uuid
       LEFT JOIN namespaces n2 ON n2.id = d.namespace_uuid
-      WHERE (
-        COALESCE(n.namespace_id, n2.namespace_id) IS NOT NULL
-        OR rle.client_ip IS NOT NULL
-      )
-        AND ($3::text IS NULL OR rle.action = $3)
+      WHERE rlub.action <> 'global_ip'
+        AND (
+          COALESCE(n.namespace_id, n2.namespace_id) IS NOT NULL
+          OR rlub.client_ip IS NOT NULL
+        )
+        AND ($3::text IS NULL OR rlub.action = $3)
       GROUP BY
-        rle.action,
+        rlub.action,
         COALESCE(n.namespace_id, n2.namespace_id),
         d.client_device_id,
-        rle.client_ip,
-        CASE
-          WHEN rle.action = 'global_ip' THEN date_trunc('minute', rle.created_at)
-          ELSE date_trunc('hour', rle.created_at)
-        END
+        rlub.client_ip,
+        date_trunc('hour', rlub.bucket_at)
     )
     SELECT
       action,
@@ -414,10 +411,7 @@ export async function listAdminRateLimitEvents(
       client_device_id,
       client_ip,
       period_start,
-      CASE
-        WHEN action = 'global_ip' THEN period_start + interval '1 minute'
-        ELSE period_start + interval '1 hour'
-      END AS period_end,
+      period_start + interval '1 hour' AS period_end,
       event_count,
       COUNT(*) OVER() AS total_count
     FROM grouped

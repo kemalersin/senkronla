@@ -44,8 +44,7 @@ describe('developer auth mail rate limits', () => {
         .mockResolvedValueOnce({ rowCount: 0 })
         .mockResolvedValueOnce({ rows: [{ count: '1', oldest_at: new Date() }] })
         .mockResolvedValueOnce({ rowCount: 1 })
-        .mockResolvedValueOnce({ rows: [{ count: '2', oldest_at: new Date() }] })
-        .mockResolvedValueOnce({ rowCount: 1 }),
+        .mockResolvedValueOnce({ rows: [{ count: '2', oldest_at: new Date() }] }),
     }
 
     const config = baseConfig()
