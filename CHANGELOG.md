@@ -27,7 +27,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 - **web:** ESR setup guide — system requirements under Prerequisites (`/guides/esr#prerequisites`)
 - **docs:** Architecture spec — ~1000 namespace resource sizing (moderate / heavy sync) in §6.2; ESR guide sizing table updated to match
 - **docker:** Optional `docker-compose.resources.example.yml` — per-container CPU/RAM limits (~100 / ~1000 tiers); OPERATOR.md and ESR guide document merge usage
-- **docker:** API image build installs/builds only `@senkronla/server` + `@senkronla/protocol`; runtime via `pnpm deploy --prod`
+- **docker:** Compose `env_file` uses `${PWD}/.env` so all `.env` vars reach api/web containers when run from repo root
 - **docs:** Enrich root README with architecture diagrams (system, push/pull, WebSocket), deployment sketch, and [senkron.la](https://senkron.la) links
 
 ## [0.1.11]

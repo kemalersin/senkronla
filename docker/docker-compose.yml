@@ -21,6 +21,9 @@
 #     --env-file .env --profile bundled-db up --build
 #
 # Blob storage: ESR_BLOB_PATH in .env is the host bind-mount source; inside the api container ESR_BLOB_PATH is /data/blobs.
+#
+# env_file uses ${PWD}/.env so variables reach containers even when the project directory is docker/.
+# Always run compose from the repo root (where .env lives). After .env changes: add --force-recreate.
 
 services:
   postgres:
@@ -28,7 +31,7 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     env_file:
-      - .env
+      - ${PWD}/.env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-esr}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esr}
@@ -49,7 +52,7 @@ services:
       dockerfile: docker/Dockerfile
     restart: unless-stopped
     env_file:
-      - .env
+      - ${PWD}/.env
     ports:
       - '${ESR_PUBLISH_PORT:-8080}:8080'
     environment:
@@ -73,7 +76,7 @@ services:
       dockerfile: docker/Dockerfile.web
     restart: unless-stopped
     env_file:
-      - .env
+      - ${PWD}/.env
     ports:
       - '${WEB_PUBLISH_PORT:-3000}:3000'
     environment:
