@@ -235,7 +235,7 @@ export default async function EsrGuidePage({ params }: PageProps) {
         <p>{t.rich('sections.docker.externalP1', rich)}</p>
         <CodeBlock code={snippets.dockerExternal} language="bash" />
         <p className="doc-subheading">{t('sections.docker.resourcesTitle')}</p>
-        <p>{t('sections.docker.resourcesP1')}</p>
+        <p>{t.rich('sections.docker.resourcesP1', rich)}</p>
         <CodeBlock code={snippets.dockerResources} language="bash" />
         <DocCallout variant="tip" title={t('sections.docker.resourcesTipTitle')}>
           <p>{t('sections.docker.resourcesTipBody')}</p>

@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- ESR setup guide — render Docker resources paragraph with rich text (`<tag>` markup)
+
 ### Changed
 
 - ESR setup guide — system requirements, resource sizing (~1000 namespace moderate/heavy rows), and ports under Prerequisites
