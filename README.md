@@ -15,7 +15,9 @@ Your app encrypts and owns the data model. Senkronla stores opaque `ESR-DOC1` en
 
 ## At a glance
 
-| **Deploy** | Self-hosted relay (Docker or Node.js + Postgres) |
+| Topic | Summary |
+| --- | --- |
+| **Deploy** | Self-hosted relay — [ESR setup](https://senkron.la/guides/esr#prerequisites): Docker Compose or Node.js 22+, PostgreSQL 16+, persistent blob storage, TLS in production |
 | **Client** | [`@senkronla/client`](https://senkron.la/sdk) — `EsrSync` facade, offline queue, conflict callbacks |
 | **Protocol** | REST `/v1` + optional WebSocket notifications (push-to-pull) |
 | **Docs** | [Integration guides](https://senkron.la/guides) · [API](https://senkron.la/api) · [ESR setup](https://senkron.la/guides/esr) |

@@ -159,7 +159,11 @@ Reverse proxy: Caddy veya nginx (TLS termination).
 | Ölçek | CPU | RAM | Disk |
 |-------|-----|-----|------|
 | MVP / kişisel | 1 vCPU | 512 MB | 10 GB + blob |
-| 100 namespace | 2 vCPU | 1 GB | 50 GB |
+| ~100 namespace | 2 vCPU | 1 GB | 50 GB + blob |
+| ~1000 namespace (orta) | 4–8 vCPU | 8–16 GB | 250–500 GB + blob |
+| ~1000 namespace (yoğun sync) | 8–16 vCPU | 16–32 GB | 500 GB–1 TB + blob |
+
+Bu rakamlar **başlangıç noktasıdır**; sert üst sınır değildir. Gerçek yük; eşzamanlı cihaz sayısı, zarf boyutu, revizyon retention ve WebSocket fan-out'a bağlıdır — yalnızca namespace sayısına değil. ~1000 namespace orta yükte `database.poolSize` artırın (ör. 25–50), blob için NVMe kullanın ve mümkünse Postgres'i ayrı instance'ta çalıştırın (`ESR_DATABASE_URL` ile ayrı sunucu veya yönetilen veritabanı — bundled Compose Postgres'i aynı VM'de bırakmayın). Paylaşımlı host'ta isteğe bağlı konteyner CPU/RAM tavanları: `docker/docker-compose.resources.example.yml`. Bellek içi bildirim hub'ı, sticky WebSocket yönlendirmesi olmadan yatay API ölçeklemesini sınırlar.
 
 ### 6.3 Portlar
 

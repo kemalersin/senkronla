@@ -1,0 +1,47 @@
+# Optional CPU/RAM limits per container (Linux cgroups via Docker Compose).
+#
+# Merge with the base compose file (use bundled-db or external Postgres as usual):
+#
+#   cd docker
+#   docker compose -f docker-compose.yml -f docker-compose.resources.example.yml \
+#     --profile bundled-db up --build
+#
+# External Postgres (omit bundled-db profile; postgres limits below are ignored):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.resources.example.yml up api web
+#
+# Limits cap each container on a shared host — they do not replace a separate Postgres
+# machine or managed DB at scale (see docs/en/02-ARCHITECTURE.md §6.2).
+#
+# Tier reference (sum of limits + ~15% headroom for the OS):
+#
+#   ~100 namespaces (bundled) — active below:
+#     api 2 CPU / 2G · postgres 1 CPU / 2G · web 0.5 CPU / 512M  → ~4 vCPU / 5G host
+#
+#   ~1000 namespaces (moderate, bundled) — replace limits with:
+#     api 4 CPU / 8G · postgres 2 CPU / 4G · web 1 CPU / 1G  → ~8 vCPU / 14G host
+#
+#   ~1000 namespaces (moderate, external Postgres) — api + web only:
+#     api 4 CPU / 8G · web 1 CPU / 1G  (remove or comment out postgres block)
+
+services:
+  postgres:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+  api:
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  web:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M

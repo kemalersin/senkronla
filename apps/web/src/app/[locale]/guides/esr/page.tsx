@@ -139,6 +139,45 @@ export default async function EsrGuidePage({ params }: PageProps) {
     ],
   ]
 
+  const systemRequirementRows = (
+    ['runtimeDocker', 'runtimeSource', 'database', 'blob', 'tls'] as const
+  ).map((key) => [
+    t(`sections.prerequisites.rows.${key}`),
+    t.rich(`sections.prerequisites.rows.${key}Detail`, rich),
+  ])
+
+  const sizingRows = [
+    [
+      t('sections.prerequisites.sizingMvp'),
+      t('sections.prerequisites.sizingMvpCpu'),
+      t('sections.prerequisites.sizingMvpRam'),
+      t('sections.prerequisites.sizingMvpDisk'),
+    ],
+    [
+      t('sections.prerequisites.sizing100'),
+      t('sections.prerequisites.sizing100Cpu'),
+      t('sections.prerequisites.sizing100Ram'),
+      t('sections.prerequisites.sizing100Disk'),
+    ],
+    [
+      t('sections.prerequisites.sizing1000Moderate'),
+      t('sections.prerequisites.sizing1000ModerateCpu'),
+      t('sections.prerequisites.sizing1000ModerateRam'),
+      t('sections.prerequisites.sizing1000ModerateDisk'),
+    ],
+    [
+      t('sections.prerequisites.sizing1000Heavy'),
+      t('sections.prerequisites.sizing1000HeavyCpu'),
+      t('sections.prerequisites.sizing1000HeavyRam'),
+      t('sections.prerequisites.sizing1000HeavyDisk'),
+    ],
+  ]
+
+  const portRows = (['api', 'web', 'postgres'] as const).map((key) => [
+    t(`sections.prerequisites.ports.${key}`),
+    t.rich(`sections.prerequisites.ports.${key}Detail`, rich),
+  ])
+
   return (
     <DocsLayout title={t('title')} intro={t.rich('intro', rich)} nav={nav}>
       <DocSection id="overview" title={t('sections.overview.title')}>
@@ -158,6 +197,33 @@ export default async function EsrGuidePage({ params }: PageProps) {
           <li>{t.rich('sections.prerequisites.li3', rich)}</li>
           <li>{t('sections.prerequisites.li4')}</li>
         </ul>
+        <p className="doc-subheading">{t('sections.prerequisites.requirementsTitle')}</p>
+        <p>{t('sections.prerequisites.requirementsP1')}</p>
+        <DocsTable
+          headers={[t('table.component'), t('table.requirement')]}
+          rows={systemRequirementRows}
+          tagFirstColumn={false}
+        />
+        <p className="doc-subheading">{t('sections.prerequisites.sizingTitle')}</p>
+        <p>{t('sections.prerequisites.sizingP1')}</p>
+        <DocsTable
+          headers={[
+            t('sections.prerequisites.sizingHeaders.scale'),
+            t('sections.prerequisites.sizingHeaders.cpu'),
+            t('sections.prerequisites.sizingHeaders.ram'),
+            t('sections.prerequisites.sizingHeaders.disk'),
+          ]}
+          rows={sizingRows}
+          tagFirstColumn={false}
+        />
+        <p>{t('sections.prerequisites.sizingNote')}</p>
+        <p className="doc-subheading">{t('sections.prerequisites.portsTitle')}</p>
+        <p>{t('sections.prerequisites.portsP1')}</p>
+        <DocsTable
+          headers={[t('table.component'), t('table.requirement')]}
+          rows={portRows}
+          tagFirstColumn={false}
+        />
       </DocSection>
 
       <DocSection id="docker" title={t('sections.docker.title')}>
@@ -168,6 +234,12 @@ export default async function EsrGuidePage({ params }: PageProps) {
         <p className="doc-subheading">{t('sections.docker.externalTitle')}</p>
         <p>{t.rich('sections.docker.externalP1', rich)}</p>
         <CodeBlock code={snippets.dockerExternal} language="bash" />
+        <p className="doc-subheading">{t('sections.docker.resourcesTitle')}</p>
+        <p>{t('sections.docker.resourcesP1')}</p>
+        <CodeBlock code={snippets.dockerResources} language="bash" />
+        <DocCallout variant="tip" title={t('sections.docker.resourcesTipTitle')}>
+          <p>{t('sections.docker.resourcesTipBody')}</p>
+        </DocCallout>
         <DocCallout variant="tip" title={t('sections.docker.tipTitle')}>
           <p>{t.rich('sections.docker.tipBody', rich)}</p>
         </DocCallout>

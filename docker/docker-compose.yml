@@ -14,6 +14,10 @@
 #   macOS/Windows: postgresql://user:pass@host.docker.internal:5432/esr
 #   Linux:         postgresql://user:pass@172.17.0.1:5432/esr
 #                    or add extra_hosts: host.docker.internal:host-gateway
+#
+# Optional per-container CPU/RAM limits (shared host):
+#   docker compose -f docker-compose.yml -f docker-compose.resources.example.yml ...
+#   See docker-compose.resources.example.yml for ~100 / ~1000 namespace tiers.
 
 services:
   postgres:

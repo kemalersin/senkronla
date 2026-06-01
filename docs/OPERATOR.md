@@ -279,3 +279,13 @@ cd docker && docker compose --profile bundled-db up --build
 ```
 
 External Postgres: set `ESR_DATABASE_URL` and run `docker compose up api web` without the bundled profile.
+
+Optional CPU/RAM limits per container (shared host, Linux cgroups):
+
+```bash
+cd docker
+docker compose -f docker-compose.yml -f docker-compose.resources.example.yml \
+  --profile bundled-db up --build
+```
+
+Edit `docker-compose.resources.example.yml` to switch tiers (~100 namespaces default, ~1000 moderate values in file comments). Limits cap containers on one VM; at ~1000 namespaces prefer external or managed Postgres on a separate host — see [02-ARCHITECTURE.md](en/02-ARCHITECTURE.md) §6.2.

@@ -159,7 +159,11 @@ Reverse proxy: Caddy or nginx (TLS termination).
 | Scale | CPU | RAM | Disk |
 |-------|-----|-----|------|
 | MVP / personal | 1 vCPU | 512 MB | 10 GB + blob |
-| 100 namespace | 2 vCPU | 1 GB | 50 GB |
+| ~100 namespaces | 2 vCPU | 1 GB | 50 GB + blob |
+| ~1000 namespaces (moderate) | 4–8 vCPU | 8–16 GB | 250–500 GB + blob |
+| ~1000 namespaces (heavy sync) | 8–16 vCPU | 16–32 GB | 500 GB–1 TB + blob |
+
+These figures are **starting points**, not hard limits. Actual load depends on concurrent devices, envelope size, revision retention, and WebSocket fan-out — not namespace count alone. For ~1000 namespaces at moderate load, raise `database.poolSize` (e.g. 25–50), use NVMe for blobs, and prefer a dedicated Postgres instance (set `ESR_DATABASE_URL` to a separate host or managed database — not bundled Compose Postgres on the same VM). Optional per-container CPU/RAM caps on a shared host: `docker/docker-compose.resources.example.yml`. The in-process notification hub limits horizontal API scaling without sticky WebSocket routing.
 
 ### 6.3 Ports
 

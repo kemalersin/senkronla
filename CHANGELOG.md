@@ -16,6 +16,9 @@ The published version number lives only in the [`package.json`](package.json) `v
 - **docs:** Move specification from `docs/envelope-sync-relay/` to `docs/` (`en/`, `tr/`, `openapi.yaml`); update repo, web, agent, and package references; fix in-spec paths to relative links
 - **docs:** Remove stale “planned” wording for shipped features (app registry v1.3, limit overrides v1.3.2, WebSocket, multi-document, revision history, operator portal)
 - **docs:** Point AGENT-HANDOFF at `.cursor/rules/feature-shipped-docs.mdc` when a phase or feature ships
+- **web:** ESR setup guide — system requirements under Prerequisites (`/guides/esr#prerequisites`)
+- **docs:** Architecture spec — ~1000 namespace resource sizing (moderate / heavy sync) in §6.2; ESR guide sizing table updated to match
+- **docker:** Optional `docker-compose.resources.example.yml` — per-container CPU/RAM limits (~100 / ~1000 tiers); OPERATOR.md and ESR guide document merge usage
 - **docs:** Enrich root README with architecture diagrams (system, push/pull, WebSocket), deployment sketch, and [senkron.la](https://senkron.la) links
 
 ## [0.1.11]
