@@ -2347,6 +2347,27 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   pointer-events: auto;
 }
 
+.operator-table--apps th,
+.operator-table--apps td {
+  vertical-align: middle;
+}
+
+.operator-apps-cell-primary-layout {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.operator-apps-cell-primary-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.operator-table--apps .operator-apps-cell-primary-layout .operator-copy-button {
+  margin-top: 0;
+}
+
 .operator-table--apps .operator-apps-cell-primary {
   white-space: nowrap;
 }
@@ -3238,6 +3259,133 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 
 .doc-callout-tip {
   background: var(--bg-band);
+}
+
+.doc-agent-files {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.doc-agent-files-origin-note {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg-band);
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.doc-agent-files-groups {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 40rem) {
+  .doc-agent-files-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .doc-agent-files-group:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+.doc-agent-files-group {
+  margin: 0;
+  padding: 0.9rem 1rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--bg-card);
+}
+
+.doc-agent-files-group-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.doc-agent-files-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.doc-agent-file-row {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.doc-agent-file-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+}
+
+.doc-agent-file-path {
+  text-decoration: none;
+  color: var(--accent);
+  min-width: 0;
+}
+
+.doc-agent-file-path:hover,
+.doc-agent-file-path:focus-visible {
+  color: var(--accent-dim);
+}
+
+.doc-agent-file-path code {
+  font-size: 0.875rem;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.doc-agent-file-lang {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.doc-agent-file-desc {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.doc-agent-files-recommended {
+  margin: 0;
+  padding: 1rem 1.05rem;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: var(--accent-soft);
+}
+
+.doc-agent-files-recommended-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.doc-agent-files-recommended-steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  gap: 0.45rem;
 }
 
 .doc-subheading {

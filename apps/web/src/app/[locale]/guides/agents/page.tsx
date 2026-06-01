@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { DocAgentFiles } from '@/components/doc-agent-files'
 import { DocCallout } from '@/components/doc-callout'
 import { DocSection } from '@/components/doc-section'
 import { DocStepList } from '@/components/doc-step-list'
@@ -36,6 +37,79 @@ export default async function AgentsGuidePage({ params }: PageProps) {
     body: t.rich(`sections.usage.steps.s${n}.body`, rich),
   }))
 
+  const agentFileGroups = [
+    {
+      id: 'overview',
+      title: t('sections.files.overviewTitle'),
+      items: [
+        {
+          href: AGENT_DOC_PATHS.en,
+          path: t('sections.files.enLink'),
+          langLabel: t('sections.files.langEn'),
+          description: t('sections.files.enDesc'),
+        },
+        {
+          href: AGENT_DOC_PATHS.tr,
+          path: t('sections.files.trLink'),
+          langLabel: t('sections.files.langTr'),
+          description: t('sections.files.trDesc'),
+        },
+      ],
+    },
+    {
+      id: 'sdk',
+      title: t('sections.files.sdkTitle'),
+      items: [
+        {
+          href: AGENT_SDK_PATHS.en,
+          path: t('sections.files.sdkEnLink'),
+          langLabel: t('sections.files.langEn'),
+          description: t('sections.files.sdkEnDesc'),
+        },
+        {
+          href: AGENT_SDK_PATHS.tr,
+          path: t('sections.files.sdkTrLink'),
+          langLabel: t('sections.files.langTr'),
+          description: t('sections.files.sdkTrDesc'),
+        },
+      ],
+    },
+    {
+      id: 'api',
+      title: t('sections.files.apiTitle'),
+      items: [
+        {
+          href: AGENT_API_PATHS.en,
+          path: t('sections.files.apiEnLink'),
+          langLabel: t('sections.files.langEn'),
+          description: t('sections.files.apiEnDesc'),
+        },
+        {
+          href: AGENT_API_PATHS.tr,
+          path: t('sections.files.apiTrLink'),
+          langLabel: t('sections.files.langTr'),
+          description: t('sections.files.apiTrDesc'),
+        },
+      ],
+    },
+    {
+      id: 'manifest',
+      title: t('sections.files.llmsTitle'),
+      items: [
+        {
+          href: LLMS_TXT_PATH,
+          path: t('sections.files.llmsLink'),
+          langLabel: t('sections.files.langAny'),
+          description: t('sections.files.llmsDesc'),
+        },
+      ],
+    },
+  ]
+
+  const recommendedSteps = [1, 2, 3, 4].map((n) =>
+    t.rich(`sections.files.recommendedSteps.s${n}`, rich),
+  )
+
   return (
     <DocsLayout title={t('title')} intro={t('intro')} nav={nav}>
       <DocSection id="overview" title={t('sections.overview.title')}>
@@ -59,55 +133,13 @@ export default async function AgentsGuidePage({ params }: PageProps) {
       </DocSection>
 
       <DocSection id="files" title={t('sections.files.title')}>
-        <p>{t('sections.files.p1')}</p>
-        <p className="doc-subheading">{t('sections.files.overviewTitle')}</p>
-        <ul className="doc-list">
-          <li>
-            <a href={AGENT_DOC_PATHS.en}>{t('sections.files.enLink')}</a>
-            {' — '}
-            {t('sections.files.enDesc')}
-          </li>
-          <li>
-            <a href={AGENT_DOC_PATHS.tr}>{t('sections.files.trLink')}</a>
-            {' — '}
-            {t('sections.files.trDesc')}
-          </li>
-        </ul>
-        <p className="doc-subheading">{t('sections.files.sdkTitle')}</p>
-        <ul className="doc-list">
-          <li>
-            <a href={AGENT_SDK_PATHS.en}>{t('sections.files.sdkEnLink')}</a>
-            {' — '}
-            {t('sections.files.sdkEnDesc')}
-          </li>
-          <li>
-            <a href={AGENT_SDK_PATHS.tr}>{t('sections.files.sdkTrLink')}</a>
-            {' — '}
-            {t('sections.files.sdkTrDesc')}
-          </li>
-        </ul>
-        <p className="doc-subheading">{t('sections.files.apiTitle')}</p>
-        <ul className="doc-list">
-          <li>
-            <a href={AGENT_API_PATHS.en}>{t('sections.files.apiEnLink')}</a>
-            {' — '}
-            {t('sections.files.apiEnDesc')}
-          </li>
-          <li>
-            <a href={AGENT_API_PATHS.tr}>{t('sections.files.apiTrLink')}</a>
-            {' — '}
-            {t('sections.files.apiTrDesc')}
-          </li>
-        </ul>
-        <p className="doc-subheading">{t('sections.files.llmsTitle')}</p>
-        <ul className="doc-list">
-          <li>
-            <a href={LLMS_TXT_PATH}>{t('sections.files.llmsLink')}</a>
-            {' — '}
-            {t('sections.files.llmsDesc')}
-          </li>
-        </ul>
-        <p>{t('sections.files.p2')}</p>
+        <DocAgentFiles
+          intro={t('sections.files.p1')}
+          originNote={t.rich('sections.files.originNote', rich)}
+          groups={agentFileGroups}
+          recommendedTitle={t('sections.files.recommendedTitle')}
+          recommendedSteps={recommendedSteps}
+        />
       </DocSection>
 
       <DocSection id="usage" title={t('sections.usage.title')}>

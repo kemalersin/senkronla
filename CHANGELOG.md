@@ -11,6 +11,11 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Fixed
+
+- **server:** auto-verify localhost app origins when `ESR_APPS__ALLOW_LOCALHOST_ORIGINS` is enabled (no DNS/well-known step in operator or developer UI)
+- **dev:** run workspace dependency builds before dev watchers so `@senkronla/protocol` resolves on first `pnpm dev`
+
 ### Added
 
 - **server:** Deployment-wide operator limit overrides with admin `GET/PATCH /v1/admin/settings/limits`

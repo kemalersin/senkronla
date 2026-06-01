@@ -24,6 +24,45 @@ export function generateVerificationToken(): string {
   return randomBytes(16).toString('hex')
 }
 
+export function isLocalhostOriginVerificationExempt(
+  config: ServerConfig,
+  origin: string,
+): boolean {
+  return config.apps.allowLocalhostOrigins && isLocalhostOrigin(origin)
+}
+
+/** Backfill verified_at for localhost origins when dev exemption is enabled. */
+export async function ensureLocalhostOriginsVerified(
+  pool: DbPool,
+  config: ServerConfig,
+  appUuid: string,
+): Promise<boolean> {
+  if (!config.apps.allowLocalhostOrigins) {
+    return false
+  }
+
+  const pending = await pool.query<Pick<AppOriginRow, 'id' | 'origin'>>(
+    `SELECT id, origin
+     FROM app_origins
+     WHERE app_uuid = $1 AND verified_at IS NULL`,
+    [appUuid],
+  )
+
+  const verifiedAt = new Date()
+  let updated = false
+
+  for (const row of pending.rows) {
+    if (!isLocalhostOrigin(row.origin)) {
+      continue
+    }
+
+    await pool.query(`UPDATE app_origins SET verified_at = $1 WHERE id = $2`, [verifiedAt, row.id])
+    updated = true
+  }
+
+  return updated
+}
+
 export function buildVerificationInstructions(
   origin: string,
   appId: string,
@@ -184,7 +223,7 @@ export async function verifyAppOrigin(
     }
   }
 
-  if (config.apps.allowLocalhostOrigins && isLocalhostOrigin(originRow.origin)) {
+  if (isLocalhostOriginVerificationExempt(config, originRow.origin)) {
     const verifiedAt = new Date()
     await pool.query(
       `UPDATE app_origins SET verified_at = $1 WHERE id = $2`,

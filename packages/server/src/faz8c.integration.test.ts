@@ -58,7 +58,7 @@ describe('Faz 8c — origin verification (integration)', () => {
   })
 
   it.skipIf(!container || !app)(
-    'unverified origin includes instructions; localhost verify succeeds',
+    'localhost origin auto-verifies when allowLocalhostOrigins is enabled',
     async () => {
       const appId = 'esr_app_verifytest'
       const origin = 'http://localhost:4321'
@@ -89,23 +89,9 @@ describe('Faz 8c — origin verification (integration)', () => {
       const originRow = added.origins.find((row: { origin: string }) => row.origin === origin)
 
       expect(originRow).toBeTruthy()
-      expect(originRow.verifiedAt).toBeNull()
-      expect(originRow.verification).toMatchObject({
-        dnsHost: '_esr-verify.localhost',
-        wellKnownUrl: `${origin}/.well-known/esr-app-verification`,
-      })
-      expect(originRow.verification.dnsTxt).toContain(`esr_verify=${appId}:`)
-
-      const failedVerify = await app!.inject({
-        method: 'POST',
-        url: `/v1/admin/apps/${appId}/origins/${originRow.id}/verify`,
-        headers: adminAuth,
-      })
-
-      expect(failedVerify.statusCode).toBe(200)
-      expect(failedVerify.json().verification.method).toBe('localhost')
-      expect(failedVerify.json().app.origins[0].verifiedAt).toBeTruthy()
-      expect(failedVerify.json().app.status).toBe('active')
+      expect(originRow.verifiedAt).toBeTruthy()
+      expect(originRow.verification).toBeNull()
+      expect(added.status).toBe('active')
     },
   )
 

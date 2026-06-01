@@ -1308,14 +1308,20 @@ export function OperatorAppsPanel({
                       onClick={() => selectApp(row.appId)}
                     >
                       <td className="operator-table-col-sticky operator-apps-cell-primary">
-                        <span className="operator-apps-cell-name">{row.name}</span>
-                        <span
-                          className="operator-apps-cell-id-row"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <code className="operator-apps-cell-id">{row.appId}</code>
-                          <OperatorCopyButton value={row.appId} />
-                        </span>
+                        <div className="operator-apps-cell-primary-layout">
+                          <div className="operator-apps-cell-primary-body">
+                            <span className="operator-apps-cell-name">{row.name}</span>
+                            <code
+                              className="operator-apps-cell-id"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {row.appId}
+                            </code>
+                          </div>
+                          <span onClick={(event) => event.stopPropagation()}>
+                            <OperatorCopyButton value={row.appId} />
+                          </span>
+                        </div>
                       </td>
                       <td>{row.type === 'web' ? t('apps.typeWeb') : t('apps.typeNative')}</td>
                       <td className="operator-table-col-status">

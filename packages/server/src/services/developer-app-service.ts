@@ -4,7 +4,6 @@ import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
 import { findAppByPublicId } from './app-registry-service.js'
-import { maybeActivateAppAfterVerification } from './origin-verification-service.js'
 import {
   buildAdminAppDetail,
   assertAppNotArchived,
@@ -12,7 +11,13 @@ import {
   type AdminAppSummary,
   type PaginatedAppsResult,
 } from './admin-app-service.js'
-import { generateVerificationToken, normalizeOriginForRegistration, verifyAppOrigin } from './origin-verification-service.js'
+import {
+  generateVerificationToken,
+  isLocalhostOriginVerificationExempt,
+  maybeActivateAppAfterVerification,
+  normalizeOriginForRegistration,
+  verifyAppOrigin,
+} from './origin-verification-service.js'
 import type { AppRow } from '../types/db.js'
 import type { VerifyOriginResult } from './origin-verification-service.js'
 
@@ -251,12 +256,13 @@ export async function addDeveloperAppOrigin(
   }
 
   const origin = normalizeOriginForRegistration(input.origin)
+  const verifiedAt = isLocalhostOriginVerificationExempt(config, origin) ? new Date() : null
 
   try {
     await pool.query(
       `INSERT INTO app_origins (app_uuid, origin, verification_token, verified_at)
-       VALUES ($1, $2, $3, NULL)`,
-      [app.id, origin, generateVerificationToken()],
+       VALUES ($1, $2, $3, $4)`,
+      [app.id, origin, generateVerificationToken(), verifiedAt],
     )
   } catch (error) {
     const pgError = error as { code?: string }
@@ -274,6 +280,10 @@ export async function addDeveloperAppOrigin(
   }
 
   await pool.query(`UPDATE apps SET updated_at = now() WHERE id = $1`, [app.id])
+
+  if (verifiedAt) {
+    await maybeActivateAppAfterVerification(pool, app.id)
+  }
 
   const refreshed = await findAppByPublicId(pool, appId)
   return buildAdminAppDetail(pool, refreshed ?? app, config)

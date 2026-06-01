@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Auto-verify localhost web app origins when `allowLocalhostOrigins` is enabled (on add, on app detail load, and without DNS/HTTPS instructions in the API)
+
 ### Added
 
 - Deployment-wide operator limit overrides stored in `operator_settings` (`key=limits`); admin `GET/PATCH /v1/admin/settings/limits`; cascade precedence app → developer → operator → env → config (namespace and row fallbacks unchanged)

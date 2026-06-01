@@ -4,10 +4,12 @@ import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
 import { findAppByPublicId } from './app-registry-service.js'
-import { maybeActivateAppAfterVerification } from './origin-verification-service.js'
 import {
   buildVerificationInstructions,
+  ensureLocalhostOriginsVerified,
   generateVerificationToken,
+  isLocalhostOriginVerificationExempt,
+  maybeActivateAppAfterVerification,
   normalizeOriginForRegistration,
   verifyAppOrigin,
   type VerifyOriginResult,
@@ -140,14 +142,17 @@ function normalizeOriginInput(origin: string): string {
 }
 
 function mapOrigin(row: AppOriginRow, appId: string, config: ServerConfig): AdminAppOrigin {
+  const verificationExempt = isLocalhostOriginVerificationExempt(config, row.origin)
+
   return {
     id: row.id,
     origin: row.origin,
     verifiedAt: row.verified_at?.toISOString() ?? null,
     createdAt: row.created_at.toISOString(),
-    verification: row.verified_at
-      ? null
-      : buildVerificationInstructions(row.origin, appId, row.verification_token, config),
+    verification:
+      row.verified_at || verificationExempt
+        ? null
+        : buildVerificationInstructions(row.origin, appId, row.verification_token, config),
   }
 }
 
@@ -181,6 +186,14 @@ export async function buildAdminAppDetail(
   app: AppRow,
   config: ServerConfig,
 ): Promise<AdminAppDetail> {
+  if (await ensureLocalhostOriginsVerified(pool, config, app.id)) {
+    await maybeActivateAppAfterVerification(pool, app.id)
+    const refreshed = await findAppByPublicId(pool, app.app_id)
+    if (refreshed) {
+      app = refreshed
+    }
+  }
+
   const [origins, bundles, counts] = await Promise.all([
     pool.query<AppOriginRow>(
       `SELECT id, app_uuid, origin, verification_token, verified_at, created_at
@@ -405,7 +418,8 @@ export async function addAdminAppOrigin(
   const app = await requireAppRow(pool, appId)
   assertAppNotArchived(app)
   const origin = normalizeOriginInput(input.origin)
-  const verified = input.verified !== false
+  const verified =
+    input.verified !== false || isLocalhostOriginVerificationExempt(config, origin)
 
   try {
     await pool.query(
@@ -425,7 +439,12 @@ export async function addAdminAppOrigin(
   }
 
   await pool.query(`UPDATE apps SET updated_at = now() WHERE id = $1`, [app.id])
-  return buildAdminAppDetail(pool, app, config)
+  if (verified) {
+    await maybeActivateAppAfterVerification(pool, app.id)
+  }
+
+  const refreshed = await findAppByPublicId(pool, appId)
+  return buildAdminAppDetail(pool, refreshed ?? app, config)
 }
 
 export async function addAdminAppBundle(
