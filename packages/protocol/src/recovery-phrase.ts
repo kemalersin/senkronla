@@ -1,4 +1,5 @@
-import { generateMnemonic, validateMnemonic } from 'bip39'
+import { generateMnemonic, validateMnemonic } from '@scure/bip39'
+import { wordlist } from '@scure/bip39/wordlists/english'
 
 export const RECOVERY_SALT_BYTES = 16
 export const RECOVERY_HASH_BYTES = 32
@@ -10,9 +11,9 @@ export function normalizeRecoveryPhrase(phrase: string): string {
 
 /** Generate a BIP39 English 24-word recovery phrase */
 export function generateRecoveryPhrase(): string {
-  return generateMnemonic(256)
+  return generateMnemonic(wordlist, 256)
 }
 
 export function isValidRecoveryPhrase(phrase: string): boolean {
-  return validateMnemonic(normalizeRecoveryPhrase(phrase))
+  return validateMnemonic(normalizeRecoveryPhrase(phrase), wordlist)
 }

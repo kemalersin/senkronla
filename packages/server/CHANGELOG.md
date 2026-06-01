@@ -9,18 +9,25 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+
+## [0.1.10]
+
 ### Fixed
 
+- Skip app registry handshake on WebSocket `/notifications` upgrade (browsers cannot send `X-ESR-App-Id`; device token auth runs after connect)
+- Reactivate revoked devices on pairing instead of inserting a duplicate row (fixes `devices_namespace_uuid_client_device_id_key` when re-adding a removed device)
 - Auto-verify localhost web app origins when `allowLocalhostOrigins` is enabled (on add, on app detail load, and without DNS/HTTPS instructions in the API)
 
 ### Added
 
+- Log WebSocket message traffic on the notifications route and hub (`ws message`); auth tokens are redacted; ping/pong logged at debug level
 - Deployment-wide operator limit overrides stored in `operator_settings` (`key=limits`); admin `GET/PATCH /v1/admin/settings/limits`; cascade precedence app → developer → operator → env → config (namespace and row fallbacks unchanged)
 - Admin API `POST /v1/admin/danger/purge-all-records` — permanently delete all relay operational data (requires `{ "confirm": "purge-all-records" }`); preserves operator mail settings overrides; removes blob namespace directories
 - Rate limits for developer auth mail — `developer_auth_mail` per IP (`limits.rateLimit.developerAuthMailPerHourPerIp`, default 20/h) and per developer account (`apps.developerPortal.authMailPerHourPerDeveloper`, default 5/h); per-developer cap returns success without sending mail; IP cap returns `429`
 
 ### Changed
 
+- Reuse and overwrite the current blob file when consecutive document pushes come from the same device instead of creating a new revision file each time
 - Developer verification and password-reset mail is dispatched in the background so API responses are not blocked on SMTP delivery
 - Developer auth emails use branded HTML templates aligned with the web portal (Senkronla colors, typography, CTA button, plain-text fallback)
 

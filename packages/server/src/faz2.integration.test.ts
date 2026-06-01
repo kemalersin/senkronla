@@ -70,13 +70,15 @@ describe('Faz 2 — namespace and pairing (integration)', () => {
     const pairing = pairingResponse.json()
     expect(pairing.code).toMatch(/^\d{6}$/)
 
+    const phoneClientDeviceId = randomUUID()
+
     const joinResponse = await app!.inject({
       method: 'POST',
       url: `/v1/namespaces/${namespaceId}/devices`,
       payload: {
         pairingCode: pairing.code,
         deviceLabel: 'Phone',
-        clientDeviceId: randomUUID(),
+        clientDeviceId: phoneClientDeviceId,
       },
     })
 
@@ -119,6 +121,43 @@ describe('Faz 2 — namespace and pairing (integration)', () => {
 
     expect(lastDeviceResponse.statusCode).toBe(403)
     expect(lastDeviceResponse.json().error.code).toBe('LAST_DEVICE_PROTECTED')
+
+    const rejoinPairingResponse = await app!.inject({
+      method: 'POST',
+      url: `/v1/namespaces/${namespaceId}/pairing-tokens`,
+      headers: { authorization: `Bearer ${created.deviceToken}` },
+      payload: { ttlSeconds: 600 },
+    })
+
+    expect(rejoinPairingResponse.statusCode).toBe(201)
+    const rejoinPairing = rejoinPairingResponse.json()
+
+    const rejoinResponse = await app!.inject({
+      method: 'POST',
+      url: `/v1/namespaces/${namespaceId}/devices`,
+      payload: {
+        pairingCode: rejoinPairing.code,
+        deviceLabel: 'Phone Again',
+        clientDeviceId: phoneClientDeviceId,
+      },
+    })
+
+    expect(rejoinResponse.statusCode).toBe(201)
+    const rejoined = rejoinResponse.json()
+    expect(rejoined.deviceToken).toMatch(/^dvt_/)
+    expect(rejoined.limits.activeDevices).toBe(2)
+
+    const rejoinedListResponse = await app!.inject({
+      method: 'GET',
+      url: `/v1/namespaces/${namespaceId}/devices`,
+      headers: { authorization: `Bearer ${rejoined.deviceToken}` },
+    })
+
+    expect(rejoinedListResponse.statusCode).toBe(200)
+    expect(rejoinedListResponse.json().devices).toHaveLength(2)
+    expect(
+      rejoinedListResponse.json().devices.some((device: { label: string }) => device.label === 'Phone Again'),
+    ).toBe(true)
   })
 
   it.skipIf(!container || !app)('returns NAMESPACE_EXISTS on duplicate create', async () => {

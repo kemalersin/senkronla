@@ -44,6 +44,26 @@ export function buildBlobKey(namespaceId: string, documentId: string, revision: 
   return `${namespaceId}/${documentId}/${revision}.json`
 }
 
+export interface BlobHeadForReuse {
+  blob_key: string
+  writer_device_id: string
+}
+
+/** Reuse the current blob file when the same device pushes again; otherwise use a revision path. */
+export function resolvePushBlobKey(
+  namespaceId: string,
+  documentId: string,
+  revision: string,
+  writerDeviceId: string,
+  currentHead: BlobHeadForReuse | null,
+): string {
+  if (currentHead && currentHead.writer_device_id === writerDeviceId) {
+    return currentHead.blob_key
+  }
+
+  return buildBlobKey(namespaceId, documentId, revision)
+}
+
 export async function writeBlob(blobRoot: string, blobKey: string, content: string): Promise<void> {
   const { mkdir, writeFile } = await import('node:fs/promises')
   const { dirname } = await import('node:path')

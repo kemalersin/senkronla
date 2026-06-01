@@ -142,21 +142,16 @@ export async function pairDeviceWithCode(
        FROM devices
        WHERE namespace_uuid = $1
          AND client_device_id = $2
-         AND revoked_at IS NULL
        FOR UPDATE`,
       [namespace.id, input.clientDeviceId],
     )
 
-    const isRePair = existingDevice.rows.length > 0
+    const existing = existingDevice.rows[0]
+    const isNewDevice = !existing
+    const isReactivate = existing?.revoked_at != null
 
-    if (!isRePair) {
+    if (isNewDevice || isReactivate) {
       assertCanAddDevice(config, limits)
-    } else {
-      await client.query(
-        `UPDATE devices SET revoked_at = now()
-         WHERE namespace_uuid = $1 AND client_device_id = $2 AND revoked_at IS NULL`,
-        [namespace.id, input.clientDeviceId],
-      )
     }
 
     const codeHash = hashPairingCode(input.pairingCode, namespace.namespace_id)
@@ -183,12 +178,27 @@ export async function pairDeviceWithCode(
     const tokenHash = hashDeviceToken(deviceToken)
     const devicePublicId = ulid()
 
-    await client.query(
-      `INSERT INTO devices (
-         namespace_uuid, device_id, client_device_id, label, token_hash, is_host
-       ) VALUES ($1, $2, $3, $4, $5, false)`,
-      [namespace.id, devicePublicId, input.clientDeviceId, input.deviceLabel, tokenHash],
-    )
+    if (isNewDevice) {
+      await client.query(
+        `INSERT INTO devices (
+           namespace_uuid, device_id, client_device_id, label, token_hash, is_host
+         ) VALUES ($1, $2, $3, $4, $5, false)`,
+        [namespace.id, devicePublicId, input.clientDeviceId, input.deviceLabel, tokenHash],
+      )
+    } else {
+      await client.query(
+        `UPDATE devices
+         SET device_id = $3,
+             label = $4,
+             token_hash = $5,
+             revoked_at = NULL,
+             paired_at = now(),
+             last_seen_at = NULL
+         WHERE namespace_uuid = $1
+           AND client_device_id = $2`,
+        [namespace.id, input.clientDeviceId, devicePublicId, input.deviceLabel, tokenHash],
+      )
+    }
 
     await client.query('COMMIT')
 

@@ -214,6 +214,9 @@ export class RelayClient {
       if (isEsrError(error) && error.code === 'DOCUMENT_NOT_FOUND') {
         return null
       }
+      if (isEsrError(error) && error.code === 'NAMESPACE_NOT_FOUND') {
+        return null
+      }
       throw error
     }
   }

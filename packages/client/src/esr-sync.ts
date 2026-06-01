@@ -9,6 +9,7 @@ import { EsrError, isEsrError, isOfflineError } from './errors.js'
 import { EsrSyncScheduler } from './esr-sync-scheduler.js'
 import { resolveDocumentSlots } from './esr-sync-slots.js'
 import { NotificationClient } from './notification-client.js'
+import { resolveRelayNotificationMode } from './relay-health.js'
 import { RelayClient } from './relay-client.js'
 import { SyncEngine } from './sync-engine.js'
 import { getOrCreateClientDeviceId, SyncStateStore } from './sync-state.js'
@@ -141,6 +142,14 @@ export class EsrSync {
 
     const notificationsEnabled = options.notificationsEnabled !== false
     const documentIds = slots.map((slot) => slot.documentId)
+    const notificationMode = notificationsEnabled
+      ? await resolveRelayNotificationMode({
+          relayUrl: options.relayUrl,
+          fetch: options.fetch,
+          notificationMode: options.notificationMode,
+          websocketEnabled: options.websocketEnabled,
+        })
+      : null
     const notifications = notificationsEnabled
       ? new NotificationClient({
           relayUrl: options.relayUrl,
@@ -148,9 +157,7 @@ export class EsrSync {
           namespaceId,
           documentIds,
           getDeviceToken: () => sharedState.getDeviceToken(),
-          mode:
-            options.notificationMode ??
-            (options.websocketEnabled === false ? 'poll_only' : 'ws_with_poll_fallback'),
+          mode: notificationMode ?? 'poll_only',
           pollIntervalMs: options.pullIntervalDisconnectedMs ?? 45_000,
           pollIntervalConnectedMs: options.pullIntervalConnectedMs ?? 300_000,
           pauseWhenHidden: options.pauseSchedulerWhenHidden !== false,
@@ -233,6 +240,11 @@ export class EsrSync {
     return this.notifications?.isConnected() ?? false
   }
 
+  /** Bildirim istemcisi (WS / poll) aktif mi — varsa EsrSyncScheduler devre dışı kalır. */
+  hasNotifications(): boolean {
+    return this.notifications !== null
+  }
+
   handleNotificationStateChange(): void {
     if (!this.enabled) {
       return
@@ -256,7 +268,12 @@ export class EsrSync {
         await this.relay.getNamespace(namespaceId)
         return { namespaceId, created: false }
       } catch (error) {
-        if (isEsrError(error) && (error.code === 'DEVICE_TOKEN_INVALID' || error.code === 'UNAUTHORIZED')) {
+        if (
+          isEsrError(error) &&
+          (error.code === 'DEVICE_TOKEN_INVALID' ||
+            error.code === 'UNAUTHORIZED' ||
+            error.code === 'NAMESPACE_NOT_FOUND')
+        ) {
           await this.sharedState.clearDeviceToken()
         } else if (!isOfflineError(error)) {
           await this.handleDeviceLimit(error)
@@ -408,6 +425,30 @@ export class EsrSync {
     }
 
     this.setStatus('pending_push')
+  }
+
+  /** Yerel değişiklik bayrağı — debounce/push tetiklemez (harici scheduler için). */
+  markLocalChange(documentId?: string): void {
+    if (!this.enabled) {
+      return
+    }
+
+    const targets = this.slotsForDocument(documentId)
+
+    for (const slot of targets) {
+      slot.engine.markLocalMutationOnly()
+      this.options.onDocumentStatusChange?.(slot.documentId, 'pending_push')
+    }
+
+    this.setStatus('pending_push')
+  }
+
+  cancelDebouncedPush(documentId?: string): void {
+    const targets = this.slotsForDocument(documentId)
+
+    for (const slot of targets) {
+      slot.engine.cancelDebouncedPush()
+    }
   }
 
   async flushPush(documentId?: string): Promise<void> {

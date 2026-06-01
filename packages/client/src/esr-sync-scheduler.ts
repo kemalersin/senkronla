@@ -20,6 +20,11 @@ export class EsrSyncScheduler {
   start(): void {
     this.stop()
 
+    // Bildirim istemcisi (WS + kopukken poll) uzak güncellemeyi yönetir.
+    if (this.sync.hasNotifications()) {
+      return
+    }
+
     if (typeof document !== 'undefined' && this.options.pauseWhenHidden) {
       this.visibilityHandler = () => {
         if (!document.hidden) {

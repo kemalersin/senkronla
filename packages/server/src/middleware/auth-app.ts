@@ -23,6 +23,10 @@ export function shouldSkipAppAuth(path: string): boolean {
     return true
   }
 
+  if (path.endsWith('/notifications')) {
+    return true
+  }
+
   if (!path.startsWith('/v1')) {
     return true
   }

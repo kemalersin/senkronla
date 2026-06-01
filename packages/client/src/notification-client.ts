@@ -1,5 +1,5 @@
 import { WS_SUBPROTOCOL, parseWsServerMessage, type WsHeadChanged } from '@senkronla/protocol'
-import { isOfflineError } from './errors.js'
+import { isEsrError, isOfflineError } from './errors.js'
 import type { RelayClient } from './relay-client.js'
 import type {
   HeadChangedNotification,
@@ -33,6 +33,8 @@ export interface NotificationClientOptions {
 
 const WS_RECONNECT_BASE_MS = 1_000
 const WS_RECONNECT_MAX_MS = 60_000
+/** Ardışık head/meta kontrollerini birleştirir (bootstrap, poll, WS catch-up). */
+const HEAD_CHECK_DEBOUNCE_MS = 400
 
 function headChangedToMeta(message: WsHeadChanged): HeadMeta {
   return {
@@ -64,6 +66,9 @@ export class NotificationClient {
   private visibilityHandler: (() => void) | undefined
   private onlineHandler: (() => void) | undefined
   private offlineHandler: (() => void) | undefined
+  private headCheckTimer: ReturnType<typeof setTimeout> | undefined
+  private headCheckInFlight: Promise<void> | null = null
+  private headCheckQueued = false
 
   constructor(private readonly options: NotificationClientOptions) {
     this.documentIds =
@@ -78,11 +83,15 @@ export class NotificationClient {
     this.running = true
     this.bindLifecycleHandlers()
     this.startPollLoop()
+    this.scheduleHeadCheck()
     this.connectWebSocket()
   }
 
   disconnect(): void {
     this.running = false
+    this.clearHeadCheckTimer()
+    this.headCheckInFlight = null
+    this.headCheckQueued = false
     this.stopPollLoop()
     this.closeWebSocket()
     this.clearReconnectTimer()
@@ -129,7 +138,7 @@ export class NotificationClient {
         } else {
           this.paused = false
           this.connectWebSocket()
-          void this.catchUpHeadMeta()
+          this.scheduleHeadCheck()
           this.restartPollLoop()
           this.options.onConnectionStateChange?.(this.getState())
         }
@@ -140,7 +149,7 @@ export class NotificationClient {
     if (typeof window !== 'undefined') {
       this.onlineHandler = () => {
         this.connectWebSocket()
-        void this.catchUpHeadMeta()
+        this.scheduleHeadCheck()
       }
       this.offlineHandler = () => {
         this.closeWebSocket()
@@ -171,15 +180,27 @@ export class NotificationClient {
 
   private startPollLoop(): void {
     this.stopPollLoop()
+    if (this.shouldSkipPeriodicPoll()) {
+      return
+    }
+
     const interval = this.currentPollInterval()
-    void this.pollOnce()
     this.pollTimer = setInterval(() => {
       if (this.options.pauseWhenHidden && typeof document !== 'undefined' && document.hidden) {
         return
       }
 
-      void this.pollOnce()
+      this.scheduleHeadCheck()
     }, interval)
+  }
+
+  /** WS bağlıyken periyodik poll yok; kopunca fallback devreye girer. */
+  private shouldSkipPeriodicPoll(): boolean {
+    if (this.options.mode === 'poll_only') {
+      return false
+    }
+
+    return this.wsConnected
   }
 
   private restartPollLoop(): void {
@@ -251,6 +272,7 @@ export class NotificationClient {
 
       this.setWsConnected(false)
       this.restartPollLoop()
+      this.scheduleHeadCheck()
       this.scheduleReconnect()
     }
 
@@ -279,7 +301,7 @@ export class NotificationClient {
       this.setWsConnected(true)
       this.sendSubscribeMessage()
       this.restartPollLoop()
-      await this.catchUpHeadMeta()
+      this.scheduleHeadCheck()
       return
     }
 
@@ -375,12 +397,41 @@ export class NotificationClient {
     }
   }
 
-  private async catchUpHeadMeta(): Promise<void> {
-    await this.checkAllDocumentHeads()
+  private clearHeadCheckTimer(): void {
+    if (this.headCheckTimer) {
+      clearTimeout(this.headCheckTimer)
+      this.headCheckTimer = undefined
+    }
   }
 
-  private async pollOnce(): Promise<void> {
-    await this.checkAllDocumentHeads()
+  /** Debounce + in-flight birleştirme — aynı anda tek head/meta turu. */
+  private scheduleHeadCheck(): void {
+    if (!this.running) {
+      return
+    }
+
+    this.clearHeadCheckTimer()
+    this.headCheckTimer = setTimeout(() => {
+      this.headCheckTimer = undefined
+      void this.runHeadCheck()
+    }, HEAD_CHECK_DEBOUNCE_MS)
+  }
+
+  private async runHeadCheck(): Promise<void> {
+    if (this.headCheckInFlight) {
+      this.headCheckQueued = true
+      return this.headCheckInFlight
+    }
+
+    this.headCheckInFlight = this.checkAllDocumentHeads().finally(() => {
+      this.headCheckInFlight = null
+      if (this.headCheckQueued) {
+        this.headCheckQueued = false
+        void this.runHeadCheck()
+      }
+    })
+
+    return this.headCheckInFlight
   }
 
   private sendSubscribeMessage(): void {
@@ -415,9 +466,13 @@ export class NotificationClient {
         }
       }
     } catch (error) {
-      if (!isOfflineError(error)) {
-        throw error
+      if (isOfflineError(error)) {
+        return
       }
+      if (isEsrError(error) && error.code === 'NAMESPACE_NOT_FOUND') {
+        return
+      }
+      throw error
     }
   }
 }

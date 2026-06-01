@@ -12,6 +12,7 @@ export class SyncEngine {
   private debounceTimer: ReturnType<typeof setTimeout> | undefined
   private debounceMs = 2000
   private pendingConflict: ConflictContext | null = null
+  private pushInFlight = false
 
   constructor(
     private readonly client: RelayClient,
@@ -113,6 +114,7 @@ export class SyncEngine {
       password,
     })
 
+    this.pushInFlight = true
     try {
       const result = await this.client.pushDocument({
         namespaceId,
@@ -148,6 +150,8 @@ export class SyncEngine {
       }
 
       throw error
+    } finally {
+      this.pushInFlight = false
     }
   }
 
@@ -160,6 +164,19 @@ export class SyncEngine {
     this.debounceTimer = setTimeout(() => {
       void this.push()
     }, this.debounceMs)
+  }
+
+  /** Debounce zamanlayıcısını iptal eder; push yapmaz. */
+  cancelDebouncedPush(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = undefined
+    }
+  }
+
+  /** Yalnızca yerel değişiklik bayrağı — debounce/push tetiklemez. */
+  markLocalMutationOnly(): void {
+    this.state.markLocalMutation()
   }
 
   async flushPush(): Promise<SyncResult> {
@@ -178,6 +195,16 @@ export class SyncEngine {
   async handleRemoteHeadMeta(meta: HeadMeta): Promise<SyncResult> {
     const known = await this.state.getKnownRemoteRevision()
     if (meta.revision === known) {
+      return { status: 'ok' }
+    }
+
+    // Push sürerken WS yankısı: bilinen revizyon henüz güncellenmeden gelir.
+    if (
+      this.pushInFlight &&
+      this.state.hasLocalChangesSinceLastPush() &&
+      meta.deviceId === this.client.clientDeviceId
+    ) {
+      await this.state.setKnownRemoteRevision(meta.revision)
       return { status: 'ok' }
     }
 

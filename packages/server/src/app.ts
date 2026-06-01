@@ -111,9 +111,7 @@ export async function buildApp({ config, db, env = process.env }: AppDependencie
   })
 
   app.addHook('onRequest', async (request) => {
-    await enforceAppContext({ config, db }, request, {
-      allowOriginOnly: request.url.split('?')[0]?.endsWith('/notifications') ?? false,
-    })
+    await enforceAppContext({ config, db }, request)
   })
 
   app.addHook('onRequest', async (request, reply) => {
@@ -180,7 +178,9 @@ export async function buildApp({ config, db, env = process.env }: AppDependencie
     }))
   }
 
-  const notificationHub = config.websocket.enabled ? new NotificationHub() : undefined
+  const notificationHub = config.websocket.enabled
+    ? new NotificationHub(app.log.child({ component: 'notification-hub' }))
+    : undefined
 
   await registerApiRoutes(app, {
     config,

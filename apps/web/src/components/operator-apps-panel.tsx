@@ -195,6 +195,7 @@ interface OperatorAppsPanelProps {
   nativeRequireClientSecret?: boolean
   developerIdFilter?: string | null
   developerFilterLabel?: string | null
+  listRefreshKey?: number
   onClearDeveloperFilter?: () => void
   onNavigateToNamespaces?: (appId: string, label: string) => void
   onUnauthorized: () => void
@@ -208,6 +209,7 @@ export function OperatorAppsPanel({
   nativeRequireClientSecret = false,
   developerIdFilter = null,
   developerFilterLabel = null,
+  listRefreshKey = 0,
   onClearDeveloperFilter,
   onNavigateToNamespaces,
   onUnauthorized,
@@ -392,6 +394,20 @@ export function OperatorAppsPanel({
 
     void loadApps({ dedupe: true })
   }, [authState, apiBase, debouncedSearch, developerIdFilter, loadApps, mode, page, statusFilter])
+
+  useEffect(() => {
+    if (authState !== 'authenticated' || listRefreshKey === 0) {
+      return
+    }
+
+    setApps(null)
+    setSelectedAppId(null)
+    setSelectedApp(null)
+    setDetailError(null)
+    setActionError(null)
+    setRevealedClientSecret(null)
+    void loadApps()
+  }, [authState, listRefreshKey, loadApps])
 
   useEffect(() => {
     if (!selectedAppId || selectedApp?.appId === selectedAppId) {

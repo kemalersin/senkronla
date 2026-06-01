@@ -9,6 +9,9 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+
+## [0.1.10]
+
 ### Added
 
 - Operator header **Limits** button opens a modal to set deployment-wide limit overrides (app and developer overrides still take precedence)
@@ -17,6 +20,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Fixed
 
+- Operator dangerous purge reloads the active list tab (namespaces, unlock codes, apps, developers, and other tables) instead of leaving stale rows or an endless spinner
 - Developer drawer truncates long email addresses with an ellipsis instead of overlapping the status badge
 - Drawer backdrop shows default cursor instead of pointer; page content no longer receives hover under open overlays
 - Operator limit override clear control is an × inside the input (no separate row button or undo)

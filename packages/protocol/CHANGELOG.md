@@ -9,6 +9,13 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.10]
+
+### Changed
+
+- Tarayıcı uyumluluğu: `sha256Hex` artık `@noble/hashes`; recovery Argon2id `hash-wasm` (Node `node:crypto` / native `argon2` kaldırıldı).
+- Recovery phrase: `bip39` → `@scure/bip39` (tarayıcıda `Buffer` gerektirmez).
+
 ## [0.1.6]
 
 ### Added

@@ -1,4 +1,3 @@
-import { randomBytes, timingSafeEqual } from 'node:crypto'
 import {
   isValidRecoveryPhrase,
   normalizeRecoveryPhrase,
@@ -14,7 +13,7 @@ export {
   RECOVERY_SALT_BYTES,
 } from './recovery-phrase.js'
 
-/** argon2id — numeric constant avoids loading native argon2 at module init */
+/** argon2id — numeric constant for shared defaults documentation */
 const ARGON2_ID = 2
 
 export const RECOVERY_ARGON2_DEFAULTS = {
@@ -42,23 +41,53 @@ export interface BuildRecoveryKeyProofOptions {
   argon2?: RecoveryArgon2Options
 }
 
-type Argon2Module = typeof import('argon2')
+type HashWasmModule = typeof import('hash-wasm')
 
-let argon2Promise: Promise<Argon2Module> | null = null
+let hashWasmPromise: Promise<HashWasmModule> | null = null
 
-function loadArgon2(): Promise<Argon2Module> {
-  if (!argon2Promise) {
-    argon2Promise = import('argon2')
+function loadHashWasm(): Promise<HashWasmModule> {
+  if (!hashWasmPromise) {
+    hashWasmPromise = import('hash-wasm')
   }
-  return argon2Promise
+  return hashWasmPromise
 }
 
-function toBase64Url(buffer: Buffer): string {
-  return buffer.toString('base64url')
+function randomBytes(length: number): Uint8Array {
+  const bytes = new Uint8Array(length)
+  globalThis.crypto.getRandomValues(bytes)
+  return bytes
 }
 
-function fromBase64Url(value: string): Buffer {
-  return Buffer.from(value, 'base64url')
+function timingSafeEqual(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  let diff = 0
+  for (let index = 0; index < left.length; index += 1) {
+    diff |= left[index]! ^ right[index]!
+  }
+
+  return diff === 0
+}
+
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = ''
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function fromBase64Url(value: string): Uint8Array {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/')
+  const padding = padded.length % 4 === 0 ? '' : '='.repeat(4 - (padded.length % 4))
+  const binary = atob(padded + padding)
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  return bytes
 }
 
 function resolveArgon2Options(options?: RecoveryArgon2Options) {
@@ -78,7 +107,7 @@ export async function buildRecoveryKeyProof(
     throw new Error('Invalid recovery phrase')
   }
 
-  const argon2 = await loadArgon2()
+  const { argon2id } = await loadHashWasm()
   const argon2Options = resolveArgon2Options(options.argon2)
   const salt = options.salt ? fromBase64Url(options.salt) : randomBytes(RECOVERY_SALT_BYTES)
 
@@ -86,15 +115,23 @@ export async function buildRecoveryKeyProof(
     throw new Error('Recovery salt must be 16 bytes')
   }
 
-  const hash = await argon2.hash(normalized, {
-    ...argon2Options,
+  const hash = await argon2id({
+    password: normalized,
     salt,
-    raw: true,
+    parallelism: argon2Options.parallelism,
+    iterations: argon2Options.timeCost,
+    memorySize: argon2Options.memoryCost,
+    hashLength: argon2Options.hashLength,
+    outputType: 'binary',
   })
+
+  if (!(hash instanceof Uint8Array)) {
+    throw new Error('Unexpected Argon2 output type')
+  }
 
   return {
     salt: toBase64Url(salt),
-    hash: toBase64Url(Buffer.from(hash)),
+    hash: toBase64Url(hash),
   }
 }
 

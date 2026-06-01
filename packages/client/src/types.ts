@@ -186,7 +186,7 @@ export interface EsrSyncConnectOptions {
   pauseSchedulerWhenHidden?: boolean
   notificationsEnabled?: boolean
   notificationMode?: NotificationMode
-  /** Check server health for websocket.enabled before WS connect */
+  /** false = poll-only; true/undefined = `/health` websocket bayrağına bakılır. */
   websocketEnabled?: boolean
   persistRecoveryPhrase?: boolean
   onRecoveryPhrase: (ctx: { phrase: string; namespaceId: string }) => void | Promise<void>

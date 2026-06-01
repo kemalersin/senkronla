@@ -1,5 +1,7 @@
+import type { FastifyBaseLogger } from 'fastify'
 import type { WebSocket } from 'ws'
 import type { WsHeadChanged, WsServerMessage } from '@senkronla/protocol'
+import { isWsKeepaliveMessage, sanitizeWsServerMessage } from '../lib/ws-log.js'
 
 const WS_OPEN = 1
 
@@ -18,6 +20,8 @@ interface TrackedSocket {
 
 export class NotificationHub {
   private readonly rooms = new Map<string, Set<TrackedSocket>>()
+
+  constructor(private readonly log?: FastifyBaseLogger) {}
 
   subscribe(namespaceId: string, ws: WebSocket, meta: NotificationSocketMeta): void {
     const tracked: TrackedSocket = { ws, meta, subscribedDocumentIds: null }
@@ -73,6 +77,7 @@ export class NotificationHub {
     }
 
     const payload = JSON.stringify(message)
+    let delivered = 0
 
     for (const tracked of room) {
       if (tracked.ws.readyState !== WS_OPEN) {
@@ -84,7 +89,10 @@ export class NotificationHub {
       }
 
       tracked.ws.send(payload)
+      delivered += 1
     }
+
+    this.logWsMessage('out', namespaceId, message, { delivered, roomSize: room.size })
   }
 
   closeDevice(namespaceId: string, deviceUuid: string, code = 4403, reason = 'Device revoked'): void {
@@ -158,5 +166,30 @@ export class NotificationHub {
     }
 
     return filter.has((message as WsHeadChanged).documentId)
+  }
+
+  private logWsMessage(
+    direction: 'in' | 'out',
+    namespaceId: string,
+    message: WsServerMessage,
+    extra: Record<string, unknown> = {},
+  ): void {
+    if (!this.log) {
+      return
+    }
+
+    const payload = {
+      direction,
+      namespaceId,
+      wsMessage: sanitizeWsServerMessage(message),
+      ...extra,
+    }
+
+    if (isWsKeepaliveMessage(message)) {
+      this.log.debug(payload, 'ws message')
+      return
+    }
+
+    this.log.info(payload, 'ws message')
   }
 }

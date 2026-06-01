@@ -79,6 +79,7 @@ function accountStatusPillClass(developer: DeveloperRow) {
 interface OperatorDevelopersPanelProps {
   authState: 'loading' | 'guest' | 'authenticated'
   page: number
+  listRefreshKey?: number
   onNavigateToApps?: (developerId: string, email: string) => void
   onUnauthorized: () => void
   onPageChange: (page: number) => void
@@ -87,6 +88,7 @@ interface OperatorDevelopersPanelProps {
 export function OperatorDevelopersPanel({
   authState,
   page,
+  listRefreshKey = 0,
   onNavigateToApps,
   onUnauthorized,
   onPageChange,
@@ -269,6 +271,19 @@ export function OperatorDevelopersPanel({
 
     void loadDevelopers({ dedupe: true })
   }, [authState, debouncedSearch, filter, loadDevelopers, page])
+
+  useEffect(() => {
+    if (authState !== 'authenticated' || listRefreshKey === 0) {
+      return
+    }
+
+    setDevelopers(null)
+    setSelectedId(null)
+    setSelectedDeveloper(null)
+    setDetailError(null)
+    setActionError(null)
+    void loadDevelopers()
+  }, [authState, listRefreshKey, loadDevelopers])
 
   useEffect(() => {
     if (!selectedId || selectedDeveloper?.id === selectedId) {

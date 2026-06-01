@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { mkdtemp } from 'node:fs/promises'
+import { mkdtemp, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { sha256Hex } from '@senkronla/protocol'
@@ -37,6 +37,25 @@ function buildEnvelope(input: {
     contentSha256: sha256Hex(payload),
     payload,
   }
+}
+
+async function countBlobFiles(root: string): Promise<number> {
+  let count = 0
+
+  async function walk(dir: string) {
+    const entries = await readdir(dir, { withFileTypes: true })
+    for (const entry of entries) {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) {
+        await walk(path)
+      } else if (entry.isFile() && entry.name.endsWith('.json')) {
+        count += 1
+      }
+    }
+  }
+
+  await walk(root)
+  return count
 }
 
 describe('Faz 3 — document push/pull (integration)', () => {
@@ -144,6 +163,7 @@ describe('Faz 3 — document push/pull (integration)', () => {
 
     expect(push2.statusCode).toBe(201)
     expect(push2.json().revision).toBe(revision2)
+    expect(await countBlobFiles(blobPath)).toBe(1)
 
     const revision3 = ulid()
     const envelope3 = buildEnvelope({

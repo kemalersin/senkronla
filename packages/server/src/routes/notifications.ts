@@ -1,13 +1,18 @@
 import websocket from '@fastify/websocket'
-import type { FastifyInstance } from 'fastify'
+import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import type { WebSocket } from 'ws'
 import {
   isValidDocumentId,
-  WS_SUBPROTOCOL,
   parseWsClientMessage,
+  type WsClientMessage,
   type WsServerMessage,
 } from '@senkronla/protocol'
 import { hashDeviceToken } from '../lib/crypto.js'
+import {
+  isWsKeepaliveMessage,
+  sanitizeWsClientMessage,
+  sanitizeWsServerMessage,
+} from '../lib/ws-log.js'
 import { findDeviceByTokenHash } from '../services/device-service.js'
 import { requireNamespaceExists } from '../middleware/auth-device.js'
 import type { AppContext } from '../types/context.js'
@@ -25,10 +30,40 @@ function extractBearerToken(header: string | undefined): string | null {
   return token || null
 }
 
-function sendMessage(ws: WebSocket, message: WsServerMessage): void {
+function sendMessage(
+  ws: WebSocket,
+  message: WsServerMessage,
+  log: FastifyBaseLogger,
+  context: Record<string, unknown>,
+): void {
+  logWsMessage(log, 'out', message, context)
+
   if (ws.readyState === WS_OPEN) {
     ws.send(JSON.stringify(message))
   }
+}
+
+function logWsMessage(
+  log: FastifyBaseLogger,
+  direction: 'in' | 'out',
+  message: WsClientMessage | WsServerMessage,
+  context: Record<string, unknown>,
+): void {
+  const payload = {
+    direction,
+    ...context,
+    wsMessage:
+      direction === 'in'
+        ? sanitizeWsClientMessage(message as WsClientMessage)
+        : sanitizeWsServerMessage(message as WsServerMessage),
+  }
+
+  if (isWsKeepaliveMessage(message)) {
+    log.debug(payload, 'ws message')
+    return
+  }
+
+  log.info(payload, 'ws message')
 }
 
 async function authenticateDevice(
@@ -66,11 +101,20 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
     (socket, request) => {
       const { namespaceId } = request.params as { namespaceId: string }
       const wsConfig = ctx.config.websocket
+      const wsLog = request.log.child({ ws: true, namespaceId })
       let authenticated = false
+      let deviceId: string | undefined
       let authTimer: ReturnType<typeof setTimeout> | undefined
       let pingTimer: ReturnType<typeof setInterval> | undefined
       let pongTimer: ReturnType<typeof setTimeout> | undefined
       let lastPingTs: string | null = null
+
+      wsLog.info({ direction: 'in' }, 'ws connection opened')
+
+      const wsContext = (): Record<string, unknown> => ({
+        namespaceId,
+        ...(deviceId ? { deviceId } : {}),
+      })
 
       const clearTimers = () => {
         if (authTimer) {
@@ -90,7 +134,7 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
       }
 
       const failAuth = (code: string, message: string) => {
-        sendMessage(socket, { type: 'auth_fail', code, message })
+        sendMessage(socket, { type: 'auth_fail', code, message }, wsLog, wsContext())
         socket.close(4401, message)
         clearTimers()
       }
@@ -102,7 +146,7 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
           }
 
           lastPingTs = new Date().toISOString()
-          sendMessage(socket, { type: 'ping', ts: lastPingTs })
+          sendMessage(socket, { type: 'ping', ts: lastPingTs }, wsLog, wsContext())
 
           if (pongTimer) {
             clearTimeout(pongTimer)
@@ -132,28 +176,39 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
           }
 
           if (hub.countNamespaceConnections(namespaceId) >= wsConfig.maxConnectionsPerNamespace) {
-            sendMessage(socket, {
-              type: 'error',
-              code: 'WS_TOO_MANY_CONNECTIONS',
-              message: 'Namespace connection limit reached',
-            })
+            sendMessage(
+              socket,
+              {
+                type: 'error',
+                code: 'WS_TOO_MANY_CONNECTIONS',
+                message: 'Namespace connection limit reached',
+              },
+              wsLog,
+              wsContext(),
+            )
             socket.close(4429, 'Too many connections')
             clearTimers()
             return
           }
 
           if (hub.countDeviceConnections(namespaceId, device.deviceUuid) >= wsConfig.maxConnectionsPerDevice) {
-            sendMessage(socket, {
-              type: 'error',
-              code: 'WS_TOO_MANY_CONNECTIONS',
-              message: 'Device connection limit reached',
-            })
+            sendMessage(
+              socket,
+              {
+                type: 'error',
+                code: 'WS_TOO_MANY_CONNECTIONS',
+                message: 'Device connection limit reached',
+              },
+              wsLog,
+              wsContext(),
+            )
             socket.close(4429, 'Too many connections')
             clearTimers()
             return
           }
 
           authenticated = true
+          deviceId = device.deviceId
           if (authTimer) {
             clearTimeout(authTimer)
             authTimer = undefined
@@ -165,12 +220,17 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
             deviceUuid: device.deviceUuid,
           })
 
-          sendMessage(socket, {
-            type: 'auth_ok',
-            deviceId: device.deviceId,
-            namespaceId,
-            serverTime: new Date().toISOString(),
-          })
+          sendMessage(
+            socket,
+            {
+              type: 'auth_ok',
+              deviceId: device.deviceId,
+              namespaceId,
+              serverTime: new Date().toISOString(),
+            },
+            wsLog,
+            wsContext(),
+          )
 
           startPingLoop()
         } catch {
@@ -180,6 +240,7 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
 
       const headerToken = extractBearerToken(request.headers.authorization)
       if (headerToken) {
+        logWsMessage(wsLog, 'in', { type: 'auth', token: headerToken }, wsContext())
         void completeAuth(headerToken)
       } else {
         authTimer = setTimeout(() => {
@@ -194,7 +255,12 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
         try {
           parsed = JSON.parse(String(raw))
         } catch {
-          sendMessage(socket, { type: 'error', code: 'WS_INVALID_MESSAGE', message: 'Invalid JSON' })
+          sendMessage(
+            socket,
+            { type: 'error', code: 'WS_INVALID_MESSAGE', message: 'Invalid JSON' },
+            wsLog,
+            wsContext(),
+          )
           return
         }
 
@@ -202,9 +268,16 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
         try {
           message = parseWsClientMessage(parsed)
         } catch {
-          sendMessage(socket, { type: 'error', code: 'WS_INVALID_MESSAGE', message: 'Invalid message shape' })
+          sendMessage(
+            socket,
+            { type: 'error', code: 'WS_INVALID_MESSAGE', message: 'Invalid message shape' },
+            wsLog,
+            wsContext(),
+          )
           return
         }
+
+        logWsMessage(wsLog, 'in', message, wsContext())
 
         if (message.type === 'auth') {
           void completeAuth(message.token)
@@ -230,30 +303,45 @@ export async function registerNotificationRoutes(app: FastifyInstance, ctx: AppC
             (message.documentId ? [message.documentId] : null)
 
           if (!ids || ids.length === 0) {
-            sendMessage(socket, {
-              type: 'error',
-              code: 'WS_INVALID_SUBSCRIBE',
-              message: 'subscribe requires documentIds or documentId',
-            })
+            sendMessage(
+              socket,
+              {
+                type: 'error',
+                code: 'WS_INVALID_SUBSCRIBE',
+                message: 'subscribe requires documentIds or documentId',
+              },
+              wsLog,
+              wsContext(),
+            )
             return
           }
 
           for (const documentId of ids) {
             if (!isValidDocumentId(documentId)) {
-              sendMessage(socket, {
-                type: 'error',
-                code: 'WS_INVALID_SUBSCRIBE',
-                message: `Invalid documentId: ${documentId}`,
-              })
+              sendMessage(
+                socket,
+                {
+                  type: 'error',
+                  code: 'WS_INVALID_SUBSCRIBE',
+                  message: `Invalid documentId: ${documentId}`,
+                },
+                wsLog,
+                wsContext(),
+              )
               return
             }
           }
 
           hub.setDocumentSubscription(namespaceId, socket, ids)
+          wsLog.info({ ...wsContext(), documentIds: ids }, 'ws subscribe updated')
         }
       })
 
-      socket.on('close', () => {
+      socket.on('close', (code, reason) => {
+        wsLog.info(
+          { ...wsContext(), code, reason: reason.toString(), authenticated },
+          'ws connection closed',
+        )
         clearTimers()
         if (authenticated) {
           hub.unsubscribe(namespaceId, socket)

@@ -11,13 +11,20 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+
+## [0.1.10]
+
 ### Fixed
 
+- **web:** operator dangerous purge reloads the active list tab instead of leaving stale rows or an endless spinner
+- **server:** skip app registry handshake on WebSocket `/notifications` upgrade (fixes localhost relay client WS connection failures with `APP_ID_REQUIRED`)
+- **server:** reactivate revoked devices on pairing instead of inserting a duplicate row (fixes re-adding a removed device with the same client id)
 - **server:** auto-verify localhost app origins when `ESR_APPS__ALLOW_LOCALHOST_ORIGINS` is enabled (no DNS/well-known step in operator or developer UI)
 - **dev:** run workspace dependency builds before dev watchers so `@senkronla/protocol` resolves on first `pnpm dev`
 
 ### Added
 
+- **server:** log WebSocket message traffic on notifications route and hub (auth tokens redacted; ping/pong at debug level)
 - **server:** Deployment-wide operator limit overrides with admin `GET/PATCH /v1/admin/settings/limits`
 - **web:** Operator settings global limits tab
 - **server:** Admin purge endpoint to delete all relay operational records (namespaces, devices, documents, apps, developers, blobs)
@@ -26,6 +33,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Changed
 
+- **server:** reuse and overwrite the current blob when consecutive document pushes come from the same device
 - **web:** Operator admin token sign-in screen layout aligned with the developer portal auth card
 - **web:** Operator settings drawer uses tabs for limits, mail, and dangerous operations
 - **web:** Operator Developers tab self-service prerequisites callout can be dismissed

@@ -14,6 +14,13 @@ export {
 export { buildEnvelope, extractDocument, extractRawDocument, buildRecoveryKeyProof } from './envelope-builder.js'
 export { getOrCreateClientDeviceId, SyncStateStore } from './sync-state.js'
 export { buildNotificationWsUrl } from './ws-url.js'
+export {
+  buildRelayHealthUrl,
+  clearRelayHealthCache,
+  fetchRelayWebsocketEnabled,
+  resolveRelayNotificationMode,
+} from './relay-health.js'
+export type { RelayHealthSnapshot } from './relay-health.js'
 
 export type {
   ConflictContext,

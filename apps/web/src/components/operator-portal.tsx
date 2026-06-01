@@ -206,6 +206,7 @@ export function OperatorPortal() {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [listRefreshKey, setListRefreshKey] = useState(0)
   const tRef = useRef(t)
   tRef.current = t
 
@@ -380,7 +381,7 @@ export function OperatorPortal() {
         setRateLimits((await loadPaginated('/api/operator/rate-limit-events', page, listOptions)) as Paginated<RateLimitGroupRow> | null)
       }
     })()
-  }, [authState, tab, page, debouncedSearch, rateLimitAction, appsEnabled, namespaceAppFilter?.appId, loadPaginated])
+  }, [authState, tab, page, debouncedSearch, rateLimitAction, appsEnabled, namespaceAppFilter?.appId, listRefreshKey, loadPaginated])
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -435,16 +436,13 @@ export function OperatorPortal() {
 
   const handleRecordsPurged = useCallback(() => {
     invalidateDedupedGet('/api/operator/overview')
-    invalidateDedupedGet('/api/operator/namespaces')
-    invalidateDedupedGet('/api/operator/unlock-codes')
-    invalidateDedupedGet('/api/operator/unlock-events')
-    invalidateDedupedGet('/api/operator/rate-limit-events')
     setOverview(null)
     setNamespaces(null)
     setUnlockCodes(null)
     setUnlockEvents(null)
     setRateLimits(null)
     setPage(0)
+    setListRefreshKey((key) => key + 1)
     void loadOverview()
   }, [loadOverview])
 
@@ -987,6 +985,7 @@ export function OperatorPortal() {
         <OperatorAppsPanel
           authState={authState}
           page={page}
+          listRefreshKey={listRefreshKey}
           developerIdFilter={appsDeveloperFilter?.developerId ?? null}
           developerFilterLabel={appsDeveloperFilter?.email ?? null}
           onClearDeveloperFilter={() => {
@@ -1005,6 +1004,7 @@ export function OperatorPortal() {
         <OperatorDevelopersPanel
           authState={authState}
           page={page}
+          listRefreshKey={listRefreshKey}
           onNavigateToApps={navigateToDeveloperApps}
           onUnauthorized={handleUnauthorized}
           onPageChange={setPage}

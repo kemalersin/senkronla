@@ -7,7 +7,7 @@ import {
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool, DbQueryable } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
-import { buildBlobKey, readBlob, writeBlob } from '../blob/store.js'
+import { readBlob, resolvePushBlobKey, writeBlob } from '../blob/store.js'
 import { loadLimitContext } from './limit-context-loader.js'
 import { resolveRateLimitRule } from './limit-resolution-service.js'
 import {
@@ -241,7 +241,6 @@ export async function pushDocument(
   })
 
   const envelope = validateEnvelopeForPush(config, namespace.namespace_id, documentId, input.envelope)
-  const blobKey = buildBlobKey(namespace.namespace_id, documentId, envelope.revision)
   const serialized = JSON.stringify(envelope)
   const sizeBytes = Buffer.byteLength(serialized, 'utf8')
 
@@ -278,6 +277,14 @@ export async function pushDocument(
         remoteMeta: toDocumentHeadMeta(currentHead),
       })
     }
+
+    const blobKey = resolvePushBlobKey(
+      namespace.namespace_id,
+      documentId,
+      envelope.revision,
+      envelope.deviceId,
+      currentHead,
+    )
 
     await writeBlob(config.blob.filesystem.path, blobKey, serialized)
 
