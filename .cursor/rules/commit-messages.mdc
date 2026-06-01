@@ -24,7 +24,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) for every commi
 ```
 fix(ci): resolve pnpm version conflict in GitHub Actions
 feat(client): add EsrSync reconnect backoff
-docs(envelope-sync-relay): add English translations under en/
+docs(en): add English translations under docs/en/
 refactor(server): extract slot limit check into service
 chore(deps): bump turbo to 2.3.3
 ```

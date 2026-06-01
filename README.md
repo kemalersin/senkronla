@@ -15,8 +15,6 @@ Your app encrypts and owns the data model. Senkronla stores opaque `ESR-DOC1` en
 
 ## At a glance
 
-| | |
-|---|---|
 | **Deploy** | Self-hosted relay (Docker or Node.js + Postgres) |
 | **Client** | [`@senkronla/client`](https://senkron.la/sdk) — `EsrSync` facade, offline queue, conflict callbacks |
 | **Protocol** | REST `/v1` + optional WebSocket notifications (push-to-pull) |
@@ -25,7 +23,7 @@ Your app encrypts and owns the data model. Senkronla stores opaque `ESR-DOC1` en
 
 ## Architecture
 
-Senkronla splits responsibility between your application, the client SDK, and a self-hosted relay. Full spec: [02 — Architecture](./docs/envelope-sync-relay/en/02-ARCHITECTURE.md).
+Senkronla splits responsibility between your application, the client SDK, and a self-hosted relay. Full spec: [02 — Architecture](./docs/en/02-ARCHITECTURE.md).
 
 ### System overview
 
@@ -226,10 +224,9 @@ docker compose up api web
 | Website (guides, API, SDK) | [senkron.la](https://senkron.la) |
 | Quick start checklist | [senkron.la/quick-start](https://senkron.la/quick-start) |
 | Relay deployment guide | [senkron.la/guides/esr](https://senkron.la/guides/esr) |
-| Specification (repo) | [docs/envelope-sync-relay/README.md](./docs/envelope-sync-relay/README.md) |
+| Specification (repo) | [docs/README.md](./docs/README.md) |
 | Operator guide | [docs/OPERATOR.md](./docs/OPERATOR.md) |
 | OpenAPI | [openapi.yaml](./openapi.yaml) (also at `/docs` on running API) |
-| Implementation plan | [docs/envelope-sync-relay/en/11-IMPLEMENTATION-PLAN.md](./docs/envelope-sync-relay/en/11-IMPLEMENTATION-PLAN.md) |
 
 ## Scripts
 

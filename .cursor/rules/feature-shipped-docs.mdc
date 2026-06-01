@@ -1,0 +1,63 @@
+---
+description: When a planned feature or implementation phase ships, sync spec docs and related references
+alwaysApply: true
+---
+
+# Feature / phase shipped — update docs
+
+When you **finish implementing** a spec feature, close an implementation **phase**, or move something from *planned* to *shipped*, update every place that still describes it as future work. Do not mark the task done until this pass is complete (in addition to [`changelog.mdc`](changelog.mdc)).
+
+## Trigger
+
+Apply this rule when any of the following become true in code:
+
+- A phase in `docs/en|tr/11-IMPLEMENTATION-PLAN.md` (or a feature doc § “Implementation plan”) is complete
+- A spec section marked **planned / planlandı / gelecek / optional phase** is now live
+- OpenAPI, migrations, operator UI, or SDK surface for a documented capability lands
+
+## Required doc sync
+
+| Area | Update |
+|------|--------|
+| Feature spec (e.g. `docs/en|tr/16-*.md`) | Status → **implemented / shipped**; phase checklist `- [ ]` → `- [x]`; acceptance criteria checked |
+| `docs/en|tr/11-IMPLEMENTATION-PLAN.md` | Phase table **done**; optional items checked if shipped; remove stale “known limitations” |
+| Cross-cutting spec | `07-SERVER-CONFIGURATION`, `08-SECURITY`, `10-DATA-MODEL`, `12-ERROR-CODES` — drop “planned” headers; describe current behaviour |
+| Index | `docs/README.md`, `docs/en|tr/README.md` — reading-order table, version history, spec metadata |
+| Operator | `docs/OPERATOR.md` — env vars, UI, admin routes for the feature |
+| API SSOT | Root `openapi.yaml` (+ `docs/openapi.yaml` if kept in sync) |
+| Web / agents | `apps/web/messages`, guides pages, `public/agents/*.md`, `public/llms.txt`, Postman artifacts when API or env docs change |
+| Package pointers | `packages/*/TODO.md`, root `README.md` links if paths or scope changed |
+| Changelog | Root + affected package `CHANGELOG.md` under `[Unreleased]` |
+
+Update **both** `docs/en/` and `docs/tr/` when the spec exists in both languages.
+
+## Wording rules
+
+- Replace **planned / planlandı / Planlanıyor / gelecek faz / to be implemented** with **shipped / yayında / implemented** only when the capability is actually in the repo (tests or UI verify).
+- Leave future-only items explicit (e.g. S3 blob, Stripe webhook, v1.4 attestation) — do not mark them shipped.
+- Prefer **relative links** inside `docs/en/` and `docs/tr/` (`../openapi.yaml`, `../OPERATOR.md`), not repo-root `docs/...` paths.
+- Phase checklists: mark items `[x]` when done; do not delete historical phase headings.
+
+## Quick verification
+
+Before finishing, search markdown (and agent docs) for stale future tense:
+
+```
+planlandı|planned|Planlanıyor|geliştirilecek|to be implemented|— planned|— planlandı
+```
+
+Fix or justify every hit tied to the shipped scope.
+
+## Example (app registry v1.3)
+
+```
+# Before
+**v1.3.0 (planned):** Application registry …
+## Application registry (v1.3 — planned)
+
+# After
+**v1.3.0 (shipped):** Application registry …
+## Application registry (v1.3 — shipped)
+```
+
+Also check: `16-APP-REGISTRY.md` §20 checklists, `OPERATOR.md` “Faz 8…” headings, README spec version row.

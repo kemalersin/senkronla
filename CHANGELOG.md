@@ -13,6 +13,9 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Changed
 
+- **docs:** Move specification from `docs/envelope-sync-relay/` to `docs/` (`en/`, `tr/`, `openapi.yaml`); update repo, web, agent, and package references; fix in-spec paths to relative links
+- **docs:** Remove stale “planned” wording for shipped features (app registry v1.3, limit overrides v1.3.2, WebSocket, multi-document, revision history, operator portal)
+- **docs:** Point AGENT-HANDOFF at `.cursor/rules/feature-shipped-docs.mdc` when a phase or feature ships
 - **docs:** Enrich root README with architecture diagrams (system, push/pull, WebSocket), deployment sketch, and [senkron.la](https://senkron.la) links
 
 ## [0.1.11]
@@ -156,7 +159,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Changed
 
-- **docs:** root `openapi.yaml` SSOT synced to `docs/envelope-sync-relay/openapi.yaml`
+- **docs:** root `openapi.yaml` SSOT synced to `docs/openapi.yaml`
 
 ## [0.1.3]
 
@@ -184,7 +187,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Added
 
-- **multi-document:** namespace başına çoklu döküman (protocol, server, client, WS subscribe filter, docs, örnek script); spec [15-MULTI-DOCUMENT.md](docs/envelope-sync-relay/tr/15-MULTI-DOCUMENT.md)
+- **multi-document:** namespace başına çoklu döküman (protocol, server, client, WS subscribe filter, docs, örnek script); spec [15-MULTI-DOCUMENT.md](docs/tr/15-MULTI-DOCUMENT.md)
 
 ### Changed
 
@@ -200,7 +203,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 - `@senkronla/web` operator portal with EN/TR i18n
 - Fastify server with `/health`, `/metrics`, Swagger UI at `/docs`
 - Docker Compose with `bundled-db` profile and external Postgres support via `ESR_DATABASE_URL`
-- Specification moved to `docs/envelope-sync-relay/`
+- Specification moved to `docs/`
 - Root `openapi.yaml` as API SSOT
 
 ### Changed

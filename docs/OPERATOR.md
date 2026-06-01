@@ -39,9 +39,9 @@ Each namespace can hold multiple opaque envelopes (`primary`, `settings`, etc.).
 - **Operator portal:** the namespace table shows **Documents** (count) and **Primary head** (revision/size of `primary` only).
 - **Admin overview:** the `documents` stat is total `document_heads` rows across all namespaces.
 
-See [15-MULTI-DOCUMENT.md](envelope-sync-relay/en/15-MULTI-DOCUMENT.md) for protocol and client integration.
+See [15-MULTI-DOCUMENT.md](en/15-MULTI-DOCUMENT.md) for protocol and client integration.
 
-### Application registry (v1.3 — Faz 8a/8b shipped)
+### Application registry (v1.3 — shipped)
 
 Optional layer: registered apps (`appId`) with verified web origins or native bundle IDs; **namespaces are bound to the app that created them**.
 
@@ -51,11 +51,11 @@ Optional layer: registered apps (`appId`) with verified web origins or native bu
 | `apps.registrationMode: operator_managed` | Operator registers apps via YAML seed or admin API |
 | `apps.registrationMode: self_service` | Application owners register via developer portal + DNS verification |
 
-Key variables: `ESR_APPS__ENABLED`, `ESR_APPS__REGISTRATION_MODE`, `ESR_APPS__ALLOW_LOCALHOST_ORIGINS`, `ESR_APPS__LEGACY_DEFAULT_APP_ID`, `ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET`, `ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW`, `ESR_DEVELOPER_JWT_SECRET` (or `ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET`), `ESR_APPS__LIMITS__PER_APP__*`. Full list: [16-APP-REGISTRY §5.2](envelope-sync-relay/en/16-APP-REGISTRY.md#52-environment-variables).
+Key variables: `ESR_APPS__ENABLED`, `ESR_APPS__REGISTRATION_MODE`, `ESR_APPS__ALLOW_LOCALHOST_ORIGINS`, `ESR_APPS__LEGACY_DEFAULT_APP_ID`, `ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET`, `ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW`, `ESR_DEVELOPER_JWT_SECRET` (or `ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET`), `ESR_APPS__LIMITS__PER_APP__*`. Full list: [16-APP-REGISTRY §5.2](en/16-APP-REGISTRY.md#52-environment-variables).
 
 When `apps.enabled: true`, static CORS lists are superseded by per-app verified origins (localhost allowed only if `allowLocalhostOrigins: true`).
 
-Full spec: [16-APP-REGISTRY.md](envelope-sync-relay/en/16-APP-REGISTRY.md) · [TR](envelope-sync-relay/tr/16-APP-REGISTRY.md).
+Full spec: [16-APP-REGISTRY.md](en/16-APP-REGISTRY.md) · [TR](tr/16-APP-REGISTRY.md).
 
 ### Operator limit overrides (v1.3.2)
 
@@ -67,7 +67,7 @@ Per-namespace, per-app, and per-developer limits override config defaults at run
 | `GET/PATCH /v1/admin/apps/:appId/limits` | Defaults for all namespaces under the app |
 | `GET/PATCH /v1/admin/developers/:developerId/limits` | Defaults for all apps owned by the developer |
 
-Operator portal: Namespaces drawer, Apps/Developer **Limits** section. Spec: [17-OPERATOR-LIMIT-OVERRIDES.md](envelope-sync-relay/en/17-OPERATOR-LIMIT-OVERRIDES.md).
+Operator portal: Namespaces drawer, Apps/Developer **Limits** section. Spec: [17-OPERATOR-LIMIT-OVERRIDES.md](en/17-OPERATOR-LIMIT-OVERRIDES.md).
 
 ### Revision retention and manual purge
 
@@ -89,7 +89,7 @@ When either value is greater than zero, retention runs automatically after each 
 | `GET` | `/admin/settings/sync` | Read `revisionRetentionDays`, `revisionRetentionCount`, and related sync limits |
 | `POST` | `/admin/revisions/purge` | Manual purge by date (`mode: date`, `before`) or count (`mode: count`, `keepLastRevisions`); scope `deployment`, `namespace`, or `app` |
 
-Date mode always keeps the current head. Count mode includes the head in the keep limit. See [15-MULTI-DOCUMENT §8.4](envelope-sync-relay/en/15-MULTI-DOCUMENT.md#84-document_revisions-history).
+Date mode always keeps the current head. Count mode includes the head in the keep limit. See [15-MULTI-DOCUMENT §8.4](en/15-MULTI-DOCUMENT.md#84-document_revisions-history).
 
 ### Migrating from v1.2 to v1.3
 
@@ -99,9 +99,9 @@ Date mode always keeps the current head. Count mode includes the head in the kee
 4. **Verify origins** (DNS TXT or HTTPS well-known) before flipping `apps.enabled: true` in production.
 5. **Roll out clients** with `appId` in SDK / headers; test pairing scope with `allowedAppIds` if you restrict guest apps.
 
-Step-by-step checklist and SQL notes: [16-APP-REGISTRY §19 (EN)](envelope-sync-relay/en/16-APP-REGISTRY.md#19-migration-from-v12) · [§19 (TR)](envelope-sync-relay/tr/16-APP-REGISTRY.md#19-v12den-geçiş).
+Step-by-step checklist and SQL notes: [16-APP-REGISTRY §19 (EN)](en/16-APP-REGISTRY.md#19-migration-from-v12) · [§19 (TR)](tr/16-APP-REGISTRY.md#19-v12den-geçiş).
 
-### Admin app API (v1.3 — Faz 8b)
+### Admin app API (v1.3)
 
 Requires `ESR_ADMIN_TOKEN`. Base path: `/v1/admin/apps`.
 
@@ -130,7 +130,7 @@ POST /v1/namespaces/{namespaceId}/pairing-tokens
 
 Guest redeem with a non-listed `X-ESR-App-Id` → `403 APP_PAIRING_NOT_ALLOWED`. Omit `allowedAppIds` to allow any active app.
 
-YAML `apps.seed` still merges at startup (Faz 8a). Admin API manages runtime registry without DB access.
+YAML `apps.seed` still merges at startup. Admin API manages runtime registry without DB access.
 
 **Operator portal (web):** `/operator` → **Apps** tab lists registered applications, supports create/suspend/archive, origin verification instructions, native bundle approval, and client secret generate/rotate when `apps.nativeRequireClientSecret` is true (app must be `active` with all bundles approved). Proxied via BFF to the admin API above. **Developers** tab lists self-service accounts — verify email, disable, or re-enable (BFF → admin developer API below).
 
@@ -143,7 +143,7 @@ YAML `apps.seed` still merges at startup (Faz 8a). Admin API manages runtime reg
 | Portal **Generate secret** | Calls rotate-secret; plaintext shown once |
 | UI visibility | `/health` → `apps.nativeRequireClientSecret: true`, app `active`, ≥1 bundle, all bundles approved |
 
-Developers use the same flow in `/developer` when self-service is enabled. See [16-APP-REGISTRY §12.3 (EN)](envelope-sync-relay/en/16-APP-REGISTRY.md#123-approval-flows-and-client-secret) · [§12.3 (TR)](envelope-sync-relay/tr/16-APP-REGISTRY.md#123-onay-akışları-ve-client-secret).
+Developers use the same flow in `/developer` when self-service is enabled. See [16-APP-REGISTRY §12.3 (EN)](en/16-APP-REGISTRY.md#123-approval-flows-and-client-secret) · [§12.3 (TR)](tr/16-APP-REGISTRY.md#123-onay-akışları-ve-client-secret).
 
 ### Admin developer API (v1.3)
 
@@ -157,7 +157,7 @@ Requires `ESR_ADMIN_TOKEN`. Base path: `/v1/admin/developers`. Useful when `apps
 
 Disabling an account increments `session_version` (forces logout) and blocks login with `403 DEVELOPER_ACCOUNT_DISABLED`.
 
-### Developer portal API (v1.3 — Faz 8d)
+### Developer portal API (v1.3)
 
 Requires `apps.registrationMode: self_service` and `ESR_DEVELOPER_JWT_SECRET` (min 32 chars). Base path: `/v1/developer`.
 
@@ -253,7 +253,7 @@ Restore: replay database dump, restore blob volume, restart API.
 
 ## Security checklist
 
-See [envelope-sync-relay/en/08-SECURITY.md](./envelope-sync-relay/en/08-SECURITY.md). Automated coverage lives in `packages/server/src/faz7.integration.test.ts`.
+See [en/08-SECURITY.md](./en/08-SECURITY.md). Automated coverage lives in `packages/server/src/faz7.integration.test.ts`.
 
 Production minimum:
 

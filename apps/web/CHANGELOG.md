@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Changed
+
+- Agent docs and spec page GitHub links — point to `docs/en/` and `docs/tr/` after docs folder restructure
+
 ## [0.1.11]
 
 ### Added
