@@ -321,7 +321,7 @@ await EsrSync.connect({
 await sync.startPairing({ allowedAppIds: ['esr_app_mynotes_mobile'] })
 ```
 
-Full spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md). Human docs: `/sdk#app-registry`, `/api#app-registry`.
+Full spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md). Human docs: `/sdk#app-registry`, `/api#app-registry`.
 
 ---
 

@@ -605,7 +605,7 @@ On `head_changed` → compare revision → `GET .../head` if changed.
 | `APP_NOT_VERIFIED` | 403 | App pending verification |
 | `APP_NATIVE_ID_REQUIRED` | 400 | Missing platform/bundle headers |
 
-See [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md) for full app error list.
+See [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md) for full app error list.
 
 ---
 
@@ -620,7 +620,7 @@ When `apps.enabled: true`, operators and (in `self_service` mode) developers man
 
 OpenAPI: repo root `openapi.yaml` (tags **Applications**, **Developer**, **Admin**). Operator guide: [docs/OPERATOR.md](https://github.com/kemalersin/senkronla/blob/main/docs/OPERATOR.md).
 
-**v1.2 → v1.3 migration:** keep `apps.enabled: false` until clients send app headers; then enable registry, seed or register apps, set `legacyDefaultAppId` for existing namespaces. Details: [16-APP-REGISTRY §19](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md#19-migration-from-v12).
+**v1.2 → v1.3 migration:** keep `apps.enabled: false` until clients send app headers; then enable registry, seed or register apps, set `legacyDefaultAppId` for existing namespaces. Details: [16-APP-REGISTRY §19](https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md#19-migration-from-v12).
 
 ---
 

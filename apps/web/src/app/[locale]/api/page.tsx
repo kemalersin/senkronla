@@ -53,8 +53,8 @@ export default async function ApiPage({ params }: PageProps) {
   const apiSnippets = createApiSnippets(relayApiBaseUrl)
   const specHref =
     locale === 'tr'
-      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md'
-      : 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md'
 
   const nav = sectionKeys.map((key) => ({
     id: key,

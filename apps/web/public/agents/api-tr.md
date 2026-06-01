@@ -392,7 +392,7 @@ Authorization: Bearer dvt_...
 | `APP_NATIVE_ID_REQUIRED` | 400 | Platform/bundle başlıkları eksik |
 | `APP_BUNDLE_NOT_ALLOWED` | 403 | Bundle kayıtlı veya onaylı değil |
 
-Bkz. [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md).
+Bkz. [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md).
 
 ---
 
@@ -407,7 +407,7 @@ Bkz. [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs
 
 OpenAPI: repo kökü `openapi.yaml` (etiketler **Applications**, **Developer**, **Admin**). Operatör rehberi: [docs/OPERATOR.md](https://github.com/kemalersin/senkronla/blob/main/docs/OPERATOR.md).
 
-**v1.2 → v1.3 geçiş:** İstemciler app başlığı gönderene kadar `apps.enabled: false` bırakın; ardından kaydı açın, app'leri seed/register edin, mevcut namespace'ler için `legacyDefaultAppId` ayarlayın. Ayrıntı: [16-APP-REGISTRY §19](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md#19-v12den-geçiş).
+**v1.2 → v1.3 geçiş:** İstemciler app başlığı gönderene kadar `apps.enabled: false` bırakın; ardından kaydı açın, app'leri seed/register edin, mevcut namespace'ler için `legacyDefaultAppId` ayarlayın. Ayrıntı: [16-APP-REGISTRY §19](https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md#19-v12den-geçiş).
 
 ---
 

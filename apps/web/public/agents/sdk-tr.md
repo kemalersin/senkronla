@@ -290,7 +290,7 @@ App başlıkları tüm `/v1` rotalarında zorunlu (create/pair/recover dahil). �
 - `EsrSync.connect({ clientSecret })` veya `X-ESR-Client-Secret`
 - Web build'lerine gömülmemeli
 
-Tam spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md). İnsan dokümantasyonu: `/sdk#app-registry`, `/api#app-registry`.
+Tam spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md). İnsan dokümantasyonu: `/sdk#app-registry`, `/api#app-registry`.
 
 ---
 

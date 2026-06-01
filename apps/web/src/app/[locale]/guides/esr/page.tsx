@@ -44,12 +44,12 @@ export default async function EsrGuidePage({ params }: PageProps) {
   const snippets = createEsrGuideSnippets(exampleOrigin)
   const specHref =
     locale === 'tr'
-      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md'
-      : 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md'
   const limitsSpecHref =
     locale === 'tr'
-      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/17-OPERATOR-LIMIT-OVERRIDES.md'
-      : 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/17-OPERATOR-LIMIT-OVERRIDES.md'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/17-OPERATOR-LIMIT-OVERRIDES.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/17-OPERATOR-LIMIT-OVERRIDES.md'
   const rich = withDocRich({
     relayUrl,
     specLink: (chunks) => (

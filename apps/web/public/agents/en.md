@@ -61,7 +61,7 @@ Senkronla is an open-source, self-hosted **Envelope Sync Relay (ESR)**. Your app
 
 Default for JS/TS: **`EsrSync`** via [sdk-en.md](sdk-en.md).
 
-Spec v1.2 supports multiple documents per namespace (`primary`, `settings`, …). See [15-MULTI-DOCUMENT.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/15-MULTI-DOCUMENT.md).
+Spec v1.2 supports multiple documents per namespace (`primary`, `settings`, …). See [15-MULTI-DOCUMENT.md](https://github.com/kemalersin/senkronla/blob/main/docs/en/15-MULTI-DOCUMENT.md).
 
 ---
 
@@ -140,7 +140,7 @@ When `native.requireClientSecret: true`, also send `X-ESR-Client-Secret` (or SDK
 
 **Local dev:** operator sets `allowLocalhostOrigins: true`; use `http://localhost:{port}` as registered origin.
 
-Full spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md).
+Full spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md).
 
 **Operator / developer portals (human UI):** `/operator` (app registry admin) · `/developer` (self-service registration when enabled). Not required for SDK integration — agents use `/v1` and the references above.
 

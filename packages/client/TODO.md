@@ -1,6 +1,6 @@
 # @senkronla/client — TODO
 
-Spec: [docs/envelope-sync-relay/en/14-ESR-SYNC-FACADE.md](../../docs/envelope-sync-relay/en/14-ESR-SYNC-FACADE.md)
+Spec: [docs/en/14-ESR-SYNC-FACADE.md](../../docs/en/14-ESR-SYNC-FACADE.md)
 
 ## Faz 7b — Notifications
 

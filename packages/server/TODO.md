@@ -1,6 +1,6 @@
 # @senkronla/server — TODO
 
-Spec: [docs/envelope-sync-relay/en/04-API-REFERENCE.md](../../docs/envelope-sync-relay/en/04-API-REFERENCE.md)
+Spec: [docs/en/04-API-REFERENCE.md](../../docs/en/04-API-REFERENCE.md)
 
 ## Faz 0 — Scaffold
 

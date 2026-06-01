@@ -6,7 +6,7 @@ Senkronla stores opaque ESR-DOC1 envelopes and coordinates multi-device sync. Sp
 
 Production payloads use **ENV-ENC1** envelope encryption (PBKDF2-SHA256 + AES-256-GCM). The **sync password** is app-provided — never sent to the relay — and is separate from the 24-word recovery phrase.
 
-When the relay operator enables **app registry** (`apps.enabled`), integrations must send `X-ESR-App-Id` (+ web `Origin` or native bundle headers). Namespaces are bound to the creating app. Spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md).
+When the relay operator enables **app registry** (`apps.enabled`), integrations must send `X-ESR-App-Id` (+ web `Origin` or native bundle headers). Namespaces are bound to the creating app. Spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md).
 
 ## Agent integration (start here)
 

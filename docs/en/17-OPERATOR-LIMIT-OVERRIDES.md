@@ -132,7 +132,7 @@ PATCH body: partial `limitOverrides` object.
 - **Apps / Developers drawers:** Limits section.
 - Placeholders show config defaults; “Clear override” sets key to inherit.
 
-See [OPERATOR.md](../../../OPERATOR.md).
+See [OPERATOR.md](../OPERATOR.md).
 
 ---
 

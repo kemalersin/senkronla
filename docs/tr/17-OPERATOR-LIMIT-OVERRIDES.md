@@ -109,7 +109,7 @@ GET yanıtı: `effective`, `sources`, `overrides`, `configDefaults`.
 - **Namespaces:** satır → drawer (effective + form)
 - **Apps / Developers:** drawer Limits bölümü
 
-Bkz. [OPERATOR.md](../../../OPERATOR.md).
+Bkz. [OPERATOR.md](../OPERATOR.md).
 
 ---
 

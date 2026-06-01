@@ -1,6 +1,6 @@
 # @senkronla/protocol — TODO
 
-Spec: [docs/envelope-sync-relay/en/03-PROTOCOL.md](../../docs/envelope-sync-relay/en/03-PROTOCOL.md)
+Spec: [docs/en/03-PROTOCOL.md](../../docs/en/03-PROTOCOL.md)
 
 ## Faz 0 — Scaffold
 

@@ -97,8 +97,8 @@ export default async function SdkPage({ params }: PageProps) {
   const snippets = createGuideSnippets(relayUrl)
   const specHref =
     locale === 'tr'
-      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md'
-      : 'https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/en/16-APP-REGISTRY.md'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md'
   const rich = withDocRich({ relayUrl })
   const sdkRich = withDocRich({
     relayUrl,

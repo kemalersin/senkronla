@@ -61,7 +61,7 @@ Senkronla, açık kaynak ve self-hosted bir **Envelope Sync Relay (ESR)**'dir. U
 
 JS/TS için varsayılan: [sdk-tr.md](sdk-tr.md) içindeki **`EsrSync`**.
 
-Spec v1.2 namespace başına çoklu belge destekler (`primary`, `settings`, …). Bkz. `docs/envelope-sync-relay/tr/15-MULTI-DOCUMENT.md`.
+Spec v1.2 namespace başına çoklu belge destekler (`primary`, `settings`, …). Bkz. `docs/tr/15-MULTI-DOCUMENT.md`.
 
 ---
 
@@ -125,7 +125,7 @@ X-ESR-Bundle-Id: com.example.mynotes
 
 **SDK:** `EsrSync.connect({ appId, … })` — bkz. [sdk-tr.md](sdk-tr.md).
 
-Tam spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/envelope-sync-relay/tr/16-APP-REGISTRY.md).
+Tam spec: [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md).
 
 **Operatör / geliştirici portalları (insan UI):** `/operator` (app registry yönetimi) · `/developer` (self-service kayıt, etkinse). SDK entegrasyonu için gerekli değil — agent'lar `/v1` ve yukarıdaki referansları kullanır.
 

@@ -4,7 +4,7 @@ info:
   version: 1.3.1
   description: |
     Zero-knowledge document sync relay for offline-first applications.
-    Full specification: docs/envelope-sync-relay/README.md
+    Full specification: docs/README.md
 
     **v1.3.1:** App list search (`q`) matches app ID, name, and registered bundle ID; `/health`
     exposes `developerPortal.enabled`, `apps.enabled`, and
@@ -12,7 +12,7 @@ info:
 
     **v1.3:** Application registry — `X-ESR-App-Id`, namespace–app binding, operator admin API,
     developer self-service portal, origin verification, pairing `allowedAppIds`.
-    See docs/envelope-sync-relay/en/16-APP-REGISTRY.md
+    See docs/en/16-APP-REGISTRY.md
 
     **v1.2:** Multi-document per namespace (`/documents/{documentId}/...`).
 
