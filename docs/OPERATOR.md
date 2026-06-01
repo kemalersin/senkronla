@@ -25,12 +25,16 @@ Copy `.env.example` to `.env` or use `packages/server/config.example.yaml` as `c
 | `ESR_CORS_ORIGINS` | Comma-separated allowed origins (avoid `*` in production) |
 | `ESR_MAX_DOCUMENTS_PER_NAMESPACE` | Max documents per namespace ( default `32`, `0` = unlimited) |
 | `ESR_ALLOWED_DOCUMENT_IDS` | Optional comma-separated document ID allowlist (e.g. `primary,settings`) |
+| `ESR_REVISION_RETENTION_DAYS` | After each push, auto-purge non-head revisions older than N days per document (`0` = keep all) |
+| `ESR_REVISION_RETENTION_COUNT` | After each push, keep last N revisions per document (`0` = off; head counts toward N) |
 
 ### Multi-document
 
 Each namespace can hold multiple opaque envelopes (`primary`, `settings`, etc.). The relay stores one row per document in `document_heads` and blobs keyed by `(namespace, documentId, revision)`.
 
 - **`sync.maxDocumentsPerNamespace`** (env `ESR_MAX_DOCUMENTS_PER_NAMESPACE`): caps how many distinct document IDs a namespace may create. Default **32**. Set **0** for no cap.
+- **`sync.revisionRetentionDays`** (env `ESR_REVISION_RETENTION_DAYS`): after each push, automatically delete non-head revision records and blob files older than this many days for that namespace and document. Default **0** (keep all revisions).
+- **`sync.revisionRetentionCount`** (env `ESR_REVISION_RETENTION_COUNT`): after each push, keep only the last N revisions per document in that namespace (the current head counts toward N). Default **0** (disabled).
 - **`sync.allowedDocumentIds`** (env `ESR_ALLOWED_DOCUMENT_IDS`): when non-empty, only listed IDs are accepted on push; useful to lock a deployment to known document types.
 - **Operator portal:** the namespace table shows **Documents** (count) and **Primary head** (revision/size of `primary` only).
 - **Admin overview:** the `documents` stat is total `document_heads` rows across all namespaces.
@@ -47,7 +51,7 @@ Optional layer: registered apps (`appId`) with verified web origins or native bu
 | `apps.registrationMode: operator_managed` | Operator registers apps via YAML seed or admin API |
 | `apps.registrationMode: self_service` | Application owners register via developer portal + DNS verification |
 
-Key variables: `ESR_APPS__ENABLED`, `ESR_APPS__REGISTRATION_MODE`, `ESR_APPS__REQUIRE_REGISTRATION`, `ESR_APPS__ALLOW_LOCALHOST_ORIGINS`, `ESR_APPS__LEGACY_DEFAULT_APP_ID`, `ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET`, `ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW`, `ESR_DEVELOPER_JWT_SECRET` (or `ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET`), `ESR_APPS__LIMITS__PER_APP__*`. Full list: [16-APP-REGISTRY §5.2](envelope-sync-relay/en/16-APP-REGISTRY.md#52-environment-variables).
+Key variables: `ESR_APPS__ENABLED`, `ESR_APPS__REGISTRATION_MODE`, `ESR_APPS__ALLOW_LOCALHOST_ORIGINS`, `ESR_APPS__LEGACY_DEFAULT_APP_ID`, `ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET`, `ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW`, `ESR_DEVELOPER_JWT_SECRET` (or `ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET`), `ESR_APPS__LIMITS__PER_APP__*`. Full list: [16-APP-REGISTRY §5.2](envelope-sync-relay/en/16-APP-REGISTRY.md#52-environment-variables).
 
 When `apps.enabled: true`, static CORS lists are superseded by per-app verified origins (localhost allowed only if `allowLocalhostOrigins: true`).
 
@@ -64,6 +68,28 @@ Per-namespace, per-app, and per-developer limits override config defaults at run
 | `GET/PATCH /v1/admin/developers/:developerId/limits` | Defaults for all apps owned by the developer |
 
 Operator portal: Namespaces drawer, Apps/Developer **Limits** section. Spec: [17-OPERATOR-LIMIT-OVERRIDES.md](envelope-sync-relay/en/17-OPERATOR-LIMIT-OVERRIDES.md).
+
+### Revision retention and manual purge
+
+Every document push stores a revision history row and blob file. Configure automatic cleanup:
+
+| Config | Env | Default |
+|--------|-----|---------|
+| `sync.revisionRetentionDays` | `ESR_REVISION_RETENTION_DAYS` | `0` (keep all) |
+| `sync.revisionRetentionCount` | `ESR_REVISION_RETENTION_COUNT` | `0` (off) |
+
+When either value is greater than zero, retention runs automatically after each push for that namespace and document. Both can be enabled (date purge first, then count).
+
+**Operator portal:** **Revisions** on namespace or app rows; deployment-wide purge under **Settings → Revisions**. The panel shows current server retention values from `GET /v1/admin/settings/sync`.
+
+**Admin API:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/admin/settings/sync` | Read `revisionRetentionDays`, `revisionRetentionCount`, and related sync limits |
+| `POST` | `/admin/revisions/purge` | Manual purge by date (`mode: date`, `before`) or count (`mode: count`, `keepLastRevisions`); scope `deployment`, `namespace`, or `app` |
+
+Date mode always keeps the current head. Count mode includes the head in the keep limit. See [15-MULTI-DOCUMENT §8.4](envelope-sync-relay/en/15-MULTI-DOCUMENT.md#84-document_revisions-history).
 
 ### Migrating from v1.2 to v1.3
 

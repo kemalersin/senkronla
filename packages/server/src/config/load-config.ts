@@ -84,7 +84,13 @@ export function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
     }
   }
 
-  if (env.ESR_MAX_ENVELOPE_BYTES || env.ESR_MAX_DOCUMENTS_PER_NAMESPACE || env.ESR_ALLOWED_DOCUMENT_IDS) {
+  if (
+    env.ESR_MAX_ENVELOPE_BYTES ||
+    env.ESR_MAX_DOCUMENTS_PER_NAMESPACE ||
+    env.ESR_ALLOWED_DOCUMENT_IDS ||
+    env.ESR_REVISION_RETENTION_DAYS ||
+    env.ESR_REVISION_RETENTION_COUNT
+  ) {
     overrides.sync = {
       ...(overrides.sync as RawConfig),
       ...(env.ESR_MAX_ENVELOPE_BYTES ? { maxEnvelopeBytes: env.ESR_MAX_ENVELOPE_BYTES } : {}),
@@ -97,6 +103,12 @@ export function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
               .map((item) => item.trim())
               .filter(Boolean),
           }
+        : {}),
+      ...(env.ESR_REVISION_RETENTION_DAYS !== undefined
+        ? { revisionRetentionDays: env.ESR_REVISION_RETENTION_DAYS }
+        : {}),
+      ...(env.ESR_REVISION_RETENTION_COUNT !== undefined
+        ? { revisionRetentionCount: env.ESR_REVISION_RETENTION_COUNT }
         : {}),
     }
   }
@@ -174,7 +186,6 @@ export function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
   if (
     env.ESR_APPS__ENABLED ||
     env.ESR_APPS__REGISTRATION_MODE ||
-    env.ESR_APPS__REQUIRE_REGISTRATION ||
     env.ESR_APPS__ALLOW_LOCALHOST_ORIGINS ||
     env.ESR_APPS__LEGACY_DEFAULT_APP_ID ||
     env.ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET ||
@@ -228,9 +239,6 @@ export function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
       ...(overrides.apps as RawConfig),
       ...(env.ESR_APPS__ENABLED !== undefined ? { enabled: parseEnvBoolean(env.ESR_APPS__ENABLED) } : {}),
       ...(env.ESR_APPS__REGISTRATION_MODE ? { registrationMode: env.ESR_APPS__REGISTRATION_MODE } : {}),
-      ...(env.ESR_APPS__REQUIRE_REGISTRATION !== undefined
-        ? { requireRegistration: parseEnvBoolean(env.ESR_APPS__REQUIRE_REGISTRATION) }
-        : {}),
       ...(env.ESR_APPS__ALLOW_LOCALHOST_ORIGINS !== undefined
         ? { allowLocalhostOrigins: parseEnvBoolean(env.ESR_APPS__ALLOW_LOCALHOST_ORIGINS) }
         : {}),

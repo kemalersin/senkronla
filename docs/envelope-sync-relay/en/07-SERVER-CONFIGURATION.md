@@ -67,6 +67,8 @@ pairing:
 sync:
   maxEnvelopeBytes: 52428800             # 50 MB
   maxDocumentsPerNamespace: 32           # Cap document_heads rows; 0 = unlimited
+  revisionRetentionDays: 0               # 0 = keep all; auto-purge non-head revisions older than N days after each push
+  revisionRetentionCount: 0              # 0 = off; keep last N revisions per document (head counts toward N)
   allowedDocumentIds: []                 # empty = any valid id; else allowlist only
   allowedContentTypes: []                # empty = all allowed; e.g. application/vnd.*.snapshot+json
 
@@ -79,7 +81,6 @@ unlock:
 apps:
   enabled: false
   registrationMode: operator_managed   # operator_managed | self_service
-  requireRegistration: true
   allowLocalhostOrigins: false
   legacyDefaultAppId: null
   verification:
@@ -153,11 +154,12 @@ ESR_WS_PING_INTERVAL=30
 ESR_MAX_ENVELOPE_BYTES=52428800
 ESR_MAX_DOCUMENTS_PER_NAMESPACE=32      # 0 = unlimited
 ESR_ALLOWED_DOCUMENT_IDS=primary,settings   # optional comma-separated allowlist
+# ESR_REVISION_RETENTION_DAYS=0         # auto-purge non-head revisions older than N days after each push (0 = keep all)
+# ESR_REVISION_RETENTION_COUNT=0        # keep last N revisions per document after each push (0 = off; head counts toward N)
 
 # Application registry (v1.3 — optional; see doc 16)
 ESR_APPS__ENABLED=false
 ESR_APPS__REGISTRATION_MODE=operator_managed   # operator_managed | self_service
-ESR_APPS__REQUIRE_REGISTRATION=true
 ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
 # ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary
 # ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
@@ -240,6 +242,7 @@ sync.example.com {
 | Demo | `free: 99`, `mode: block` |
 | Strict | `free: 1`, `mode: payment` |
 | Closed commercial | `free: 2`, `mode: block` (3rd device impossible) |
+| **Revision history trimmed** | `revisionRetentionDays: 30` and/or `revisionRetentionCount: 50` — auto cleanup after each push; manual purge via operator portal or `POST /v1/admin/revisions/purge` |
 | **App registry off (default)** | `apps.enabled: false` — v1.2 open relay |
 | **Self-hosted single app** | `apps.enabled: true`, `registrationMode: operator_managed`, `seed: [...]` |
 | **Public hosted platform** | `apps.enabled: true`, `registrationMode: self_service`, developer portal on |

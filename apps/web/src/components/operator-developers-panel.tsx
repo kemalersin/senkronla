@@ -636,19 +636,21 @@ export function OperatorDevelopersPanel({
                         className="operator-table-col-actions"
                         onClick={(event) => event.stopPropagation()}
                       >
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() =>
-                            setLimitsTarget({
-                              scope: 'developers',
-                              scopeId: row.id,
-                              title: row.email,
-                            })
-                          }
-                        >
-                          {t('limits.openButton')}
-                        </button>
+                        <div className="operator-table-col-actions-inner">
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() =>
+                              setLimitsTarget({
+                                scope: 'developers',
+                                scopeId: row.id,
+                                title: row.email,
+                              })
+                            }
+                          >
+                            {t('limits.openButton')}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

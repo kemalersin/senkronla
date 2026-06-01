@@ -80,6 +80,8 @@ export default async function EsrGuidePage({ params }: PageProps) {
     ['ESR_CORS_ORIGINS', t.rich('sections.config.rows.cors', rich)],
     ['ESR_MAX_DOCUMENTS_PER_NAMESPACE', t('sections.config.rows.maxDocuments')],
     ['ESR_ALLOWED_DOCUMENT_IDS', t('sections.config.rows.allowedDocIds')],
+    ['ESR_REVISION_RETENTION_DAYS', t('sections.config.rows.revisionRetentionDays')],
+    ['ESR_REVISION_RETENTION_COUNT', t('sections.config.rows.revisionRetentionCount')],
     ['ESR_APPS__ENABLED', t.rich('sections.config.rows.appsEnabled', rich)],
     ['ESR_APPS__REGISTRATION_MODE', t.rich('sections.config.rows.appsRegistrationMode', rich)],
     ['ESR_APPS__ALLOW_LOCALHOST_ORIGINS', t.rich('sections.config.rows.appsLocalhost', rich)],

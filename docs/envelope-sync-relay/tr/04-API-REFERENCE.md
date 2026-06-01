@@ -529,6 +529,62 @@ PATCH /v1/admin/namespaces/{namespaceId}/slots
 GET /v1/admin/config
 ```
 
+### 8.4 Sync ayarlarını oku (retention)
+
+```http
+GET /v1/admin/settings/sync
+```
+
+**200:**
+
+```json
+{
+  "revisionRetentionDays": 0,
+  "revisionRetentionCount": 0,
+  "maxDocumentsPerNamespace": 32,
+  "maxEnvelopeBytes": 52428800
+}
+```
+
+Config anahtarları: `sync.revisionRetentionDays` (`ESR_REVISION_RETENTION_DAYS`), `sync.revisionRetentionCount` (`ESR_REVISION_RETENTION_COUNT`). Bkz. [07-SERVER-CONFIGURATION.md](./07-SERVER-CONFIGURATION.md) ve [15-MULTI-DOCUMENT.md §8.4](./15-MULTI-DOCUMENT.md#84-document_revisions-geçmişi).
+
+### 8.5 Eski revizyonları temizle (manuel)
+
+```http
+POST /v1/admin/revisions/purge
+```
+
+```json
+{
+  "mode": "date",
+  "before": "2026-01-01T00:00:00.000Z",
+  "scope": "namespace",
+  "namespaceId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Sayı modu örneği:
+
+```json
+{
+  "mode": "count",
+  "keepLastRevisions": 50,
+  "scope": "app",
+  "appId": "esr_app_example"
+}
+```
+
+**200:**
+
+```json
+{
+  "deletedRevisions": 12,
+  "deletedBlobFiles": 12
+}
+```
+
+Tarih modunda güncel head korunur. Sayı modunda head saklanan N'ye dahildir. Operatör paneli: namespace/uygulama satırlarında **Revizyonlar** ve genel ayarlarda tüm relay kapsamı.
+
 ## 9. Sağlık
 
 ```http

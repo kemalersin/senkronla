@@ -9,6 +9,10 @@ import {
   OperatorLimitsModal,
   type OperatorLimitsTarget,
 } from '@/components/operator-limits-modal'
+import {
+  OperatorRevisionPurgeModal,
+  type OperatorRevisionPurgeTarget,
+} from '@/components/operator-revision-purge-modal'
 import { OperatorSettingsDrawer } from '@/components/operator-settings-drawer'
 import { OperatorSpinner } from '@/components/operator-spinner'
 import { dedupedGet, fetchJson, invalidateDedupedGet } from '@/lib/deduped-fetch'
@@ -205,6 +209,7 @@ export function OperatorPortal() {
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
+  const [revisionPurgeTarget, setRevisionPurgeTarget] = useState<OperatorRevisionPurgeTarget | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [listRefreshKey, setListRefreshKey] = useState(0)
   const tRef = useRef(t)
@@ -799,12 +804,12 @@ export function OperatorPortal() {
                     <tr>
                       <th className="operator-table-col-sticky">{t('columns.namespace')}</th>
                       <th>{t('columns.label')}</th>
-                      {showAppColumn && <th>{t('columns.app')}</th>}
+                      {showAppColumn && <th className="operator-namespace-app-cell">{t('columns.app')}</th>}
                       <th className="operator-table-col-numeric">{t('columns.devices')}</th>
                       <th className="operator-table-col-numeric">{t('columns.slots')}</th>
                       <th className="operator-table-col-numeric">{t('columns.documentCount')}</th>
                       <th className="operator-table-col-date">{t('columns.created')}</th>
-                      <th>{t('columns.actions')}</th>
+                      <th className="operator-table-col-actions">{t('columns.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -833,20 +838,36 @@ export function OperatorPortal() {
                         <td className="operator-table-col-numeric">{row.documentCount}</td>
                         <td className="operator-table-col-date">{formatDate(row.createdAt, locale)}</td>
                         <td className="operator-table-col-actions">
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() =>
-                              setLimitsTarget({
-                                scope: 'namespaces',
-                                scopeId: row.namespaceId,
-                                title: row.namespaceLabel,
-                                subtitle: row.namespaceId,
-                              })
-                            }
-                          >
-                            {t('limits.openButton')}
-                          </button>
+                          <div className="operator-table-col-actions-inner">
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() =>
+                                setLimitsTarget({
+                                  scope: 'namespaces',
+                                  scopeId: row.namespaceId,
+                                  title: row.namespaceLabel,
+                                  subtitle: row.namespaceId,
+                                })
+                              }
+                            >
+                              {t('limits.openButton')}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() =>
+                                setRevisionPurgeTarget({
+                                  scope: 'namespace',
+                                  scopeId: row.namespaceId,
+                                  title: row.namespaceLabel,
+                                  subtitle: row.namespaceId,
+                                })
+                              }
+                            >
+                              {t('revisions.openButton')}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1092,6 +1113,12 @@ export function OperatorPortal() {
       <OperatorLimitsModal
         target={limitsTarget}
         onClose={() => setLimitsTarget(null)}
+        onUnauthorized={handleUnauthorized}
+      />
+
+      <OperatorRevisionPurgeModal
+        target={revisionPurgeTarget}
+        onClose={() => setRevisionPurgeTarget(null)}
         onUnauthorized={handleUnauthorized}
       />
 

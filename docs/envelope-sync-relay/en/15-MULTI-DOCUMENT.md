@@ -86,6 +86,8 @@ Validation applies to: URL path segment, envelope field, blob key segment, WS me
 ```yaml
 sync:
   maxDocumentsPerNamespace: 32   # 0 = unlimited (default 32)
+  revisionRetentionDays: 0       # 0 = keep all; auto-purge non-head revisions older than N days after each push
+  revisionRetentionCount: 0      # 0 = off; keep last N revisions per document (head counts toward N)
   allowedDocumentIds: []         # empty = any valid id; non-empty = allowlist
 ```
 
@@ -316,7 +318,16 @@ Head creation can insert registry row; DELETE document (future) would need separ
 
 ### 8.4 `document_revisions` history
 
-Still optional/future; per-document revision history unchanged from [10-DATA-MODEL.md](./10-DATA-MODEL.md).
+Shipped. Every push appends a row; `document_heads` remains the authoritative current revision. Blobs are stored per revision (no same-device reuse).
+
+**Automatic retention** (`sync.revisionRetentionDays`, `sync.revisionRetentionCount` — env `ESR_REVISION_RETENTION_DAYS`, `ESR_REVISION_RETENTION_COUNT`):
+
+- **Days:** after each push, delete non-head revisions older than N days for that namespace and document. Default `0` (keep all).
+- **Count:** after each push, keep only the last N revisions per document; the current head counts toward N. Default `0` (disabled).
+
+**Manual purge:** operator portal **Revisions** (namespace, app, or deployment-wide in settings) or admin API `GET /v1/admin/settings/sync` + `POST /v1/admin/revisions/purge` (`mode: date` with `before`, or `mode: count` with `keepLastRevisions`; scope `deployment`, `namespace`, or `app`). Date mode always preserves the current head; count mode includes the head in the keep limit.
+
+See [10-DATA-MODEL.md](./10-DATA-MODEL.md) §11 and [OPERATOR.md](../../OPERATOR.md).
 
 ---
 
@@ -455,7 +466,7 @@ EsrSync.connect({
 ## 12. Security and abuse
 
 - **Rate limit:** Each successful push for any `documentId` counts against the same `put_document` per-device quota (not per-document keys in `rateLimits` today).
-- **Storage:** `maxDocumentsPerNamespace` caps row count.
+- **Storage:** `maxDocumentsPerNamespace` caps row count; `revisionRetentionDays` / `revisionRetentionCount` trim old revision blobs after each push.
 - **Blob path traversal:** Regex §7.2 prevents `..` and invalid segments.
 - **No cross-document auth:** Device token grants access to all documents in namespace (same as before). Finer ACL is out of scope (see [05-DEVICE-PAIRING-AND-RECOVERY.md](./05-DEVICE-PAIRING-AND-RECOVERY.md) host-only option).
 

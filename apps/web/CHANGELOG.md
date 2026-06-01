@@ -9,6 +9,18 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.11]
+
+### Added
+
+- Operator revision purge — date or keep-last-N count; deployment-wide tab in general settings; improved modal layout without size jump after loading
+
+### Changed
+
+- ESR setup guide — document `ESR_REVISION_RETENTION_DAYS` and `ESR_REVISION_RETENTION_COUNT` in configuration table
+- REST API docs — revision retention subsection under relay quotas
+- Operator revision purge success — single-line message in a highlighted feedback card
+- Postman collection and API doc snippets — health response no longer includes `apps.requireRegistration`
 
 ## [0.1.10]
 

@@ -249,7 +249,18 @@ Namespace DELETE:
 - Blob dosyaları async GC
 - unlock_events audit retention policy (operatör)
 
-## 11. Opsiyonel: revision history (v1.1)
+## 11. Revizyon geçmişi (yayında)
+
+Her başarılı belge push'u `document_heads` güncel head kalırken `document_revisions` tablosuna bir satır ekler. Blob'lar revizyon başına `{namespaceId}/{documentId}/{revision}.json` altında saklanır.
+
+Otomatik retention (isteğe bağlı, `sync` bloğu):
+
+| Anahtar | Env | Varsayılan | Davranış |
+|---------|-----|------------|----------|
+| `revisionRetentionDays` | `ESR_REVISION_RETENTION_DAYS` | `0` | Push sonrası o namespace ve belge için N günden eski head-dışı revizyonları sil. `0` = hepsini tut. |
+| `revisionRetentionCount` | `ESR_REVISION_RETENTION_COUNT` | `0` | Push sonrası belge başına son N revizyonu tut (head N'ye dahil). `0` = kapalı. |
+
+Her iki politika birlikte açılabilir (önce tarih, sonra sayı). Manuel operatör temizliği: `POST /v1/admin/revisions/purge` ve operatör paneli **Revizyonlar** — bkz. [OPERATOR.md](../../OPERATOR.md) ve [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) §8.4.
 
 ```sql
 CREATE TABLE document_revisions (

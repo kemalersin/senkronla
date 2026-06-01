@@ -1436,8 +1436,176 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   width: min(44rem, 100%);
 }
 
-.operator-table-col-actions {
+.operator-modal--revisions {
+  position: relative;
+  width: min(32rem, 100%);
+  min-height: 30rem;
+}
+
+.operator-modal-body--revisions {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.85rem 1.15rem 1.25rem;
+  overflow: hidden;
+}
+
+.operator-revisions-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.operator-revisions-panel--modal {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.operator-revisions-panel--modal.is-loading {
+  position: static;
+  overflow: visible;
+}
+
+.operator-revisions-modal-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+}
+
+.operator-revisions-modal-loading .operator-panel-spinner {
+  flex: none;
+  min-height: 0;
+  padding: 0;
+}
+
+.operator-revisions-panel-content {
+  display: grid;
+  gap: 1rem;
+  flex: 1 1 auto;
+}
+
+.operator-revisions-panel-content.is-pending {
+  visibility: hidden;
+}
+
+.operator-revisions-panel--drawer {
+  gap: 1.15rem;
+}
+
+.operator-revisions-panel-header h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.operator-revisions-panel-target-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.operator-revisions-panel-target .operator-muted {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.operator-revisions-settings-slot {
+  min-height: 5.5rem;
+}
+
+.operator-revisions-settings-loading {
+  display: flex;
+  align-items: center;
+  min-height: 5.5rem;
+}
+
+.operator-revisions-auto-retention {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--bg-elevated);
+}
+
+.operator-revisions-auto-retention-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.operator-revisions-auto-retention-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.operator-revisions-panel-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.operator-revisions-panel-form .form-field {
+  margin-bottom: 0;
+}
+
+.operator-revisions-purge-feedback {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.65rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.operator-revisions-purge-feedback--error {
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  background: rgba(180, 83, 9, 0.08);
+  color: var(--warn);
+}
+
+.operator-revisions-purge-feedback--success {
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--bg-card));
+  color: var(--accent);
+}
+
+.operator-revisions-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.operator-revisions-panel-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.operator-table th.operator-table-col-actions,
+.operator-table td.operator-table-col-actions {
+  width: auto;
   white-space: nowrap;
+  vertical-align: middle;
+}
+
+.operator-table-col-actions-inner {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .operator-namespace-app-cell span {
@@ -1908,6 +2076,15 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 .operator-table.operator-limits-table th,
 .operator-table.operator-limits-table td {
   vertical-align: middle;
+}
+
+.operator-table--namespaces th,
+.operator-table--namespaces td {
+  vertical-align: middle;
+}
+
+.operator-table--namespaces .operator-namespace-app-cell {
+  vertical-align: top;
 }
 
 .operator-table th {

@@ -5,9 +5,10 @@ import { useTranslations } from 'next-intl'
 
 import { OperatorDangerPanel } from '@/components/operator-danger-panel'
 import { OperatorMailSettingsPanel } from '@/components/operator-mail-settings-panel'
+import { OperatorRevisionsPanel } from '@/components/operator-revisions-panel'
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
 
-type SettingsTab = 'mail' | 'danger'
+type SettingsTab = 'mail' | 'revisions' | 'danger'
 
 export function OperatorSettingsDrawer({
   open,
@@ -54,6 +55,7 @@ export function OperatorSettingsDrawer({
 
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'mail', label: t('settingsTabs.mail') },
+    { id: 'revisions', label: t('settingsTabs.revisions') },
     { id: 'danger', label: t('settingsTabs.danger') },
   ]
 
@@ -113,6 +115,20 @@ export function OperatorSettingsDrawer({
               <OperatorMailSettingsPanel
                 variant="drawer"
                 authState={authState}
+                onUnauthorized={onUnauthorized}
+              />
+            </div>
+          )}
+
+          {tab === 'revisions' && (
+            <div
+              role="tabpanel"
+              id="operator-settings-panel-revisions"
+              aria-labelledby="operator-settings-tab-revisions"
+            >
+              <OperatorRevisionsPanel
+                variant="drawer"
+                scope="deployment"
                 onUnauthorized={onUnauthorized}
               />
             </div>

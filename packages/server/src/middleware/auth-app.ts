@@ -39,7 +39,7 @@ export async function enforceAppContext(
   request: FastifyRequest,
   options?: { allowOriginOnly?: boolean },
 ): Promise<void> {
-  if (!ctx.config.apps.enabled || !ctx.config.apps.requireRegistration) {
+  if (!ctx.config.apps.enabled) {
     return
   }
 

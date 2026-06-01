@@ -58,7 +58,7 @@ function appRegistryWebHeaders(): Array<{ key: string; value: string; descriptio
     {
       key: 'X-ESR-App-Id',
       value: '{{esrAppId}}',
-      description: 'Public app id — required when apps.enabled and requireRegistration',
+      description: 'Public app id — required when apps.enabled is true',
     },
     {
       key: 'Origin',
@@ -73,7 +73,7 @@ function appRegistryNativeHeaders(): Array<{ key: string; value: string; descrip
     {
       key: 'X-ESR-App-Id',
       value: '{{esrAppId}}',
-      description: 'Public app id — required when apps.enabled and requireRegistration',
+      description: 'Public app id — required when apps.enabled is true',
     },
     {
       key: 'X-ESR-Platform',
@@ -264,7 +264,6 @@ function buildQuickStartItems(): PostmanItem[] {
         "    pm.expect(json.status).to.eql('ok');",
         "    pm.expect(json.developerPortal).to.have.property('enabled');",
         "    pm.expect(json.apps).to.have.property('enabled');",
-        "    pm.expect(json.apps).to.have.property('requireRegistration');",
         "    pm.expect(json.apps).to.have.property('nativeRequireClientSecret');",
         '});',
       ],
@@ -798,6 +797,47 @@ function buildDeveloperAppItems(): PostmanItem[] {
   ]
 }
 
+function buildAdminRevisionItems(): PostmanItem[] {
+  return [
+    httpRequest({
+      name: 'Get sync settings (retention)',
+      method: 'GET',
+      url: '{{relayBaseUrl}}/admin/settings/sync',
+      auth: adminBearerAuth(),
+      description:
+        'Returns `revisionRetentionDays` and `revisionRetentionCount` from config (`ESR_REVISION_RETENTION_DAYS`, `ESR_REVISION_RETENTION_COUNT`).',
+    }),
+    httpRequest({
+      name: 'Purge revisions (namespace, by date)',
+      method: 'POST',
+      url: '{{relayBaseUrl}}/admin/revisions/purge',
+      auth: adminBearerAuth(),
+      headers: jsonHeaders(),
+      description:
+        'Manual cleanup. Date mode always keeps the current head. Count mode includes the head in `keepLastRevisions`.',
+      body: {
+        mode: 'date',
+        before: '2026-01-01T00:00:00.000Z',
+        scope: 'namespace',
+        namespaceId: '{{namespaceId}}',
+      },
+    }),
+    httpRequest({
+      name: 'Purge revisions (app, by count)',
+      method: 'POST',
+      url: '{{relayBaseUrl}}/admin/revisions/purge',
+      auth: adminBearerAuth(),
+      headers: jsonHeaders(),
+      body: {
+        mode: 'count',
+        keepLastRevisions: 50,
+        scope: 'app',
+        appId: '{{esrAppId}}',
+      },
+    }),
+  ]
+}
+
 function buildAdminAppItems(): PostmanItem[] {
   return [
     httpRequest({
@@ -969,6 +1009,11 @@ export function buildPostmanCollection() {
         'App registry — Developer apps',
         buildDeveloperAppItems(),
         'Create and manage your own applications. List search matches app ID, name, or bundle ID.',
+      ),
+      folder(
+        'Operator — revisions',
+        buildAdminRevisionItems(),
+        'Automatic retention via `ESR_REVISION_RETENTION_DAYS` / `ESR_REVISION_RETENTION_COUNT`; manual purge for deployment, namespace, or app scope.',
       ),
       folder(
         'App registry — Operator apps',

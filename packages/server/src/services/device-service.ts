@@ -170,7 +170,7 @@ export async function pairDeviceWithCode(
       throw new AppError(400, 'PAIRING_CODE_INVALID', 'Pairing code is invalid, expired, or already used')
     }
 
-    if (config.apps.enabled && config.apps.requireRegistration) {
+    if (config.apps.enabled) {
       assertPairingAppAllowed(tokenResult.rows[0]?.allowed_app_ids ?? null, appAuth?.appId)
     }
 

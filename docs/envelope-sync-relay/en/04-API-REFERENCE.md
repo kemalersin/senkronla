@@ -560,6 +560,62 @@ PATCH /v1/admin/namespaces/{namespaceId}/slots
 GET /v1/admin/config
 ```
 
+### 8.4 Read sync settings (retention)
+
+```http
+GET /v1/admin/settings/sync
+```
+
+**200:**
+
+```json
+{
+  "revisionRetentionDays": 0,
+  "revisionRetentionCount": 0,
+  "maxDocumentsPerNamespace": 32,
+  "maxEnvelopeBytes": 52428800
+}
+```
+
+Config keys: `sync.revisionRetentionDays` (`ESR_REVISION_RETENTION_DAYS`), `sync.revisionRetentionCount` (`ESR_REVISION_RETENTION_COUNT`). See [07-SERVER-CONFIGURATION.md](./07-SERVER-CONFIGURATION.md) and [15-MULTI-DOCUMENT.md §8.4](./15-MULTI-DOCUMENT.md#84-document_revisions-history).
+
+### 8.5 Purge old revisions (manual)
+
+```http
+POST /v1/admin/revisions/purge
+```
+
+```json
+{
+  "mode": "date",
+  "before": "2026-01-01T00:00:00.000Z",
+  "scope": "namespace",
+  "namespaceId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Count mode example:
+
+```json
+{
+  "mode": "count",
+  "keepLastRevisions": 50,
+  "scope": "app",
+  "appId": "esr_app_example"
+}
+```
+
+**200:**
+
+```json
+{
+  "deletedRevisions": 12,
+  "deletedBlobFiles": 12
+}
+```
+
+Date mode always preserves the current head. Count mode includes the head in the keep limit. Operator portal: **Revisions** on namespace/app rows and deployment-wide under settings.
+
 ## 9. Health
 
 ```http

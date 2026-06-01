@@ -9,6 +9,26 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.11]
+
+### Added
+
+- `document_revisions` table — every document push appends a revision history row while `document_heads` remains the current head
+- `sync.revisionRetentionDays` config (`ESR_REVISION_RETENTION_DAYS`, default `0` = keep all) — after each push, auto-purge non-head revisions older than the retention window for that namespace and document
+- `sync.revisionRetentionCount` config (`ESR_REVISION_RETENTION_COUNT`, default `0` = off) — after each push, keep only the last N revisions per document
+- Admin API `GET /v1/admin/settings/sync` and `POST /v1/admin/revisions/purge` — operator purge by date or keep-last-N count; scope deployment, namespace, or app
+
+### Fixed
+
+- Count-based revision purge keeps exactly N revisions per document (head included in the limit; previously one extra blob was left)
+
+### Changed
+
+- Document push always writes a new blob file per revision (reverts same-device blob reuse from 0.1.10)
+
+### Removed
+
+- `apps.requireRegistration` config flag and `ESR_APPS__REQUIRE_REGISTRATION` env var — when `apps.enabled` is true, registered app credentials are always required on public API routes
 
 ## [0.1.10]
 

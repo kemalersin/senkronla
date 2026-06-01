@@ -249,7 +249,18 @@ Namespace DELETE:
 - Blob files async GC
 - unlock_events audit retention policy (operator)
 
-## 11. Optional: revision history (v1.1)
+## 11. Revision history (shipped)
+
+Every successful document push inserts a row into `document_revisions` while `document_heads` remains the current head. Blobs are stored per revision under `{namespaceId}/{documentId}/{revision}.json`.
+
+Automatic retention (optional, `sync` block):
+
+| Key | Env | Default | Behavior |
+|-----|-----|---------|----------|
+| `revisionRetentionDays` | `ESR_REVISION_RETENTION_DAYS` | `0` | After each push, delete non-head revisions older than N days for that namespace and document. `0` = keep all. |
+| `revisionRetentionCount` | `ESR_REVISION_RETENTION_COUNT` | `0` | After each push, keep only the last N revisions per document (head counts toward N). `0` = disabled. |
+
+Both policies can be enabled together (date purge runs first, then count purge). Manual operator purge: `POST /v1/admin/revisions/purge` and operator portal **Revisions** — see [OPERATOR.md](../../OPERATOR.md) and [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) §8.4.
 
 ```sql
 CREATE TABLE document_revisions (

@@ -25,7 +25,6 @@ function withSelfServiceConfig(base: ServerConfig): ServerConfig {
       ...base.apps,
       enabled: true,
       registrationMode: 'self_service',
-      requireRegistration: true,
       allowLocalhostOrigins: true,
       seed: [],
       developerPortal: {

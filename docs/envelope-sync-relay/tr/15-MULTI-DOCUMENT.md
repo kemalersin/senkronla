@@ -86,6 +86,8 @@ Doğrulama: URL path segmenti, zarf alanı, blob key segmenti, WS mesajları.
 ```yaml
 sync:
   maxDocumentsPerNamespace: 32   # 0 = sınırsız (varsayılan 32)
+  revisionRetentionDays: 0       # 0 = hepsini tut; push sonrası N günden eski head-dışı revizyonları otomatik sil
+  revisionRetentionCount: 0      # 0 = kapalı; belge başına son N revizyonu tut (head N'ye dahil)
   allowedDocumentIds: []         # boş = geçerli her id; dolu = allowlist
 ```
 
@@ -316,7 +318,16 @@ Döküman silme (DELETE) ayrı RFC'de.
 
 ### 8.4 `document_revisions` geçmişi
 
-Hâlâ opsiyonel/gelecek; döküman başına revizyon geçmişi [10-DATA-MODEL.md](./10-DATA-MODEL.md) ile uyumlu.
+Yayında. Her push bir satır ekler; `document_heads` güncel head olarak kalır. Blob'lar revizyon başına saklanır (aynı cihaz reuse yok).
+
+**Otomatik retention** (`sync.revisionRetentionDays`, `sync.revisionRetentionCount` — env `ESR_REVISION_RETENTION_DAYS`, `ESR_REVISION_RETENTION_COUNT`):
+
+- **Gün:** push sonrası o namespace ve belge için N günden eski head-dışı revizyonları sil. Varsayılan `0` (hepsini tut).
+- **Sayı:** push sonrası belge başına son N revizyonu tut; güncel head N'ye dahildir. Varsayılan `0` (kapalı).
+
+**Manuel temizlik:** operatör paneli **Revizyonlar** (namespace, uygulama veya genel ayarlarda tüm relay) veya admin API `GET /v1/admin/settings/sync` + `POST /v1/admin/revisions/purge` (`mode: date` + `before` veya `mode: count` + `keepLastRevisions`; kapsam `deployment`, `namespace` veya `app`). Tarih modunda güncel head korunur; sayı modunda head saklanan N'ye dahildir.
+
+Bkz. [10-DATA-MODEL.md](./10-DATA-MODEL.md) §11 ve [OPERATOR.md](../../OPERATOR.md).
 
 ---
 
@@ -454,7 +465,7 @@ EsrSync.connect({
 ## 12. Güvenlik ve kötüye kullanım
 
 - **Rate limit:** Her başarılı push (her `documentId`) aynı cihaz başına `put_document` kotasından düşer (`rateLimits` içinde belge başına anahtar yok).
-- **Depolama:** `maxDocumentsPerNamespace` satır sayısını sınırlar.
+- **Depolama:** `maxDocumentsPerNamespace` satır sayısını sınırlar; `revisionRetentionDays` / `revisionRetentionCount` eski revizyon blob'larını push sonrası kısaltır.
 - **Blob traversal:** §7.2 regex.
 - **Dökümanlar arası yetki yok:** Device token namespace'teki tüm dökümanlara erişir (v1 primary ile aynı). İnce taneli ACL kapsam dışı.
 

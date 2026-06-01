@@ -97,9 +97,6 @@ apps:
   # Uygulamalar nasıl kaydedilir (enabled: false iken yok sayılır).
   registrationMode: operator_managed   # operator_managed | self_service
 
-  # Geçerli app kimlik bilgisi olmayan istekleri reddet (enabled: true iken).
-  requireRegistration: true
-
   # Geliştirme kolaylığı — production'da asla true.
   allowLocalhostOrigins: false
 
@@ -155,7 +152,6 @@ apps:
 ```bash
 ESR_APPS__ENABLED=true
 ESR_APPS__REGISTRATION_MODE=self_service          # operator_managed | self_service
-ESR_APPS__REQUIRE_REGISTRATION=true
 ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
 ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary   # yalnızca v1.2 geçişi
 ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
@@ -179,7 +175,7 @@ ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
 | `true` | `operator_managed` | Operatör YAML + `POST /v1/admin/apps`; geliştirici portalı yok |
 | `true` | `self_service` | Geliştirici portalı + DNS/bundle doğrulama; admin yalnızca suspend |
 
-`enabled: true` ve `requireRegistration: true` iken:
+`enabled: true` iken:
 
 - Tüm public ve cihaz-auth uçları geçerli app bağlamı ister (§7).
 - `POST /v1/namespaces` namespace'i **istek yapan app'e bağlar**.
@@ -233,7 +229,7 @@ stateDiagram-v2
 
 ## 7. İstek kimlik doğrulama
 
-### 7.1 Zorunlu header'lar (`apps.enabled` + `requireRegistration`)
+### 7.1 Zorunlu header'lar (`apps.enabled: true`)
 
 | Header | Zorunlu | Açıklama |
 |--------|---------|----------|
@@ -650,7 +646,7 @@ App kotası aşımı → `429 RATE_LIMIT_EXCEEDED`, `details.appId`.
 
 | Tehdit | Önlem |
 |--------|-------|
-| Kayıtsız istemci spam | `requireRegistration` + app kotası |
+| Kayıtsız istemci spam | `apps.enabled` + app kotası |
 | Registry'de domain hijack | DNS/HTTPS doğrulama |
 | curl ile Origin spoof | Tarayıcı kullanıcıları için irrelevant; non-browser rate limit |
 | Çalıntı appId | Domain/bundle eşleşmesi olmadan web için işe yaramaz |
@@ -722,7 +718,6 @@ interface EsrSyncOptions {
 apps:
   enabled: true
   registrationMode: operator_managed
-  requireRegistration: true
   allowLocalhostOrigins: false
   seed:
     - appId: esr_app_primary

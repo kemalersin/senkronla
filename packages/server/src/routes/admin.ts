@@ -18,6 +18,7 @@ import {
   patchNamespaceLimits,
 } from '../services/operator-limit-service.js'
 import { purgeAllRecords } from '../services/admin-purge-service.js'
+import { purgeRevisions } from '../services/revision-retention-service.js'
 import { getMailSettings, patchMailSettings } from '../services/mail-settings-service.js'
 import {
   getOperatorLimitSettings,
@@ -55,6 +56,61 @@ const namespaceListQuerySchema = listQuerySchema.extend({
 const purgeAllRecordsBodySchema = z.object({
   confirm: z.literal('purge-all-records'),
 })
+
+const purgeRevisionsBodySchema = z
+  .object({
+    mode: z.enum(['date', 'count']),
+    scope: z.enum(['deployment', 'namespace', 'app']),
+    before: z.string().datetime().optional(),
+    keepLastRevisions: z.coerce.number().int().positive().max(10_000).optional(),
+    namespaceId: z.string().uuid().optional(),
+    appId: z
+      .string()
+      .transform(normalizeAppId)
+      .refine((value) => APP_ID_PATTERN.test(value), { message: APP_ID_VALIDATION_MESSAGE })
+      .optional(),
+  })
+  .superRefine((body, ctx) => {
+    if (body.mode === 'date' && !body.before) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'before is required when mode is date',
+        path: ['before'],
+      })
+    }
+
+    if (body.mode === 'count' && body.keepLastRevisions === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'keepLastRevisions is required when mode is count',
+        path: ['keepLastRevisions'],
+      })
+    }
+
+    if (body.scope === 'namespace' && !body.namespaceId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'namespaceId is required when scope is namespace',
+        path: ['namespaceId'],
+      })
+    }
+
+    if (body.scope === 'app' && !body.appId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'appId is required when scope is app',
+        path: ['appId'],
+      })
+    }
+
+    if (body.scope === 'deployment' && (body.namespaceId || body.appId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'namespaceId and appId must be omitted when scope is deployment',
+        path: ['scope'],
+      })
+    }
+  })
 
 const rateLimitListQuerySchema = listQuerySchema.extend({
   action: z
@@ -142,5 +198,36 @@ export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext)
   app.post('/admin/danger/purge-all-records', { preHandler: requireAdminAuth }, async (request) => {
     purgeAllRecordsBodySchema.parse(request.body ?? {})
     return purgeAllRecords(ctx.db, ctx.config.blob.filesystem.path)
+  })
+
+  app.get('/admin/settings/sync', { preHandler: requireAdminAuth }, async () => {
+    return {
+      revisionRetentionDays: ctx.config.sync.revisionRetentionDays,
+      revisionRetentionCount: ctx.config.sync.revisionRetentionCount,
+      maxDocumentsPerNamespace: ctx.config.sync.maxDocumentsPerNamespace,
+      maxEnvelopeBytes: ctx.config.sync.maxEnvelopeBytes,
+    }
+  })
+
+  app.post('/admin/revisions/purge', { preHandler: requireAdminAuth }, async (request) => {
+    const body = purgeRevisionsBodySchema.parse(request.body ?? {})
+
+    if (body.mode === 'date') {
+      return purgeRevisions(ctx.db, ctx.config.blob.filesystem.path, {
+        mode: 'date',
+        before: new Date(body.before!),
+        scope: body.scope,
+        namespaceId: body.scope === 'namespace' ? body.namespaceId : undefined,
+        appId: body.scope === 'app' ? body.appId : undefined,
+      })
+    }
+
+    return purgeRevisions(ctx.db, ctx.config.blob.filesystem.path, {
+      mode: 'count',
+      keepLastRevisions: body.keepLastRevisions!,
+      scope: body.scope,
+      namespaceId: body.scope === 'namespace' ? body.namespaceId : undefined,
+      appId: body.scope === 'app' ? body.appId : undefined,
+    })
   })
 }

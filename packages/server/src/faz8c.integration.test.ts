@@ -19,7 +19,6 @@ function withAppRegistryConfig(base: ServerConfig): ServerConfig {
     apps: {
       ...base.apps,
       enabled: true,
-      requireRegistration: true,
       allowLocalhostOrigins: true,
       seed: [],
     },

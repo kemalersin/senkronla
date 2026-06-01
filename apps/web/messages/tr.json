@@ -432,7 +432,7 @@
       },
       "config": {
         "title": "Temel yapılandırma",
-        "p1": "Ortam değişkenleri <tag>packages/server/config.example.yaml</tag> dosyasını geçersiz kılar. Sık kullanılan ayarlar:",
+        "p1": "Ortam değişkenleri <tag>packages/server/config.example.yaml</tag> dosyasını geçersiz kılar. Sık kullanılan ayarlar (isteğe bağlı revizyon retention: <tag>ESR_REVISION_RETENTION_DAYS</tag>, <tag>ESR_REVISION_RETENTION_COUNT</tag>):",
         "warnTitle": "Üretim gizlileri",
         "warnBody": "Gerçek token'ları asla commit etmeyin. <tag>ESR_ADMIN_TOKEN</tag> sızdırılırsa yenileyin — tüm admin ve operatör paneli erişimini korur.",
         "rows": {
@@ -445,6 +445,8 @@
           "cors": "Virgülle ayrılmış izin verilen origin'ler — üretimde <tag>*</tag> kullanmayın",
           "maxDocuments": "Namespace başına en fazla doküman ( varsayılan 32, 0 = sınırsız)",
           "allowedDocIds": "İsteğe bağlı virgülle ayrılmış doküman ID allowlist (örn. primary,settings)",
+          "revisionRetentionDays": "Push sonrası belge başına N günden eski head-dışı revizyonları otomatik sil (0 = hepsini tut)",
+          "revisionRetentionCount": "Push sonrası belge başına son N revizyonu tut (0 = kapalı; head N'ye dahil)",
           "appsEnabled": "<tag>ESR_APPS__ENABLED</tag> — uygulama kaydını aç (varsayılan false)",
           "appsRegistrationMode": "<tag>ESR_APPS__REGISTRATION_MODE</tag> — <tag>operator_managed</tag> veya <tag>self_service</tag>",
           "appsLocalhost": "<tag>ESR_APPS__ALLOW_LOCALHOST_ORIGINS</tag> — DNS doğrulamasız <tag>http://localhost</tag> (yalnızca dev)",
@@ -1239,6 +1241,8 @@
         "p1": "Relay operatörü bunları <tag>config.yaml</tag> veya <tag>ESR_*</tag> ortam değişkenleriyle yapılandırır. Hiçbir şey belirtilmezse aşağıdaki varsayılanlar otomatik uygulanır — limitler varsayılan olarak açıktır.",
         "sizeTitle": "Maksimum zarf boyutu",
         "sizeBody": "Push anında serialize edilmiş <tag>ESR-DOC1</tag> JSON'unun tam boyutu ölçülür. Varsayılan: <tag>52.428.800 bayt (50 MB)</tag>. <tag>sync.maxEnvelopeBytes</tag> veya <tag>ESR_MAX_ENVELOPE_BYTES</tag> ile yapılandırılır.",
+        "retentionTitle": "Revizyon retention (operatör)",
+        "retentionBody": "Her push revizyon geçmişi ve bir blob dosyası oluşturur. İsteğe bağlı otomatik temizlik (her push sonrası): <tag>ESR_REVISION_RETENTION_DAYS</tag> (N günden eski head-dışı revizyonları sil; <tag>0</tag> = hepsini tut) ve <tag>ESR_REVISION_RETENTION_COUNT</tag> (belge başına son N revizyon; head N'ye dahil; <tag>0</tag> = kapalı). Manuel temizlik: operatör paneli <tag>Revizyonlar</tag> veya admin <tag>POST /v1/admin/revisions/purge</tag> — güncel değerler için <tag>GET /v1/admin/settings/sync</tag>.",
         "rateTitle": "Rate limitler (varsayılanlar)",
         "rateP1": "PostgreSQL'de kayan pencere sayaçları. Genel IP kotasından muaf: <tag>/health</tag>, <tag>/metrics</tag> ve WebSocket <tag>.../notifications</tag>.",
         "rows": {
@@ -1336,6 +1340,7 @@
     "settingsTabs": {
       "limits": "Limitler",
       "mail": "E-posta",
+      "revisions": "Revizyonlar",
       "danger": "Tehlikeli işlemler"
     },
     "loading": "Yükleniyor…",
@@ -1468,6 +1473,38 @@
         "freeDeviceLimit": "Ücretsiz cihaz slotu",
         "purchasedSlots": "Satın alınmış slot"
       }
+    },
+    "revisions": {
+      "openButton": "Revizyonlar",
+      "title": "Eski revizyonları temizle",
+      "settingsTitle": "Revizyon temizliği",
+      "settingsHint": "Tüm relay kapsamında eski revizyon kayıtlarını ve blob dosyalarını silin.",
+      "closeModal": "Kapat",
+      "scopeDeployment": "Kapsam: tüm relay (tüm namespace ve uygulamalar).",
+      "scopeNamespace": "Kapsam: yalnızca seçili namespace.",
+      "scopeApp": "Kapsam: seçili uygulamaya bağlı tüm namespace'ler.",
+      "hint": "Tarih modunda güncel head revizyonu her zaman korunur. Sayı modunda head, saklanan N revizyona dahildir.",
+      "modeLabel": "Temizlik yöntemi",
+      "modeDate": "Tarihe göre",
+      "modeCount": "Son N revizyon",
+      "beforeLabel": "Bu tarihten önce",
+      "beforeHint": "UTC gece yarısından önce yazılmış revizyonlar silinir.",
+      "countLabel": "Belge başına saklanacak son revizyon sayısı",
+      "countHint": "Örneğin 50 girildiğinde her belge için en yeni 50 revizyon kalır; daha eskiler silinir.",
+      "autoRetentionTitle": "Sunucu otomatik temizliği",
+      "autoRetentionDays": "Gün: head-dışı revizyonlar {days} günden eskiyse push sonrası silinir.",
+      "autoRetentionDaysDisabled": "Gün: kapalı (ESR_REVISION_RETENTION_DAYS=0).",
+      "autoRetentionCount": "Sayı: belge başına son {count} revizyon tutulur; fazlası push sonrası silinir.",
+      "autoRetentionCountDisabled": "Sayı: kapalı (ESR_REVISION_RETENTION_COUNT=0).",
+      "loadingSettings": "Sync ayarları yükleniyor…",
+      "confirmDialog": "Seçilen kritere göre revizyonlar kalıcı olarak silinecek. Emin misiniz?",
+      "purgeButton": "Revizyonları sil",
+      "purging": "Siliniyor…",
+      "purgeFailed": "Revizyonlar silinemedi.",
+      "purgeSuccess": "{revisions} revizyon kaydı ve {blobs} blob dosyası silindi.",
+      "purgeSuccessNone": "Hiç revizyon kaydı ve blob dosyası silinmedi.",
+      "invalidCount": "Geçerli bir revizyon sayısı girin (en az 1).",
+      "cancel": "İptal"
     },
     "mail": {
       "title": "E-posta (SMTP)",

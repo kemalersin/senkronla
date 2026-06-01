@@ -97,9 +97,6 @@ apps:
   # How applications are registered (ignored when enabled: false).
   registrationMode: operator_managed   # operator_managed | self_service
 
-  # Reject API/WS requests without valid app credentials (when enabled: true).
-  requireRegistration: true
-
   # Development convenience — never true in production.
   allowLocalhostOrigins: false
 
@@ -157,7 +154,6 @@ Nested keys use `__` (see [07-SERVER-CONFIGURATION.md](./07-SERVER-CONFIGURATION
 ```bash
 ESR_APPS__ENABLED=true
 ESR_APPS__REGISTRATION_MODE=self_service          # operator_managed | self_service
-ESR_APPS__REQUIRE_REGISTRATION=true
 ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
 ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary   # v1.2 migration only
 ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
@@ -181,7 +177,7 @@ ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
 | `true` | `operator_managed` | Operator YAML seed + `POST /v1/admin/apps`; no developer portal |
 | `true` | `self_service` | Developer portal + DNS/bundle verification; admin suspend only |
 
-When `enabled: true` and `requireRegistration: true`:
+When `enabled: true`:
 
 - All public and device-authenticated endpoints require valid app context (§7).
 - `POST /v1/namespaces` creates namespace **bound to requesting app**.
@@ -235,7 +231,7 @@ stateDiagram-v2
 
 ## 7. Request authentication
 
-### 7.1 Required headers (when `apps.enabled` + `requireRegistration`)
+### 7.1 Required headers (when `apps.enabled: true`)
 
 | Header | Required | Description |
 |--------|----------|-------------|
@@ -754,7 +750,7 @@ Operator suspend → immediate `403 APP_SUSPENDED` (no grace period).
 
 | Threat | Mitigation |
 |--------|------------|
-| Unregistered client spam | `requireRegistration` + per-app quotas |
+| Unregistered client spam | `apps.enabled` + per-app quotas |
 | Domain hijack in registry | DNS/HTTPS verification before `active` |
 | Spoof Origin via curl | Irrelevant for browser users; rate limit non-browser |
 | Stolen appId | Without domain/bundle match, useless for web |
@@ -836,7 +832,7 @@ Update `apps/web/public/agents/*.md` with app registration section when implemen
 2. Create seed apps via admin API or YAML.
 3. Set `legacyDefaultAppId` to primary app.
 4. Run migration job: `UPDATE namespaces SET app_uuid = ... WHERE app_uuid IS NULL`.
-5. Enable `apps.enabled: true`, `requireRegistration: true`.
+5. Enable `apps.enabled: true`.
 6. Release SDK with mandatory `appId` for that relay.
 7. Remove `legacyDefaultAppId` after verification.
 
@@ -846,7 +842,6 @@ Update `apps/web/public/agents/*.md` with app registration section when implemen
 apps:
   enabled: true
   registrationMode: operator_managed
-  requireRegistration: true
   allowLocalhostOrigins: false   # true in dev config overlay only
   seed:
     - appId: esr_app_primary

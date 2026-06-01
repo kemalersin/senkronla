@@ -81,6 +81,8 @@ export const serverConfigSchema = z.object({
       allowedContentTypes: z.array(z.string()).default([]),
       maxDocumentsPerNamespace: z.coerce.number().int().nonnegative().default(32),
       allowedDocumentIds: z.array(z.string()).default([]),
+      revisionRetentionDays: z.coerce.number().int().nonnegative().default(0),
+      revisionRetentionCount: z.coerce.number().int().nonnegative().default(0),
     })
     .default({}),
   unlock: z
@@ -94,7 +96,6 @@ export const serverConfigSchema = z.object({
     .object({
       enabled: z.coerce.boolean().default(false),
       registrationMode: z.enum(['operator_managed', 'self_service']).default('operator_managed'),
-      requireRegistration: z.coerce.boolean().default(true),
       allowLocalhostOrigins: z.coerce.boolean().default(false),
       legacyDefaultAppId: z.string().nullable().default(null),
       verification: z

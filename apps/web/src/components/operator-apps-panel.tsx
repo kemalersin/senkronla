@@ -10,6 +10,10 @@ import {
   type OperatorLimitsTarget,
 } from '@/components/operator-limits-modal'
 import {
+  OperatorRevisionPurgeModal,
+  type OperatorRevisionPurgeTarget,
+} from '@/components/operator-revision-purge-modal'
+import {
   OperatorOriginVerifyError,
   type OriginVerifyErrorState,
 } from '@/components/operator-origin-verify-error'
@@ -246,6 +250,7 @@ export function OperatorAppsPanel({
   const [verifyingOriginId, setVerifyingOriginId] = useState<string | null>(null)
   const [originVerifyErrors, setOriginVerifyErrors] = useState<Record<string, OriginVerifyErrorState>>({})
   const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
+  const [revisionPurgeTarget, setRevisionPurgeTarget] = useState<OperatorRevisionPurgeTarget | null>(null)
   const loadAppsRequestId = useRef(0)
   const tRef = useRef(t)
   tRef.current = t
@@ -1369,20 +1374,36 @@ export function OperatorAppsPanel({
                           className="operator-table-col-actions"
                           onClick={(event) => event.stopPropagation()}
                         >
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() =>
-                              setLimitsTarget({
-                                scope: 'apps',
-                                scopeId: row.appId,
-                                title: row.name,
-                                subtitle: row.appId,
-                              })
-                            }
-                          >
-                            {t('limits.openButton')}
-                          </button>
+                          <div className="operator-table-col-actions-inner">
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() =>
+                                setLimitsTarget({
+                                  scope: 'apps',
+                                  scopeId: row.appId,
+                                  title: row.name,
+                                  subtitle: row.appId,
+                                })
+                              }
+                            >
+                              {t('limits.openButton')}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() =>
+                                setRevisionPurgeTarget({
+                                  scope: 'app',
+                                  scopeId: row.appId,
+                                  title: row.name,
+                                  subtitle: row.appId,
+                                })
+                              }
+                            >
+                              {t('revisions.openButton')}
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -1401,12 +1422,20 @@ export function OperatorAppsPanel({
       {renderDetailDrawer()}
 
       {mode === 'operator' && (
-        <OperatorLimitsModal
-          target={limitsTarget}
-          apiBase={apiBase}
-          onClose={() => setLimitsTarget(null)}
-          onUnauthorized={onUnauthorized}
-        />
+        <>
+          <OperatorLimitsModal
+            target={limitsTarget}
+            apiBase={apiBase}
+            onClose={() => setLimitsTarget(null)}
+            onUnauthorized={onUnauthorized}
+          />
+          <OperatorRevisionPurgeModal
+            target={revisionPurgeTarget}
+            apiBase={apiBase}
+            onClose={() => setRevisionPurgeTarget(null)}
+            onUnauthorized={onUnauthorized}
+          />
+        </>
       )}
     </div>
   )

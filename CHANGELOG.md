@@ -11,6 +11,27 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.11]
+
+### Added
+
+- **server:** Document revision history table, configurable auto-retention, and admin revision purge API
+- **web:** Operator revision purge — date or keep-last-N count; deployment-wide tab in settings; improved modal layout
+
+### Removed
+
+- **server:** `apps.requireRegistration` config flag and `ESR_APPS__REQUIRE_REGISTRATION` env var — app credentials are always enforced when the app registry is enabled
+- **docs:** references to `requireRegistration` in OpenAPI, operator docs, and app registry spec
+
+### Fixed
+
+- **server:** Count-based revision purge keeps exactly N revisions per document (head included in the limit)
+
+### Changed
+
+- **docs:** Document `ESR_REVISION_RETENTION_DAYS` and `ESR_REVISION_RETENTION_COUNT` across operator guide, server config spec, multi-document RFC, API reference, OpenAPI, ESR setup guide, Postman, and env examples
+- **server:** Each document push writes a new blob file again (reverts same-device blob reuse from 0.1.10)
+- **web:** Postman collection and API doc snippets — health response no longer includes `apps.requireRegistration`
 
 ## [0.1.10]
 

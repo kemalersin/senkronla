@@ -42,7 +42,6 @@ describe('loadConfig', () => {
     const config = loadConfig({
       ESR_APPS__ENABLED: 'true',
       ESR_APPS__REGISTRATION_MODE: 'self_service',
-      ESR_APPS__REQUIRE_REGISTRATION: 'false',
       ESR_APPS__ALLOW_LOCALHOST_ORIGINS: 'true',
       ESR_APPS__LEGACY_DEFAULT_APP_ID: 'esr_app_legacy',
       ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW: 'false',
@@ -52,7 +51,6 @@ describe('loadConfig', () => {
 
     expect(config.apps.enabled).toBe(true)
     expect(config.apps.registrationMode).toBe('self_service')
-    expect(config.apps.requireRegistration).toBe(false)
     expect(config.apps.allowLocalhostOrigins).toBe(true)
     expect(config.apps.legacyDefaultAppId).toBe('esr_app_legacy')
     expect(config.apps.native.requireManualReview).toBe(false)

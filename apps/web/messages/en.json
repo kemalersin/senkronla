@@ -432,7 +432,7 @@
       },
       "config": {
         "title": "Key configuration",
-        "p1": "Environment variables override <tag>packages/server/config.example.yaml</tag>. Common settings:",
+        "p1": "Environment variables override <tag>packages/server/config.example.yaml</tag>. Common settings (including optional revision retention via <tag>ESR_REVISION_RETENTION_DAYS</tag> and <tag>ESR_REVISION_RETENTION_COUNT</tag>):",
         "warnTitle": "Production secrets",
         "warnBody": "Never commit real tokens. Rotate <tag>ESR_ADMIN_TOKEN</tag> if leaked — it gates all admin and operator portal access.",
         "rows": {
@@ -445,6 +445,8 @@
           "cors": "Comma-separated allowed origins — avoid <tag>*</tag> in production",
           "maxDocuments": "Max documents per namespace ( default 32, 0 = unlimited)",
           "allowedDocIds": "Optional comma-separated document ID allowlist (e.g. primary,settings)",
+          "revisionRetentionDays": "After each push, auto-purge non-head revisions older than N days per document (0 = keep all)",
+          "revisionRetentionCount": "After each push, keep last N revisions per document (0 = off; head counts toward N)",
           "appsEnabled": "<tag>ESR_APPS__ENABLED</tag> — enable app registry (default false)",
           "appsRegistrationMode": "<tag>ESR_APPS__REGISTRATION_MODE</tag> — <tag>operator_managed</tag> or <tag>self_service</tag>",
           "appsLocalhost": "<tag>ESR_APPS__ALLOW_LOCALHOST_ORIGINS</tag> — allow <tag>http://localhost</tag> without DNS verify (dev only)",
@@ -1238,6 +1240,8 @@
         "p1": "The relay operator configures these in <tag>config.yaml</tag> or <tag>ESR_*</tag> environment variables. If nothing is set, the defaults below apply automatically — limits are on by default.",
         "sizeTitle": "Maximum envelope size",
         "sizeBody": "Measured on the full serialized <tag>ESR-DOC1</tag> JSON at push time. Default: <tag>52,428,800 bytes (50 MB)</tag>. Configure with <tag>sync.maxEnvelopeBytes</tag> or <tag>ESR_MAX_ENVELOPE_BYTES</tag>.",
+        "retentionTitle": "Revision retention (operator)",
+        "retentionBody": "Each push stores revision history and a blob file. Optional auto-cleanup after every push: <tag>ESR_REVISION_RETENTION_DAYS</tag> (delete non-head revisions older than N days; <tag>0</tag> = keep all) and <tag>ESR_REVISION_RETENTION_COUNT</tag> (keep last N revisions per document; head counts toward N; <tag>0</tag> = off). Manual purge: operator portal <tag>Revisions</tag> or admin <tag>POST /v1/admin/revisions/purge</tag> — see <tag>GET /v1/admin/settings/sync</tag> for current values.",
         "rateTitle": "Rate limits (defaults)",
         "rateP1": "Sliding-window counters in PostgreSQL. Exempt from the general IP quota: <tag>/health</tag>, <tag>/metrics</tag>, and WebSocket <tag>.../notifications</tag>.",
         "rows": {
@@ -1335,6 +1339,7 @@
     "settingsTabs": {
       "limits": "Limits",
       "mail": "Mail",
+      "revisions": "Revisions",
       "danger": "Dangerous operations"
     },
     "loading": "Loading…",
@@ -1467,6 +1472,38 @@
         "freeDeviceLimit": "Free device slots",
         "purchasedSlots": "Purchased slots"
       }
+    },
+    "revisions": {
+      "openButton": "Revisions",
+      "title": "Purge old revisions",
+      "settingsTitle": "Revision cleanup",
+      "settingsHint": "Delete old revision records and blob files across the entire relay.",
+      "closeModal": "Close",
+      "scopeDeployment": "Scope: entire relay (all namespaces and apps).",
+      "scopeNamespace": "Scope: selected namespace only.",
+      "scopeApp": "Scope: all namespaces bound to the selected app.",
+      "hint": "In date mode the current head revision is always kept. In count mode the head counts toward the N revisions you keep.",
+      "modeLabel": "Cleanup method",
+      "modeDate": "By date",
+      "modeCount": "Keep last N",
+      "beforeLabel": "Before date",
+      "beforeHint": "Revisions written before UTC midnight on this date are deleted.",
+      "countLabel": "Revisions to keep per document",
+      "countHint": "For example, 50 keeps the 50 newest revisions per document; older ones are deleted.",
+      "autoRetentionTitle": "Server automatic cleanup",
+      "autoRetentionDays": "Days: non-head revisions older than {days} days are removed after each push.",
+      "autoRetentionDaysDisabled": "Days: disabled (ESR_REVISION_RETENTION_DAYS=0).",
+      "autoRetentionCount": "Count: keep the last {count} revisions per document; extras are removed after each push.",
+      "autoRetentionCountDisabled": "Count: disabled (ESR_REVISION_RETENTION_COUNT=0).",
+      "loadingSettings": "Loading sync settings…",
+      "confirmDialog": "Revisions matching the selected criteria will be permanently deleted. Continue?",
+      "purgeButton": "Purge revisions",
+      "purging": "Purging…",
+      "purgeFailed": "Failed to purge revisions.",
+      "purgeSuccess": "Deleted {revisions} revision records and {blobs} blob files.",
+      "purgeSuccessNone": "No revision records or blob files were deleted.",
+      "invalidCount": "Enter a valid revision count (at least 1).",
+      "cancel": "Cancel"
     },
     "mail": {
       "title": "Outbound mail (SMTP)",

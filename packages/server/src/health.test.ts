@@ -49,7 +49,6 @@ describe('@senkronla/server health', () => {
       developerPortal: { enabled: false },
       apps: {
         enabled: false,
-        requireRegistration: true,
         nativeRequireClientSecret: false,
       },
     })
@@ -99,7 +98,6 @@ describe('@senkronla/server health', () => {
       ESR_DATABASE_URL: 'postgresql://user:pass@localhost:5432/esr',
       ESR_BLOB_PATH: await mkdtemp(join(tmpdir(), 'senkronla-blob-')),
       ESR_APPS__ENABLED: 'true',
-      ESR_APPS__REQUIRE_REGISTRATION: 'false',
       ESR_APPS__REGISTRATION_MODE: 'self_service',
       ESR_DEVELOPER_JWT_SECRET: 'x'.repeat(32),
       ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET: 'true',
@@ -119,7 +117,6 @@ describe('@senkronla/server health', () => {
       developerPortal: { enabled: true },
       apps: {
         enabled: true,
-        requireRegistration: false,
         nativeRequireClientSecret: true,
       },
     })

@@ -50,6 +50,8 @@ sync:
   maxEnvelopeBytes: 52428800
   maxDocumentsPerNamespace: 32   # 0 = unlimited; multi-document cap per namespace
   allowedDocumentIds: []         # empty = any valid id; e.g. [primary, settings]
+  revisionRetentionDays: 0       # 0 = keep all; auto-purge non-head revisions older than N days after each push
+  revisionRetentionCount: 0      # 0 = off; keep last N revisions per document (head counts toward N)
   allowedContentTypes: []
 
 unlock:
@@ -60,7 +62,6 @@ unlock:
 apps:
   enabled: false
   registrationMode: operator_managed
-  requireRegistration: true
   allowLocalhostOrigins: false
   legacyDefaultAppId: null
   verification:

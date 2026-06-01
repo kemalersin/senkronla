@@ -163,7 +163,7 @@ describe('Faz 3 — document push/pull (integration)', () => {
 
     expect(push2.statusCode).toBe(201)
     expect(push2.json().revision).toBe(revision2)
-    expect(await countBlobFiles(blobPath)).toBe(1)
+    expect(await countBlobFiles(blobPath)).toBe(2)
 
     const revision3 = ulid()
     const envelope3 = buildEnvelope({

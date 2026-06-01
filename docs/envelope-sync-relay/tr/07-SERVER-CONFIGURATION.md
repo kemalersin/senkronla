@@ -64,6 +64,8 @@ pairing:
 sync:
   maxEnvelopeBytes: 52428800             # 50 MB
   maxDocumentsPerNamespace: 32           # document_heads satır üst sınırı; 0 = sınırsız
+  revisionRetentionDays: 0               # 0 = hepsini tut; push sonrası N günden eski head-dışı revizyonları otomatik sil
+  revisionRetentionCount: 0              # 0 = kapalı; belge başına son N revizyonu tut (head N'ye dahil)
   allowedDocumentIds: []                 # boş = geçerli herhangi bir id; dolu = allowlist
   allowedContentTypes: []                # empty = all allowed; örn. application/vnd.*.snapshot+json
 
@@ -76,7 +78,6 @@ unlock:
 apps:
   enabled: false
   registrationMode: operator_managed   # operator_managed | self_service
-  requireRegistration: true
   allowLocalhostOrigins: false
   legacyDefaultAppId: null
   verification:
@@ -150,11 +151,12 @@ ESR_WS_PING_INTERVAL=30
 ESR_MAX_ENVELOPE_BYTES=52428800
 ESR_MAX_DOCUMENTS_PER_NAMESPACE=32      # 0 = sınırsız
 ESR_ALLOWED_DOCUMENT_IDS=primary,settings   # isteğe bağlı virgülle ayrılmış allowlist
+# ESR_REVISION_RETENTION_DAYS=0         # push sonrası N günden eski head-dışı revizyonları otomatik sil (0 = hepsini tut)
+# ESR_REVISION_RETENTION_COUNT=0        # push sonrası belge başına son N revizyonu tut (0 = kapalı; head N'ye dahil)
 
 # Uygulama kaydı (v1.3 — isteğe bağlı; bkz. doc 16)
 ESR_APPS__ENABLED=false
 ESR_APPS__REGISTRATION_MODE=operator_managed   # operator_managed | self_service
-ESR_APPS__REQUIRE_REGISTRATION=true
 ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
 # ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary
 # ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
@@ -237,6 +239,7 @@ sync.example.com {
 | Demo | `free: 99`, `mode: block` |
 | Sıkı | `free: 1`, `mode: payment` |
 | Kapalı ticari | `free: 2`, `mode: block` (3. cihaz imkansız) |
+| **Revizyon geçmişi kısaltma** | `revisionRetentionDays: 30` ve/veya `revisionRetentionCount: 50` — push sonrası otomatik temizlik; operatör paneli veya `POST /v1/admin/revisions/purge` ile manuel |
 | **App registry kapalı (varsayılan)** | `apps.enabled: false` — v1.2 açık relay |
 | **Self-hosted tek uygulama** | `apps.enabled: true`, `registrationMode: operator_managed`, `seed: [...]` |
 | **Public hosted platform** | `apps.enabled: true`, `registrationMode: self_service`, geliştirici portalı açık |

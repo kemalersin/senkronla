@@ -7,7 +7,7 @@ info:
     Full specification: docs/envelope-sync-relay/README.md
 
     **v1.3.1:** App list search (`q`) matches app ID, name, and registered bundle ID; `/health`
-    exposes `developerPortal.enabled`, `apps.enabled`, `apps.requireRegistration`, and
+    exposes `developerPortal.enabled`, `apps.enabled`, and
     `apps.nativeRequireClientSecret`; operator developer accounts API (`/admin/developers`).
 
     **v1.3:** Application registry — `X-ESR-App-Id`, namespace–app binding, operator admin API,
@@ -59,7 +59,7 @@ components:
       schema:
         type: string
         pattern: '^esr_app_[a-z0-9_]+$'
-      description: Public application id — required when apps.enabled and apps.requireRegistration
+      description: Public application id — required when apps.enabled is true
     OriginHeader:
       name: Origin
       in: header
@@ -544,8 +544,6 @@ components:
           properties:
             enabled:
               type: boolean
-            requireRegistration:
-              type: boolean
             nativeRequireClientSecret:
               type: boolean
           description: App registry flags for client and portal discovery
@@ -642,7 +640,7 @@ paths:
           description: Production (root)
       description: |
         No authentication. Returns `503` when database or blob storage checks fail (`status: degraded`).
-        Use `developerPortal.enabled`, `apps.enabled`, `apps.requireRegistration`, and
+        Use `developerPortal.enabled`, `apps.enabled`, and
         `apps.nativeRequireClientSecret` to configure portal UI and client app headers.
       responses:
         '200':
@@ -666,7 +664,7 @@ paths:
         - $ref: '#/components/parameters/AppIdHeader'
         - $ref: '#/components/parameters/OriginHeader'
       description: |
-        When `apps.enabled` and `apps.requireRegistration` are true, `X-ESR-App-Id` is required and
+        When `apps.enabled` is true, `X-ESR-App-Id` is required and
         web apps must send a matching `Origin` header.
       requestBody:
         required: true
@@ -1384,6 +1382,91 @@ paths:
           description: Deleted record counts
         '400':
           description: Invalid confirmation phrase
+
+  /admin/settings/sync:
+    get:
+      tags: [Admin]
+      summary: Read sync-related server settings
+      description: |
+        Returns revision retention and multi-document limits loaded from config
+        (`ESR_REVISION_RETENTION_DAYS`, `ESR_REVISION_RETENTION_COUNT`,
+        `ESR_MAX_DOCUMENTS_PER_NAMESPACE`, `ESR_MAX_ENVELOPE_BYTES`).
+        Used by the operator portal Revisions panel.
+      security:
+        - AdminToken: []
+      responses:
+        '200':
+          description: Sync settings for operator UI
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revisionRetentionDays:
+                    type: integer
+                    minimum: 0
+                    description: Auto-purge non-head revisions older than N days after each push (0 = keep all). Config `ESR_REVISION_RETENTION_DAYS`.
+                  revisionRetentionCount:
+                    type: integer
+                    minimum: 0
+                    description: Keep last N revisions per document after each push; head counts toward N (0 = disabled). Config `ESR_REVISION_RETENTION_COUNT`.
+                  maxDocumentsPerNamespace:
+                    type: integer
+                    minimum: 0
+                  maxEnvelopeBytes:
+                    type: integer
+                    minimum: 1
+
+  /admin/revisions/purge:
+    post:
+      tags: [Admin]
+      summary: Purge old document revisions and blobs
+      description: |
+        Deletes revision history rows and blob files. The current head is never deleted in date mode.
+        In count mode the head counts toward `keepLastRevisions`.
+        Use `mode: date` with `before`, or `mode: count` with `keepLastRevisions`.
+        Scope: entire relay (`deployment`), one namespace, or one app.
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode, scope]
+              properties:
+                mode:
+                  type: string
+                  enum: [date, count]
+                before:
+                  type: string
+                  format: date-time
+                keepLastRevisions:
+                  type: integer
+                  minimum: 1
+                  maximum: 10000
+                scope:
+                  type: string
+                  enum: [deployment, namespace, app]
+                namespaceId:
+                  type: string
+                  format: uuid
+                appId:
+                  type: string
+                  pattern: '^esr_app_[a-z0-9_]+$'
+      responses:
+        '200':
+          description: Purge counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deletedRevisions:
+                    type: integer
+                  deletedBlobFiles:
+                    type: integer
 
   /admin/unlock-events:
     get:

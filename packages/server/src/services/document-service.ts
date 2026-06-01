@@ -7,7 +7,11 @@ import {
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool, DbQueryable } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
-import { readBlob, resolvePushBlobKey, writeBlob } from '../blob/store.js'
+import { buildBlobKey, readBlob, writeBlob } from '../blob/store.js'
+import {
+  applyRevisionRetention,
+  insertDocumentRevision,
+} from './revision-retention-service.js'
 import { loadLimitContext } from './limit-context-loader.js'
 import { resolveRateLimitRule } from './limit-resolution-service.js'
 import {
@@ -278,15 +282,21 @@ export async function pushDocument(
       })
     }
 
-    const blobKey = resolvePushBlobKey(
-      namespace.namespace_id,
-      documentId,
-      envelope.revision,
-      envelope.deviceId,
-      currentHead,
-    )
+    const blobKey = buildBlobKey(namespace.namespace_id, documentId, envelope.revision)
 
     await writeBlob(config.blob.filesystem.path, blobKey, serialized)
+
+    await insertDocumentRevision(client, {
+      namespaceUuid: namespace.id,
+      documentId,
+      revision: envelope.revision,
+      blobKey,
+      contentSha256: envelope.contentSha256,
+      contentMagic: envelope.contentMagic,
+      sizeBytes,
+      writerDeviceId: envelope.deviceId,
+      writtenAt: envelope.writtenAt,
+    })
 
     if (currentHead) {
       await client.query(
@@ -338,6 +348,18 @@ export async function pushDocument(
     )
 
     await client.query('COMMIT')
+
+    await applyRevisionRetention(
+      pool,
+      config.blob.filesystem.path,
+      config,
+      {
+        namespacePublicId: namespace.namespace_id,
+        documentId,
+      },
+    ).catch(() => {
+      // Retention cleanup is best-effort; push already succeeded.
+    })
 
     return {
       revision: envelope.revision,

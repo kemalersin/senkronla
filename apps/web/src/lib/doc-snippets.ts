@@ -469,7 +469,6 @@ Authorization: Bearer dvt_...
   "developerPortal": { "enabled": false },
   "apps": {
     "enabled": false,
-    "requireRegistration": true,
     "nativeRequireClientSecret": false
   }
 }`,

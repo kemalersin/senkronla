@@ -24,7 +24,6 @@ export interface HealthCheckResult {
   }
   apps: {
     enabled: boolean
-    requireRegistration: boolean
     nativeRequireClientSecret: boolean
   }
 }
@@ -76,7 +75,6 @@ export async function runHealthChecks(
     },
     apps: {
       enabled: config.apps.enabled,
-      requireRegistration: config.apps.requireRegistration,
       nativeRequireClientSecret: config.apps.native.requireClientSecret,
     },
   }

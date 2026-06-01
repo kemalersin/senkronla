@@ -409,6 +409,8 @@ export default async function ApiPage({ params }: PageProps) {
         <p>{t.rich('sections.relayQuotas.p1', withDocRich())}</p>
         <p className="doc-subheading">{t('sections.relayQuotas.sizeTitle')}</p>
         <p>{t.rich('sections.relayQuotas.sizeBody', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.relayQuotas.retentionTitle')}</p>
+        <p>{t.rich('sections.relayQuotas.retentionBody', withDocRich())}</p>
         <p className="doc-subheading">{t('sections.relayQuotas.rateTitle')}</p>
         <p>{t.rich('sections.relayQuotas.rateP1', withDocRich())}</p>
         <DocsTable
