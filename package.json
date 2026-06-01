@@ -1,6 +1,6 @@
 {
   "name": "senkronla",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "description": "Senkronla — self-hosted zero-knowledge envelope sync relay",
   "license": "MIT",

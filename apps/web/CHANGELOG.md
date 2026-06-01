@@ -9,6 +9,8 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.12]
+
 ### Fixed
 
 - ESR setup guide — render Docker resources paragraph with rich text (`<tag>` markup)
