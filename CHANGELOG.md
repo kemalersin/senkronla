@@ -11,6 +11,11 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Added
+
+- **protocol:** npm package README and `publishConfig` for registry publish
+- **client:** npm package README and `publishConfig` for registry publish
+
 ### Changed
 
 - **docs:** Move specification from `docs/envelope-sync-relay/` to `docs/` (`en/`, `tr/`, `openapi.yaml`); update repo, web, agent, and package references; fix in-spec paths to relative links

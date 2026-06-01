@@ -9,6 +9,16 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.11]
+
+### Added
+
+- npm package README and registry metadata for public publish on `@senkronla/protocol`
+
+### Fixed
+
+- Exclude `*.test.ts` from build output so test files are not shipped in the npm tarball
+
 ## [0.1.10]
 
 ### Changed

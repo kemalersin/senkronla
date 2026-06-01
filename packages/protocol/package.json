@@ -3,6 +3,32 @@
   "version": "0.1.11",
   "description": "ESR-DOC1 envelope protocol, crypto helpers, and identity utilities",
   "license": "MIT",
+  "author": "Kemal Ersin",
+  "homepage": "https://senkron.la/sdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kemalersin/senkronla.git",
+    "directory": "packages/protocol"
+  },
+  "bugs": {
+    "url": "https://github.com/kemalersin/senkronla/issues"
+  },
+  "keywords": [
+    "senkronla",
+    "esr",
+    "sync",
+    "envelope",
+    "zero-knowledge",
+    "offline-first",
+    "cryptography"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,7 +58,8 @@
     "dev": "tsc -p tsconfig.json --watch",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0",

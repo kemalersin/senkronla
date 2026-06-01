@@ -3,6 +3,33 @@
   "version": "0.1.11",
   "description": "Senkronla client SDK — RelayClient, SyncEngine, EsrSync facade",
   "license": "MIT",
+  "author": "Kemal Ersin",
+  "homepage": "https://senkron.la/sdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kemalersin/senkronla.git",
+    "directory": "packages/client"
+  },
+  "bugs": {
+    "url": "https://github.com/kemalersin/senkronla/issues"
+  },
+  "keywords": [
+    "senkronla",
+    "esr",
+    "sync",
+    "client",
+    "sdk",
+    "offline-first",
+    "websocket",
+    "relay"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,7 +47,8 @@
     "dev": "tsc -p tsconfig.json --watch",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@senkronla/protocol": "workspace:*",

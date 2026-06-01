@@ -59,5 +59,7 @@ export type { BuildEnvelopeInput } from './envelope-builder.js'
 
 export * from '@senkronla/protocol'
 
-/** Client SDK semver */
-export const CLIENT_SDK_VERSION = '0.1.0'
+import pkg from '../package.json' with { type: 'json' }
+
+/** Client SDK semver (matches package.json version). */
+export const CLIENT_SDK_VERSION = pkg.version

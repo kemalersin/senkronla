@@ -9,6 +9,20 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.11]
+
+### Added
+
+- npm package README and registry metadata for public publish on `@senkronla/client`
+
+### Changed
+
+- `CLIENT_SDK_VERSION` tracks `package.json` version
+
+### Fixed
+
+- Exclude `*.test.ts` from build output so test files are not shipped in the npm tarball
+
 ## [0.1.6]
 
 ### Added
