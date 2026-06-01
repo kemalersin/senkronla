@@ -393,7 +393,10 @@ export async function listAdminRateLimitEvents(
       LEFT JOIN namespaces n ON n.id = rle.namespace_uuid
       LEFT JOIN devices d ON d.id = rle.device_uuid
       LEFT JOIN namespaces n2 ON n2.id = d.namespace_uuid
-      WHERE COALESCE(n.namespace_id, n2.namespace_id) IS NOT NULL
+      WHERE (
+        COALESCE(n.namespace_id, n2.namespace_id) IS NOT NULL
+        OR rle.client_ip IS NOT NULL
+      )
         AND ($3::text IS NULL OR rle.action = $3)
       GROUP BY
         rle.action,

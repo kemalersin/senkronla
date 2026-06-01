@@ -23,7 +23,7 @@ export async function registerRecoveryRoutes(app: FastifyInstance, ctx: AppConte
 
     const namespace = await requireNamespaceExists(ctx, namespaceId, request)
 
-    const result = await recoverNamespace(ctx.db, ctx.config, namespace, body)
+    const result = await recoverNamespace(ctx.db, ctx.config, namespace, body, request.ip)
     trackRateLimitQuota(request, result.rateLimit)
 
     const { rateLimit: _rateLimit, ...payload } = result

@@ -42,7 +42,7 @@ export async function registerDeviceRoutes(app: FastifyInstance, ctx: AppContext
     const namespace = await requireNamespaceExists(ctx, namespaceId, request)
     const hostLabel = request.deviceAuth!.label
 
-    const result = await createPairingToken(ctx.db, ctx.config, namespace, hostLabel, body)
+    const result = await createPairingToken(ctx.db, ctx.config, namespace, hostLabel, body, request.ip)
     trackRateLimitQuota(request, result.rateLimit)
 
     const { rateLimit: _rateLimit, ...payload } = result
@@ -54,7 +54,7 @@ export async function registerDeviceRoutes(app: FastifyInstance, ctx: AppContext
     const body = pairDeviceBodySchema.parse(request.body)
     const namespace = await requireNamespaceExists(ctx, namespaceId, request)
 
-    const result = await pairDeviceWithCode(ctx.db, ctx.config, namespace, body, request.appAuth)
+    const result = await pairDeviceWithCode(ctx.db, ctx.config, namespace, body, request.appAuth, request.ip)
     trackRateLimitQuota(request, result.rateLimit)
 
     const { rateLimit: _rateLimit, ...payload } = result

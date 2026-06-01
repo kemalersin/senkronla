@@ -31,11 +31,13 @@ export async function createPairingToken(
   namespace: NamespaceRow,
   hostLabel: string,
   input: CreatePairingTokenInput = {},
+  clientIp?: string | null,
 ): Promise<CreatePairingTokenResult> {
   const ctx = await loadLimitContext(pool, { namespace })
   const pairingRule = resolveRateLimitRule(RATE_LIMIT_ACTION.pairingToken, ctx, config)
   const pairingTokenRateLimit = await enforceRateLimit(pool, config, pairingRule, {
     namespaceUuid: namespace.id,
+    clientIp,
   })
 
   const limits = await getLimitsForNamespace(pool, config, ctx)

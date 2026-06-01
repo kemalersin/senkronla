@@ -11,6 +11,10 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Fixed
+
+- **server:** Operator rate limits panel — record and list client IPs on rate limit events
+
 ## [0.1.13]
 
 ### Changed

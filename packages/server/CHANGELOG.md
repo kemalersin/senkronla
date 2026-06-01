@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Operator rate limits panel — persist `client_ip` on namespace/device rate limit events; include IP-only events (`global_ip`, `namespace_create`) in admin listing
+
 ## [0.1.13]
 
 ### Fixed

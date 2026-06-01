@@ -41,11 +41,13 @@ export async function recoverNamespace(
   config: ServerConfig,
   namespace: NamespaceRow,
   input: RecoverNamespaceInput,
+  clientIp?: string | null,
 ): Promise<RecoverNamespaceResult> {
   const ctx = await loadLimitContext(pool, { namespace })
   const recoverRule = resolveRateLimitRule(RATE_LIMIT_ACTION.recover, ctx, config)
   const recoverRateLimit = await enforceRateLimit(pool, config, recoverRule, {
     namespaceUuid: namespace.id,
+    clientIp,
   })
   assertRecoveryProof(namespace, input.recoveryKeyProof)
 

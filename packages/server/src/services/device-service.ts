@@ -118,6 +118,7 @@ export async function pairDeviceWithCode(
   namespace: NamespaceRow,
   input: PairDeviceInput,
   appAuth?: AppAuthContext | null,
+  clientIp?: string | null,
 ): Promise<PairDeviceResult> {
   const ctx = await loadLimitContext(pool, {
     namespace,
@@ -127,6 +128,7 @@ export async function pairDeviceWithCode(
   const pairRule = resolveRateLimitRule(RATE_LIMIT_ACTION.pairDevice, ctx, config)
   const pairRateLimit = await enforceRateLimit(pool, config, pairRule, {
     namespaceUuid: namespace.id,
+    clientIp,
   })
 
   const client = await pool.connect()

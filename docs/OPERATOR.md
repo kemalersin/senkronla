@@ -240,6 +240,8 @@ Override via config or env (`ESR_RECOVER_PER_HOUR`, `ESR_PAIRING_PER_HOUR`, etc.
 
 Exceeded limits return **429** `RATE_LIMIT_EXCEEDED` with a `Retry-After` header.
 
+**Operator portal — Rate limits tab:** lists grouped events with namespace, device, and client IP when recorded. IP comes from the API’s `request.ip`. With nginx or Cloudflare in front, set `ESR_TRUST_PROXY=true` so the stored address is the end-user IP, not the proxy hop. Events before a server upgrade that records IPs may still show `—` for IP.
+
 ## Unlock codes
 
 Generate a code after manual payment or support verification.

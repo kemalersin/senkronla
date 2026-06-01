@@ -237,11 +237,13 @@ export async function pushDocument(
   deviceAuth: DeviceAuthContext,
   documentId: string,
   input: PushDocumentInput,
+  clientIp?: string | null,
 ): Promise<PushDocumentResult> {
   const ctx = await loadLimitContext(pool, { namespace })
   const pushRule = resolveRateLimitRule(RATE_LIMIT_ACTION.putDocument, ctx, config)
   const pushRateLimit = await enforceRateLimit(pool, config, pushRule, {
     deviceUuid: deviceAuth.deviceUuid,
+    clientIp,
   })
 
   const envelope = validateEnvelopeForPush(config, namespace.namespace_id, documentId, input.envelope)

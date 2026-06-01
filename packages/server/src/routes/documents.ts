@@ -75,6 +75,7 @@ async function handlePush(
     request.deviceAuth!,
     documentId,
     body,
+    request.ip,
   )
 
   trackRateLimitQuota(request, result.rateLimit)
