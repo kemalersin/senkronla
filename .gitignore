@@ -10,4 +10,6 @@ coverage/
 .env.*.local
 .DS_Store
 data/blobs/
+packages/server/data/
+package-lock.json
 *.tsbuildinfo
