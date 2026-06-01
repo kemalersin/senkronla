@@ -229,6 +229,18 @@ ESR_COMPOSE_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr
 docker compose --project-directory . -f docker/docker-compose.yml --env-file .env up api web
 ```
 
+### Production updates
+
+After `git pull` or `.env` changes on the server (from repo root):
+
+```bash
+dc='docker compose --project-directory . -f docker/docker-compose.yml --env-file .env'
+$dc --profile bundled-db up -d --build --force-recreate api web   # code
+$dc --profile bundled-db up -d --force-recreate api web             # .env only
+```
+
+TLS reverse proxy: [`docker/nginx/README.md`](./docker/nginx/README.md) · full operator guide: [`docs/OPERATOR.md`](./docs/OPERATOR.md) (§ Updating live services, § Reverse proxy).
+
 ## Documentation
 
 | Resource | Link |
