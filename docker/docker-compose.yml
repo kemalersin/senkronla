@@ -59,7 +59,7 @@ services:
       ESR_HOST: 0.0.0.0
       ESR_PORT: 8080
       ESR_PUBLIC_URL: ${ESR_PUBLIC_URL:-http://localhost:8080}
-      ESR_DATABASE_URL: ${ESR_COMPOSE_DATABASE_URL:-postgresql://esr:esr@postgres:5432/esr}
+      ESR_DATABASE_URL: ${ESR_COMPOSE_DATABASE_URL:-postgresql://${POSTGRES_USER:-esr}:${POSTGRES_PASSWORD:-esr}@postgres:5432/${POSTGRES_DB:-esr}}
       ESR_BLOB_PATH: /data/blobs
     volumes:
       - ${ESR_BLOB_PATH:-./data/blobs}:/data/blobs
