@@ -5,7 +5,7 @@ Guide for self-hosting and operating a Senkronla (Envelope Sync Relay) deploymen
 ## Prerequisites
 
 - PostgreSQL 16+
-- Persistent volume for blob storage (`ESR_BLOB_PATH`)
+- Persistent host directory for blob storage (Docker Compose: `ESR_BLOB_PATH` bind-mounted at `/data/blobs` in the api container)
 - TLS termination (Caddy, nginx, or cloud load balancer)
 - Long random secrets for admin and unlock HMAC
 
@@ -18,7 +18,7 @@ Copy `.env.example` to `.env` or use `packages/server/config.example.yaml` as `c
 | `ESR_DATABASE_URL` | PostgreSQL connection string |
 | `ESR_ADMIN_TOKEN` | Admin API bearer token (min 32 chars) |
 | `ESR_UNLOCK_HMAC_SECRET` | Unlock code HMAC secret (future use) |
-| `ESR_BLOB_PATH` | Filesystem blob storage path |
+| `ESR_BLOB_PATH` | Docker Compose: host directory bind-mounted at `/data/blobs`. Bare-metal API: filesystem path the process uses |
 | `ESR_PUBLIC_URL` | Public API URL (used by CLI and portal) |
 | `ESR_DEFAULT_FREE_DEVICE_LIMIT` | Free device slots per namespace |
 | `ESR_ON_LIMIT_MODE` | `payment` or `block` when limit reached |

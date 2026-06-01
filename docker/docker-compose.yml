@@ -18,6 +18,9 @@
 # Optional per-container CPU/RAM limits (shared host):
 #   docker compose -f docker-compose.yml -f docker-compose.resources.example.yml ...
 #   See docker-compose.resources.example.yml for ~100 / ~1000 namespace tiers.
+#
+# Blob storage: set ESR_BLOB_PATH in .env to the host directory bind-mounted at /data/blobs
+# inside the api container (default ./data/blobs relative to this compose file).
 
 services:
   postgres:
@@ -58,7 +61,7 @@ services:
       ESR_WEBSOCKET_ENABLED: ${ESR_WEBSOCKET_ENABLED:-true}
       ESR_CORS_ORIGINS: ${ESR_CORS_ORIGINS:-*}
     volumes:
-      - blob_data:/data/blobs
+      - ${ESR_BLOB_PATH:-./data/blobs}:/data/blobs
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     depends_on:
@@ -81,4 +84,3 @@ services:
 
 volumes:
   postgres_data:
-  blob_data:
