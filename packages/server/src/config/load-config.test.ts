@@ -58,6 +58,30 @@ describe('loadConfig', () => {
     expect(config.apps.limits.perApp.namespacesPerDay).toBe(50)
   })
 
+  it('builds database URL from ESR_DATABASE_* parts with encoded password', () => {
+    const config = loadConfig({
+      ESR_DATABASE_URL: '',
+      ESR_DATABASE_HOST: 'postgres',
+      ESR_DATABASE_USER: 'esr',
+      ESR_DATABASE_PASSWORD: 'p@ss:w#rd',
+      ESR_DATABASE_NAME: 'esr',
+    })
+
+    expect(config.database.url).toBe(
+      'postgresql://esr:p%40ss%3Aw%23rd@postgres:5432/esr',
+    )
+  })
+
+  it('prefers ESR_DATABASE_URL over ESR_DATABASE_* parts', () => {
+    const config = loadConfig({
+      ESR_DATABASE_URL: 'postgresql://custom:secret@db.example.com:5432/esr',
+      ESR_DATABASE_HOST: 'postgres',
+      ESR_DATABASE_PASSWORD: 'ignored',
+    })
+
+    expect(config.database.url).toBe('postgresql://custom:secret@db.example.com:5432/esr')
+  })
+
   it('detects bundled vs external database mode', () => {
     expect(getDatabaseMode('postgresql://esr:esr@postgres:5432/esr')).toBe('bundled')
     expect(getDatabaseMode('postgresql://esr:esr@localhost:5432/esr')).toBe('external')

@@ -55,6 +55,25 @@ function parseEnvBoolean(value: string | undefined): boolean | undefined {
   return undefined
 }
 
+function buildDatabaseUrlFromParts(env: NodeJS.ProcessEnv): string | undefined {
+  const host = env.ESR_DATABASE_HOST?.trim()
+  if (!host) return undefined
+
+  const user = env.ESR_DATABASE_USER?.trim() || 'esr'
+  const password = env.ESR_DATABASE_PASSWORD ?? ''
+  const port = env.ESR_DATABASE_PORT?.trim() || '5432'
+  const database = env.ESR_DATABASE_NAME?.trim() || 'esr'
+
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(database)}`
+}
+
+function resolveDatabaseUrl(env: NodeJS.ProcessEnv): string | undefined {
+  const explicitUrl = env.ESR_DATABASE_URL?.trim()
+  if (explicitUrl) return explicitUrl
+
+  return buildDatabaseUrlFromParts(env)
+}
+
 export function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
   const overrides: RawConfig = {}
 
@@ -68,10 +87,11 @@ export function loadEnvOverrides(env: NodeJS.ProcessEnv): RawConfig {
     }
   }
 
-  if (env.ESR_DATABASE_URL || env.ESR_DATABASE_POOL_SIZE || env.ESR_DATABASE_SSL) {
+  const databaseUrl = resolveDatabaseUrl(env)
+  if (databaseUrl || env.ESR_DATABASE_POOL_SIZE || env.ESR_DATABASE_SSL) {
     overrides.database = {
       ...(overrides.database as RawConfig),
-      ...(env.ESR_DATABASE_URL ? { url: env.ESR_DATABASE_URL } : {}),
+      ...(databaseUrl ? { url: databaseUrl } : {}),
       ...(env.ESR_DATABASE_POOL_SIZE ? { poolSize: env.ESR_DATABASE_POOL_SIZE } : {}),
       ...(env.ESR_DATABASE_SSL !== undefined ? { ssl: parseEnvBoolean(env.ESR_DATABASE_SSL) } : {}),
     }

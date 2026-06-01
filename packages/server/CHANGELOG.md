@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Database URL from `ESR_DATABASE_HOST` / `ESR_DATABASE_PASSWORD` / … env parts — URL-encodes credentials (Docker bundled Postgres with special characters in `POSTGRES_PASSWORD`)
+
 ## [0.1.12]
 
 ### Fixed
