@@ -9,9 +9,15 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.12]
+
+### Fixed
+
+- Docker API image — preserve monorepo layout in the runtime stage so pnpm dependencies resolve; load `.env` via dynamic `dotenv` import only when the file exists (Compose injects env vars directly)
+
 ### Changed
 
-- Docker Compose loads repo-root `.env` only (removed `docker/.env` fallback)
+- Docker API build — `pnpm install --filter @senkronla/server...` and `pnpm deploy` only; skips client, cli, and full monorepo `node_modules` in the runtime image
 
 ## [0.1.11]
 

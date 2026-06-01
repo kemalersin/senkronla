@@ -2,30 +2,32 @@ FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
+# Install only @senkronla/server and its workspace dependency @senkronla/protocol (not client/cli).
 FROM base AS deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/protocol/package.json packages/protocol/
 COPY packages/server/package.json packages/server/
-COPY packages/client/package.json packages/client/
-COPY packages/cli/package.json packages/cli/
-RUN pnpm install --frozen-lockfile || pnpm install
+RUN pnpm install --frozen-lockfile --filter @senkronla/server... --ignore-scripts
+# tsc is a workspace-root devDependency (not pulled by the filter above).
+RUN pnpm add -Dw typescript@^5.7.2 --ignore-scripts
 
 FROM deps AS build
-COPY packages ./packages
+COPY packages/protocol ./packages/protocol
+COPY packages/server ./packages/server
 COPY openapi.yaml ./
-RUN pnpm --filter @senkronla/protocol build
-RUN pnpm --filter @senkronla/server build
+RUN pnpm --filter @senkronla/protocol build && \
+    pnpm --filter @senkronla/server build && \
+    pnpm deploy --filter=@senkronla/server --prod /deploy/server
 
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN mkdir -p /data/blobs
-COPY --from=build /app/packages/server/dist ./dist
-COPY --from=build /app/packages/server/package.json ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/packages/server/node_modules ./packages/server/node_modules
-COPY --from=build /app/packages/protocol/dist ./packages/protocol/dist
+
+# Monorepo layout: repoRoot (../../.. from dist) → /app for openapi.yaml
+COPY --from=build /deploy/server ./packages/server
 COPY --from=build /app/openapi.yaml ./openapi.yaml
-COPY --from=build /app/packages/server/migrations ./migrations
+
+WORKDIR /app/packages/server
 EXPOSE 8080
 CMD ["node", "dist/index.js"]

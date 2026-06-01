@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { config as loadDotenv } from 'dotenv'
 import { logStartupWarnings } from './lib/startup-warnings.js'
 import { ensureBlobDirectory } from './blob/filesystem.js'
 import { buildApp } from './app.js'
@@ -11,14 +10,21 @@ import { createPool } from './db/pool.js'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
-for (const envFile of ['.env']) {
-  const envPath = resolve(repoRoot, envFile)
-  if (existsSync(envPath)) {
+async function loadEnvFromFiles(): Promise<void> {
+  for (const envFile of ['.env']) {
+    const envPath = resolve(repoRoot, envFile)
+    if (!existsSync(envPath)) {
+      continue
+    }
+
+    const { config: loadDotenv } = await import('dotenv')
     loadDotenv({ path: envPath })
   }
 }
 
 async function main() {
+  await loadEnvFromFiles()
+
   let config
 
   try {

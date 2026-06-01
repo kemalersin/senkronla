@@ -11,6 +11,8 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.12]
+
 ### Added
 
 - **client:** npm package README and `publishConfig` for registry publish
@@ -25,7 +27,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 - **web:** ESR setup guide — system requirements under Prerequisites (`/guides/esr#prerequisites`)
 - **docs:** Architecture spec — ~1000 namespace resource sizing (moderate / heavy sync) in §6.2; ESR guide sizing table updated to match
 - **docker:** Optional `docker-compose.resources.example.yml` — per-container CPU/RAM limits (~100 / ~1000 tiers); OPERATOR.md and ESR guide document merge usage
-- **docker:** Single repo-root `.env` for host dev and Compose — `env_file: .env` with `--project-directory .`; `ESR_BLOB_PATH` bind-mounts into api at `/data/blobs`
+- **docker:** API image build installs/builds only `@senkronla/server` + `@senkronla/protocol`; runtime via `pnpm deploy --prod`
 - **docs:** Enrich root README with architecture diagrams (system, push/pull, WebSocket), deployment sketch, and [senkron.la](https://senkron.la) links
 
 ## [0.1.11]

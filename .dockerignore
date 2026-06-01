@@ -1,0 +1,12 @@
+# Smaller build context — API skips client/cli; web still gets apps/web (negation below).
+node_modules
+.git
+.next
+.turbo
+dist
+coverage
+data/blobs
+packages/client
+packages/cli
+apps/*
+!apps/web
