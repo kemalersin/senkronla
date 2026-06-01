@@ -16,6 +16,7 @@
     "version": "node scripts/promote-changelog-unreleased.mjs"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "2.6.2",
     "@types/node": "^22.10.2",
     "prettier": "^3.4.2",
     "tsx": "^4.19.2",
