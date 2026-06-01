@@ -11,7 +11,7 @@ import { createPool } from '../db/pool.js'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
 
-for (const envFile of ['.env', 'docker/.env']) {
+for (const envFile of ['.env']) {
   const envPath = resolve(repoRoot, envFile)
   if (existsSync(envPath)) {
     loadDotenv({ path: envPath })

@@ -868,11 +868,11 @@ const envelope = {
 export function createEsrGuideSnippets(exampleOrigin = 'https://yourdomain.com') {
   const origin = exampleOrigin.replace(/\/$/, '')
   return {
-    dockerEnv: `cp docker/.env.example .env`,
-    dockerBundled: `cd docker\ndocker compose --profile bundled-db up --build`,
-    dockerResources: `cd docker\ndocker compose -f docker-compose.yml -f docker-compose.resources.example.yml \\\n  --profile bundled-db up --build`,
-    dockerExternal: `# macOS/Windows — Postgres on host\nESR_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr\n\ncd docker\ndocker compose up api web`,
-    localPostgres: `cd docker && docker compose --profile bundled-db up postgres -d`,
+    dockerEnv: `cp .env.example .env`,
+    dockerBundled: `docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up --build`,
+    dockerResources: `docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.resources.example.yml \\\n  --env-file .env --profile bundled-db up --build`,
+    dockerExternal: `# macOS/Windows — Postgres on host\n# Add to .env:\nESR_COMPOSE_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr\n\ndocker compose --project-directory . -f docker/docker-compose.yml --env-file .env up api web`,
+    localPostgres: `docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up postgres -d`,
     localDev: `pnpm install\ncp .env.example .env\npnpm dev`,
     healthCheck: `curl -s ${origin}/health`,
     migrate: `pnpm --filter @senkronla/server migrate`,

@@ -440,21 +440,21 @@
         "p1": "The fastest path for a full stack — API, web portal, and optional bundled Postgres:",
         "bundledTitle": "Bundled Postgres",
         "externalTitle": "Existing Postgres",
-        "externalP1": "Point <tag>ESR_DATABASE_URL</tag> at your instance and start without the bundled database profile:",
+        "externalP1": "Set <tag>ESR_COMPOSE_DATABASE_URL</tag> for an external database and start without the bundled database profile:",
         "resourcesTitle": "Container resource limits (optional)",
         "resourcesP1": "On a shared host, cap CPU and RAM per service. Copy or edit <tag>docker/docker-compose.resources.example.yml</tag> (default tier: ~100 namespaces bundled), then merge when starting:",
         "resourcesTipTitle": "Limits vs separate Postgres",
         "resourcesTipBody": "Docker limits cap each container on one VM (Linux cgroups). They do not replace a separate Postgres host or managed database at ~1000 namespaces — use external Postgres via ESR_DATABASE_URL for that. See the tier comments in the example file for ~1000 moderate values.",
         "tipTitle": "Web portal",
-        "tipBody": "The compose file also starts the docs portal on port 3000. Set <tag>NEXT_PUBLIC_API_URL</tag> to your public relay URL (e.g. <tag>https://yourdomain.com</tag>).",
+        "tipBody": "The compose file also starts the docs portal on port 3000. In production set <tag>ESR_PUBLIC_URL</tag> to your public relay URL (e.g. <tag>https://yourdomain.com</tag>); the web portal uses it as <tag>NEXT_PUBLIC_API_URL</tag>.",
         "steps": {
           "s1": {
             "title": "Copy environment file",
-            "body": "Start from <tag>docker/.env.example</tag> and set secrets before production."
+            "body": "Copy <tag>.env.example</tag> to <tag>.env</tag> at the repo root and set secrets before production."
           },
           "s2": {
             "title": "Choose database mode",
-            "body": "Use <tag>--profile bundled-db</tag> for a local Postgres container, or set <tag>ESR_DATABASE_URL</tag> for an external database."
+            "body": "Use <tag>--profile bundled-db</tag> for a local Postgres container, or set <tag>ESR_COMPOSE_DATABASE_URL</tag> for an external database."
           },
           "s3": {
             "title": "Start services",

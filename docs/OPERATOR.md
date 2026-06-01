@@ -18,7 +18,7 @@ Copy `.env.example` to `.env` or use `packages/server/config.example.yaml` as `c
 | `ESR_DATABASE_URL` | PostgreSQL connection string |
 | `ESR_ADMIN_TOKEN` | Admin API bearer token (min 32 chars) |
 | `ESR_UNLOCK_HMAC_SECRET` | Unlock code HMAC secret (future use) |
-| `ESR_BLOB_PATH` | Docker Compose: host directory bind-mounted at `/data/blobs`. Bare-metal API: filesystem path the process uses |
+| `ESR_BLOB_PATH` | Host filesystem path for blobs (`pnpm dev` and Docker bind-mount at `/data/blobs`; use `--project-directory .` for relative paths) |
 | `ESR_PUBLIC_URL` | Public API URL (used by CLI and portal) |
 | `ESR_DEFAULT_FREE_DEVICE_LIMIT` | Free device slots per namespace |
 | `ESR_ON_LIMIT_MODE` | `payment` or `block` when limit reached |
@@ -286,20 +286,21 @@ Production minimum:
 
 ## Docker
 
+Copy `.env.example` to `.env` at the repo root. Compose reads it with `--env-file .env` and passes variables into containers via `env_file`.
+
 Bundled Postgres profile:
 
 ```bash
-cd docker && docker compose --profile bundled-db up --build
+docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up --build
 ```
 
-External Postgres: set `ESR_DATABASE_URL` and run `docker compose up api web` without the bundled profile.
+External Postgres: set `ESR_COMPOSE_DATABASE_URL` in `.env` and run `docker compose --project-directory . -f docker/docker-compose.yml --env-file .env up api web` without the bundled profile.
 
 Optional CPU/RAM limits per container (shared host, Linux cgroups):
 
 ```bash
-cd docker
-docker compose -f docker-compose.yml -f docker-compose.resources.example.yml \
-  --profile bundled-db up --build
+docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.resources.example.yml \
+  --env-file .env --profile bundled-db up --build
 ```
 
 Edit `docker-compose.resources.example.yml` to switch tiers (~100 namespaces default, ~1000 moderate values in file comments). Limits cap containers on one VM; at ~1000 namespaces prefer external or managed Postgres on a separate host — see [02-ARCHITECTURE.md](en/02-ARCHITECTURE.md) §6.2.

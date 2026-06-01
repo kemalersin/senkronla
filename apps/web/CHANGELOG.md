@@ -15,6 +15,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
+- ESR setup guide — single repo-root `.env` for Docker and local dev; `ESR_COMPOSE_DATABASE_URL` for external Postgres from containers
 - ESR setup guide — system requirements, resource sizing (~1000 namespace moderate/heavy rows), and ports under Prerequisites
 - ESR setup guide — optional Docker Compose CPU/RAM limits (`docker-compose.resources.example.yml`)
 - SDK install section — npm install commands, Node 22+, links to `@senkronla/*` on npm registry

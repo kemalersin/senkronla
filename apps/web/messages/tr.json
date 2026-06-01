@@ -440,21 +440,21 @@
         "p1": "Tam yığın için en hızlı yol — API, web portalı ve isteğe bağlı Postgres:",
         "bundledTitle": "Dahili Postgres",
         "externalTitle": "Mevcut Postgres",
-        "externalP1": "<tag>ESR_DATABASE_URL</tag>'yi kendi sunucunuza yönlendirin ve dahili veritabanı profili olmadan başlatın:",
+        "externalP1": "Harici veritabanı için <tag>ESR_COMPOSE_DATABASE_URL</tag> ayarlayın ve dahili veritabanı profili olmadan başlatın:",
         "resourcesTitle": "Konteyner kaynak limitleri (isteğe bağlı)",
         "resourcesP1": "Paylaşımlı host'ta servis başına CPU ve RAM tavanı koyun. <tag>docker/docker-compose.resources.example.yml</tag> dosyasını kopyalayın veya düzenleyin (varsayılan katman: ~100 namespace bundled), ardından birleştirerek başlatın:",
         "resourcesTipTitle": "Limitler vs ayrı Postgres",
         "resourcesTipBody": "Docker limitleri tek VM'de konteyner başına tavan koyar (Linux cgroups). ~1000 namespace'te ayrı Postgres sunucusu veya yönetilen veritabanının yerini tutmaz — bunun için ESR_DATABASE_URL ile harici Postgres kullanın. ~1000 orta yük değerleri örnek dosyadaki katman yorumlarında.",
         "tipTitle": "Web portalı",
-        "tipBody": "Compose dosyası dokümantasyon portalını da 3000 portunda başlatır. <tag>NEXT_PUBLIC_API_URL</tag>'yi genel relay URL'nize ayarlayın (örn. <tag>https://alanadiniz.com</tag>).",
+        "tipBody": "Compose dosyası dokümantasyon portalını da 3000 portunda başlatır. Üretimde <tag>ESR_PUBLIC_URL</tag>'yi genel relay URL'nize ayarlayın (örn. <tag>https://alanadiniz.com</tag>); web portalı bunu <tag>NEXT_PUBLIC_API_URL</tag> olarak kullanır.",
         "steps": {
           "s1": {
             "title": "Ortam dosyasını kopyalayın",
-            "body": "<tag>docker/.env.example</tag> ile başlayın; üretim öncesi gizlileri ayarlayın."
+            "body": "Kök dizinde <tag>.env.example</tag> dosyasını <tag>.env</tag> olarak kopyalayın; üretim öncesi gizlileri ayarlayın."
           },
           "s2": {
             "title": "Veritabanı modunu seçin",
-            "body": "Yerel Postgres konteyneri için <tag>--profile bundled-db</tag> kullanın veya harici veritabanı için <tag>ESR_DATABASE_URL</tag> ayarlayın."
+            "body": "Yerel Postgres konteyneri için <tag>--profile bundled-db</tag> kullanın veya harici veritabanı için <tag>ESR_COMPOSE_DATABASE_URL</tag> ayarlayın."
           },
           "s3": {
             "title": "Servisleri başlatın",

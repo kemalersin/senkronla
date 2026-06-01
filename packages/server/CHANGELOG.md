@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Changed
+
+- Docker Compose loads repo-root `.env` only (removed `docker/.env` fallback)
+
 ## [0.1.11]
 
 ### Added

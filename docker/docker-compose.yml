@@ -1,32 +1,34 @@
 # Senkronla — Docker Compose
 #
-# Two database modes:
+# Configuration: repo-root `.env` (copy from `.env.example`). Always run from the repo root
+# with `--project-directory .` so relative paths (e.g. ESR_BLOB_PATH=./data/blobs) match pnpm dev.
 #
 # 1) Bundled Postgres (default for local dev):
-#    docker compose --profile bundled-db up
+#    docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up --build
 #
 # 2) External Postgres (existing instance — Docker or bare metal):
-#    Set ESR_DATABASE_URL in .env, then:
-#    docker compose up api
+#    Set ESR_COMPOSE_DATABASE_URL in .env, then:
+#    docker compose --project-directory . -f docker/docker-compose.yml --env-file .env up api web
 #    (omit --profile bundled-db — postgres service is not started)
 #
 # External DB on host machine from container:
-#   macOS/Windows: postgresql://user:pass@host.docker.internal:5432/esr
+#   macOS/Windows: ESR_COMPOSE_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr
 #   Linux:         postgresql://user:pass@172.17.0.1:5432/esr
-#                    or add extra_hosts: host.docker.internal:host-gateway
+#                  or add extra_hosts: host.docker.internal:host-gateway (api service already has this)
 #
 # Optional per-container CPU/RAM limits (shared host):
-#   docker compose -f docker-compose.yml -f docker-compose.resources.example.yml ...
-#   See docker-compose.resources.example.yml for ~100 / ~1000 namespace tiers.
+#   docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.resources.example.yml \
+#     --env-file .env --profile bundled-db up --build
 #
-# Blob storage: set ESR_BLOB_PATH in .env to the host directory bind-mounted at /data/blobs
-# inside the api container (default ./data/blobs relative to this compose file).
+# Blob storage: ESR_BLOB_PATH in .env is the host bind-mount source; inside the api container ESR_BLOB_PATH is /data/blobs.
 
 services:
   postgres:
     profiles: [bundled-db]
     image: postgres:16-alpine
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-esr}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esr}
@@ -43,23 +45,19 @@ services:
 
   api:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - '${ESR_PUBLISH_PORT:-8080}:8080'
     environment:
       ESR_HOST: 0.0.0.0
       ESR_PORT: 8080
       ESR_PUBLIC_URL: ${ESR_PUBLIC_URL:-http://localhost:8080}
-      ESR_DATABASE_URL: ${ESR_DATABASE_URL:-postgresql://esr:esr@postgres:5432/esr}
+      ESR_DATABASE_URL: ${ESR_COMPOSE_DATABASE_URL:-postgresql://esr:esr@postgres:5432/esr}
       ESR_BLOB_PATH: /data/blobs
-      ESR_ADMIN_TOKEN: ${ESR_ADMIN_TOKEN:-change-me-use-a-long-random-token-min-32-chars}
-      ESR_UNLOCK_HMAC_SECRET: ${ESR_UNLOCK_HMAC_SECRET:-change-me-unlock-hmac-secret-min-32}
-      ESR_DEFAULT_FREE_DEVICE_LIMIT: ${ESR_DEFAULT_FREE_DEVICE_LIMIT:-2}
-      ESR_ON_LIMIT_MODE: ${ESR_ON_LIMIT_MODE:-payment}
-      ESR_WEBSOCKET_ENABLED: ${ESR_WEBSOCKET_ENABLED:-true}
-      ESR_CORS_ORIGINS: ${ESR_CORS_ORIGINS:-*}
     volumes:
       - ${ESR_BLOB_PATH:-./data/blobs}:/data/blobs
     extra_hosts:
@@ -71,9 +69,11 @@ services:
 
   web:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.web
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - '${WEB_PUBLISH_PORT:-3000}:3000'
     environment:
