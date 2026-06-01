@@ -135,41 +135,49 @@ websocket:
 
 > **Şema notu:** Yetkili anahtarlar `packages/server/src/config/schema.ts` içindedir. Yukarıda “henüz yok” işaretli bloklar (`blob.s3`, `payment`) tasarım yer tutucusudur — production YAML'e kopyalamayın.
 
-## 3. Ortam değişkenleri (minimum docker)
+## 3. Ortam değişkenleri (repo kökü `.env`)
+
+Tek `.env` dosyası hem **host dev** (`pnpm dev`) hem **Docker Compose** için kullanılır. `.env.example` dosyasından kopyalayın.
 
 ```bash
-ESR_DATABASE_URL=postgresql://esr:esr@postgres:5432/esr
-ESR_ADMIN_TOKEN=change-me-long-random
-ESR_UNLOCK_HMAC_SECRET=change-me-long-random
-ESR_BLOB_PATH=/var/lib/senkronla/blobs   # host yolu; container içinde /data/blobs
+# Host dev — localhost'ta API
+ESR_DATABASE_URL=postgresql://esr:esr@localhost:5432/esr
+
+# Bundled Postgres (Docker) — API URL bu değerlerden üretilir; şifredeki özel karakterler encode edilir
+POSTGRES_USER=esr
+POSTGRES_PASSWORD=change-me
+POSTGRES_DB=esr
+# Konteynerden harici DB (gerekirse şifreyi URL-encode edin):
+# ESR_COMPOSE_DATABASE_URL=postgresql://esr:secret@host.docker.internal:5432/esr
+
+ESR_PUBLISH_PORT=8080
+WEB_PUBLISH_PORT=3000
 ESR_PUBLIC_URL=https://sync.senkron.la
+ESR_ADMIN_TOKEN=change-me-long-random-min-32-chars
+ESR_UNLOCK_HMAC_SECRET=change-me-long-random-min-32-chars
+ESR_BLOB_PATH=./data/blobs
+ESR_TRUST_PROXY=true
 ESR_DEFAULT_FREE_DEVICE_LIMIT=2
-ESR_ON_LIMIT_MODE=payment          # payment | block
-ESR_SLOT_PACKAGES=3,5,10
+ESR_ON_LIMIT_MODE=payment
+ESR_CORS_ORIGINS=https://senkron.la
 ESR_WEBSOCKET_ENABLED=true
-ESR_WS_PING_INTERVAL=30
 ESR_MAX_ENVELOPE_BYTES=52428800
-ESR_MAX_DOCUMENTS_PER_NAMESPACE=32      # 0 = sınırsız
-ESR_ALLOWED_DOCUMENT_IDS=primary,settings   # isteğe bağlı virgülle ayrılmış allowlist
-# ESR_REVISION_RETENTION_DAYS=0         # push sonrası N günden eski head-dışı revizyonları otomatik sil (0 = hepsini tut)
-# ESR_REVISION_RETENTION_COUNT=0        # push sonrası belge başına son N revizyonu tut (0 = kapalı; head N'ye dahil)
 
 # Uygulama kaydı (v1.3 — isteğe bağlı; bkz. doc 16)
 ESR_APPS__ENABLED=false
-ESR_APPS__REGISTRATION_MODE=operator_managed   # operator_managed | self_service
-ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
-# ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary
-# ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
-# ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW=true
+ESR_APPS__REGISTRATION_MODE=operator_managed
 ESR_DEVELOPER_JWT_SECRET=change-me-long-random-min-32-chars
-# ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET=...   # ESR_DEVELOPER_JWT_SECRET alias'ı
-# ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY=100
-# ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR=30
-# ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
-# apps.verification.*, limits.perDeveloper.*, developerPortal.enabled/sessionTtlHours/requireEmailVerification, seed — yalnızca YAML
 ```
 
+Compose komutu (repo kökünden): `docker compose --project-directory . -f docker/docker-compose.yml --env-file .env …`
+
+`.env` değişince: `up -d --force-recreate api web`. Bkz. [OPERATOR.md](../OPERATOR.md) § Updating live services.
+
 ## 4. docker-compose.yml (referans)
+
+> **Güncel dosya:** [`docker/docker-compose.yml`](../../docker/docker-compose.yml) — repo kökü `.env`, `env_file: ${PWD}/.env`, bundled DB için `POSTGRES_*` / `ESR_DATABASE_*` parçaları, harici Postgres için isteğe bağlı `ESR_COMPOSE_DATABASE_URL`. Repo kökünden `--project-directory .` ile çalıştırın.
+
+Aşağıdaki şema örnektir (isteğe bağlı Caddy dahil); üretimde genelde host nginx kullanılır — bkz. [OPERATOR.md](../OPERATOR.md) § Reverse proxy.
 
 ```yaml
 services:

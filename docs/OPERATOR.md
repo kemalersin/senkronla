@@ -11,14 +11,42 @@ Guide for self-hosting and operating a Senkronla (Envelope Sync Relay) deploymen
 
 ## Configuration
 
-Copy `.env.example` to `.env` or use `packages/server/config.example.yaml` as `config.yaml`.
+Copy `.env.example` to `.env` at the **repo root**, or use `packages/server/config.example.yaml` as `config.yaml` with `ESR_CONFIG_PATH`.
+
+### Single `.env` for host dev and Docker
+
+| Context | How config is loaded |
+|---------|-------------------|
+| **`pnpm dev`** (API on host) | Server reads repo-root `.env` at startup |
+| **Docker Compose** | `${PWD}/.env` on each service (`env_file`) + `--env-file .env` for compose interpolation |
+| **Always** | Run compose from the repo root: `cd /path/to/senkronla` |
+
+After changing `.env`, recreate affected containers (`--force-recreate`) — a rebuild alone does not refresh injected env.
+
+### Database connection
+
+| Variable | When |
+|----------|------|
+| `ESR_DATABASE_URL` | **Host dev** — e.g. `postgresql://esr:esr@localhost:5432/esr` |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | **Bundled Postgres** — must match; API URL is built from these inside the container |
+| `ESR_COMPOSE_DATABASE_URL` | **Optional** — full URL for external Postgres from containers; URL-encode special characters in the password |
+| `ESR_DATABASE_HOST`, `ESR_DATABASE_USER`, `ESR_DATABASE_PASSWORD`, … | Set by Compose for bundled mode; override only for advanced setups |
+
+Bundled Postgres: leave `ESR_COMPOSE_DATABASE_URL` unset. Compose passes `ESR_DATABASE_*` parts; the API builds an encoded connection URL (passwords with `@`, `:`, `#` are safe).
+
+External Postgres: set `ESR_COMPOSE_DATABASE_URL=postgresql://user:pass@host:5432/esr` and start **without** `--profile bundled-db`.
+
+> Postgres password is fixed when the `postgres_data` volume is first created. Changing `POSTGRES_PASSWORD` in `.env` later does not alter an existing volume — align credentials or recreate the volume (data loss).
 
 | Variable | Purpose |
 |----------|---------|
-| `ESR_DATABASE_URL` | PostgreSQL connection string |
+| `ESR_DATABASE_URL` | Host dev PostgreSQL connection string |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Bundled Postgres container credentials |
+| `ESR_COMPOSE_DATABASE_URL` | External DB URL from api container (optional) |
+| `ESR_PUBLISH_PORT` / `WEB_PUBLISH_PORT` | Host ports published for API (8080) and web (3000) |
 | `ESR_ADMIN_TOKEN` | Admin API bearer token (min 32 chars) |
 | `ESR_UNLOCK_HMAC_SECRET` | Unlock code HMAC secret (future use) |
-| `ESR_BLOB_PATH` | Host filesystem path for blobs (`pnpm dev` and Docker bind-mount at `/data/blobs`; use `--project-directory .` for relative paths) |
+| `ESR_BLOB_PATH` | Host path for blobs (same in `.env` for `pnpm dev` and Compose bind-mount; use `--project-directory .` for relative paths) |
 | `ESR_PUBLIC_URL` | Public API URL (used by CLI and portal) |
 | `ESR_DEFAULT_FREE_DEVICE_LIMIT` | Free device slots per namespace |
 | `ESR_ON_LIMIT_MODE` | `payment` or `block` when limit reached |
@@ -286,21 +314,108 @@ Production minimum:
 
 ## Docker
 
-Copy `.env.example` to `.env` at the repo root. Compose reads it with `--env-file .env` and passes variables into containers via `env_file`.
-
-Bundled Postgres profile:
+Use this compose invocation from the **repo root** (define a shell alias if helpful):
 
 ```bash
-docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up --build
+dc='docker compose --project-directory . -f docker/docker-compose.yml --env-file .env'
 ```
 
-External Postgres: set `ESR_COMPOSE_DATABASE_URL` in `.env` and run `docker compose --project-directory . -f docker/docker-compose.yml --env-file .env up api web` without the bundled profile.
+Copy `.env.example` → `.env`, set secrets (min 32 chars for `ESR_ADMIN_TOKEN`, `ESR_UNLOCK_HMAC_SECRET`, `ESR_DEVELOPER_JWT_SECRET` when apps registry is on).
 
-Optional CPU/RAM limits per container (shared host, Linux cgroups):
+**Full stack (bundled Postgres):**
 
 ```bash
-docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.resources.example.yml \
-  --env-file .env --profile bundled-db up --build
+$dc --profile bundled-db up -d --build
 ```
+
+**External Postgres** — set `ESR_COMPOSE_DATABASE_URL`, then:
+
+```bash
+$dc up -d --build api web
+```
+
+**Optional CPU/RAM limits** — merge `docker/docker-compose.resources.example.yml` (see file comments for ~100 / ~1000 namespace tiers).
+
+Build scope: only `@senkronla/server`, `@senkronla/protocol`, and `@senkronla/web` images are built — not `client` or `cli`.
+
+See also [docker/nginx/README.md](../docker/nginx/README.md) for TLS reverse proxy in front of published host ports.
+
+## Updating live services
+
+After `git pull` or `.env` changes on a production host:
+
+| Change | Command |
+|--------|---------|
+| Application code (API and/or web) | `$dc --profile bundled-db up -d --build --force-recreate api web` |
+| `.env` only (no code change) | `$dc --profile bundled-db up -d --force-recreate api web` |
+| API only | `$dc --profile bundled-db up -d --build --force-recreate api` |
+| Web only | `$dc --profile bundled-db up -d --build --force-recreate web` |
+| Compose file / Dockerfile | `$dc --profile bundled-db up -d --build --force-recreate` |
+| Postgres credentials in `.env` | Align with existing volume **or** recreate volume (see below) — then `$dc --profile bundled-db up -d --force-recreate postgres api` |
+
+Omit `--profile bundled-db` when using external Postgres.
+
+**Verify:**
+
+```bash
+$dc ps
+$dc logs api --tail 30
+curl -s http://127.0.0.1:${ESR_PUBLISH_PORT:-8080}/health
+```
+
+Migrations run on API startup; no separate migrate step in Docker.
+
+**Postgres volume reset** (no production data to keep):
+
+```bash
+$dc --profile bundled-db down
+docker volume rm senkronla_postgres_data   # confirm name with docker volume ls
+$dc --profile bundled-db up -d
+```
+
+**nginx / TLS:** application deploys usually do **not** require `systemctl reload nginx` unless host ports or public URLs change.
+
+## Reverse proxy (nginx)
+
+Example configs live in [`docker/nginx/`](../docker/nginx/) (`senkron.la.conf`, `sync.senkron.la.conf`, `cloudflare-real-ip.conf`).
+
+Typical production layout:
+
+| Public URL | nginx `server_name` | Upstream (host) | Compose |
+|------------|---------------------|-----------------|--------|
+| `https://senkron.la` | `senkron.la` | `127.0.0.1:${WEB_PUBLISH_PORT}` | web |
+| `https://sync.senkron.la` | `sync.senkron.la` | `127.0.0.1:${ESR_PUBLISH_PORT}` | api (+ WebSocket) |
+
+Set in `.env` before compose:
+
+```bash
+ESR_PUBLIC_URL=https://sync.senkron.la
+ESR_CORS_ORIGINS=https://senkron.la
+WEB_PUBLISH_PORT=3000          # example host port
+ESR_PUBLISH_PORT=8080
+ESR_TRUST_PROXY=true           # rate limits use client IP behind proxy
+```
+
+**Install (Debian/Ubuntu):**
+
+```bash
+sudo cp docker/nginx/cloudflare-real-ip.conf /etc/nginx/snippets/
+sudo cp docker/nginx/senkron.la.conf /etc/nginx/sites-available/senkron.la
+sudo cp docker/nginx/sync.senkron.la.conf /etc/nginx/sites-available/sync.senkron.la
+sudo ln -sf /etc/nginx/sites-available/senkron.la /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/sync.senkron.la /etc/nginx/sites-enabled/
+```
+
+**TLS:** One Let's Encrypt certificate can cover `senkron.la`, `www.senkron.la`, and `sync.senkron.la` — both nginx configs then use `/etc/letsencrypt/live/senkron.la/fullchain.pem`. Use `listen 443 ssl http2;` on nginx 1.18.x (Ubuntu 22.04); not standalone `http2 on;`.
+
+**Cloudflare:** DNS proxied (orange cloud); SSL/TLS mode **Full (strict)**; WebSockets enabled (default).
+
+**Reload after config change:**
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Full walkthrough: [docker/nginx/README.md](../docker/nginx/README.md).
 
 Edit `docker-compose.resources.example.yml` to switch tiers (~100 namespaces default, ~1000 moderate values in file comments). Limits cap containers on one VM; at ~1000 namespaces prefer external or managed Postgres on a separate host — see [02-ARCHITECTURE.md](en/02-ARCHITECTURE.md) §6.2.

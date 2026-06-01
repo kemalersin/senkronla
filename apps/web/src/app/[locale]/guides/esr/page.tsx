@@ -27,6 +27,8 @@ const sectionKeys = [
   'docker',
   'local',
   'config',
+  'updates',
+  'reverseProxy',
   'rateLimits',
   'verify',
   'production',
@@ -71,8 +73,11 @@ export default async function EsrGuidePage({ params }: PageProps) {
   }))
 
   const configRows = [
-    ['ESR_DATABASE_URL', t('sections.config.rows.database')],
-    ['ESR_PUBLIC_URL', t('sections.config.rows.publicUrl')],
+    ['ESR_DATABASE_URL', t.rich('sections.config.rows.database', rich)],
+    ['POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB', t('sections.config.rows.postgres')],
+    ['ESR_COMPOSE_DATABASE_URL', t('sections.config.rows.composeDatabaseUrl')],
+    ['ESR_PUBLISH_PORT / WEB_PUBLISH_PORT', t.rich('sections.config.rows.publishPorts', rich)],
+    ['ESR_PUBLIC_URL', t.rich('sections.config.rows.publicUrl', rich)],
     ['ESR_ADMIN_TOKEN', t('sections.config.rows.adminToken')],
     ['ESR_BLOB_PATH', t('sections.config.rows.blobPath')],
     ['ESR_DEFAULT_FREE_DEVICE_LIMIT', t('sections.config.rows.freeLimit')],
@@ -88,7 +93,21 @@ export default async function EsrGuidePage({ params }: PageProps) {
     ['ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET', t.rich('sections.config.rows.appsNativeSecret', rich)],
     ['ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW', t.rich('sections.config.rows.appsNativeReview', rich)],
     ['ESR_DEVELOPER_JWT_SECRET', t.rich('sections.config.rows.developerJwt', rich)],
+    ['ESR_TRUST_PROXY', t.rich('sections.config.rows.trustProxy', rich)],
   ]
+
+  const updateRows = (
+    ['code', 'envOnly', 'apiOnly', 'webOnly', 'compose', 'postgresCreds'] as const
+  ).map((key) => [
+    t(`sections.updates.rows.${key}`),
+    t(`sections.updates.commands.${key}`),
+  ])
+
+  const reverseProxyRows = (['web', 'api'] as const).map((key) => [
+    t(`sections.reverseProxy.rows.${key}Url`),
+    t(`sections.reverseProxy.rows.${key}Upstream`),
+    t(`sections.reverseProxy.rows.${key}Service`),
+  ])
 
   const dockerSteps = [1, 2, 3].map((n) => ({
     title: t(`sections.docker.steps.s${n}.title`),
@@ -227,8 +246,9 @@ export default async function EsrGuidePage({ params }: PageProps) {
       </DocSection>
 
       <DocSection id="docker" title={t('sections.docker.title')}>
-        <p>{t('sections.docker.p1')}</p>
+        <p>{t.rich('sections.docker.p1', rich)}</p>
         <DocStepList steps={dockerSteps} />
+        <CodeBlock code={snippets.composeAlias} language="bash" />
         <p className="doc-subheading">{t('sections.docker.bundledTitle')}</p>
         <CodeBlock code={`${snippets.dockerEnv}\n\n${snippets.dockerBundled}`} language="bash" />
         <p className="doc-subheading">{t('sections.docker.externalTitle')}</p>
@@ -238,7 +258,7 @@ export default async function EsrGuidePage({ params }: PageProps) {
         <p>{t.rich('sections.docker.resourcesP1', rich)}</p>
         <CodeBlock code={snippets.dockerResources} language="bash" />
         <DocCallout variant="tip" title={t('sections.docker.resourcesTipTitle')}>
-          <p>{t('sections.docker.resourcesTipBody')}</p>
+          <p>{t.rich('sections.docker.resourcesTipBody', rich)}</p>
         </DocCallout>
         <DocCallout variant="tip" title={t('sections.docker.tipTitle')}>
           <p>{t.rich('sections.docker.tipBody', rich)}</p>
@@ -258,6 +278,48 @@ export default async function EsrGuidePage({ params }: PageProps) {
         <DocCallout variant="warn" title={t('sections.config.warnTitle')}>
           <p>{t.rich('sections.config.warnBody', rich)}</p>
         </DocCallout>
+        <DocCallout variant="tip" title={t('sections.config.postgresTipTitle')}>
+          <p>{t.rich('sections.config.postgresTipBody', rich)}</p>
+        </DocCallout>
+      </DocSection>
+
+      <DocSection id="updates" title={t('sections.updates.title')}>
+        <p>{t.rich('sections.updates.p1', rich)}</p>
+        <DocsTable
+          headers={[t('table.change'), t('table.command')]}
+          rows={updateRows}
+          tagFirstColumn={false}
+        />
+        <p className="doc-subheading">{t('sections.updates.verifyTitle')}</p>
+        <CodeBlock
+          code={`${snippets.dockerUpdateCode}\n\n# .env only:\n${snippets.dockerUpdateEnv}`}
+          language="bash"
+        />
+        <p>{t.rich('sections.updates.p2', rich)}</p>
+      </DocSection>
+
+      <DocSection id="reverseProxy" title={t('sections.reverseProxy.title')}>
+        <p>{t.rich('sections.reverseProxy.p1', rich)}</p>
+        <DocsTable
+          headers={[
+            t('sections.reverseProxy.headers.publicUrl'),
+            t('sections.reverseProxy.headers.upstream'),
+            t('sections.reverseProxy.headers.service'),
+          ]}
+          rows={reverseProxyRows}
+          tagFirstColumn={false}
+        />
+        <p className="doc-subheading">{t('sections.reverseProxy.envTitle')}</p>
+        <p>{t.rich('sections.reverseProxy.envP1', rich)}</p>
+        <p className="doc-subheading">{t('sections.reverseProxy.installTitle')}</p>
+        <CodeBlock code={snippets.nginxInstall} language="bash" />
+        <DocCallout variant="tip" title={t('sections.reverseProxy.cloudflareTitle')}>
+          <p>{t.rich('sections.reverseProxy.cloudflareBody', rich)}</p>
+        </DocCallout>
+        <DocCallout variant="tip" title={t('sections.reverseProxy.tlsTitle')}>
+          <p>{t.rich('sections.reverseProxy.tlsBody', rich)}</p>
+        </DocCallout>
+        <p>{t.rich('sections.reverseProxy.p2', rich)}</p>
       </DocSection>
 
       <DocSection id="rateLimits" title={t('sections.rateLimits.title')}>

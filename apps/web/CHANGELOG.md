@@ -9,6 +9,16 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.13]
+
+### Fixed
+
+- ESR setup guide — use `t.rich` for config table rows and Docker tip text that contain `<tag>` markup
+
+### Changed
+
+- ESR setup guide — **Updating live services** and **Reverse proxy (nginx)** sections; expanded env table (POSTGRES_*, ESR_COMPOSE_DATABASE_URL, publish ports, trust proxy); compose alias and production update snippets
+
 ## [0.1.12]
 
 ### Fixed

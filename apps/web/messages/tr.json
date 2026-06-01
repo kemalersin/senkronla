@@ -355,6 +355,8 @@
       "docker": "Docker",
       "local": "Yerel geliştirme",
       "config": "Yapılandırma",
+      "updates": "Canlı servis güncelleme",
+      "reverseProxy": "Reverse proxy",
       "rateLimits": "Rate limitler",
       "verify": "Doğrulama",
       "production": "Üretim",
@@ -368,7 +370,9 @@
       "quota": "Kota",
       "default": "Varsayılan",
       "scope": "Kapsam",
-      "window": "Pencere"
+      "window": "Pencere",
+      "change": "Değişiklik",
+      "command": "Komut"
     },
     "sections": {
       "overview": {
@@ -428,23 +432,23 @@
         "portsP1": "Dışarıya yalnızca HTTPS (ve isteğe bağlı web portalı) açın; Postgres'i internal tutun:",
         "ports": {
           "api": "API (relay)",
-          "apiDetail": "8080 — dahili; TLS sonlandırmayı reverse proxy'de 443'te yapın",
+          "apiDetail": "Varsayılan 8080 (<tag>ESR_PUBLISH_PORT</tag>) — dahili; TLS sonlandırmayı reverse proxy'de 443'te yapın",
           "web": "Web portalı (isteğe bağlı)",
-          "webDetail": "3000 — Docker Compose ile docs, operatör ve geliştirici UI",
+          "webDetail": "Varsayılan 3000 (<tag>WEB_PUBLISH_PORT</tag>) — Docker Compose ile docs, operatör ve geliştirici UI",
           "postgres": "PostgreSQL",
           "postgresDetail": "5432 — yalnızca dahili; dışarı açmayın"
         }
       },
       "docker": {
         "title": "Docker Compose (önerilen)",
-        "p1": "Tam yığın için en hızlı yol — API, web portalı ve isteğe bağlı Postgres:",
+        "p1": "Tüm compose komutlarını <tag>repo kökünden</tag> çalıştırın. Tek <tag>.env</tag> dosyası hem <tag>pnpm dev</tag> hem Docker için kullanılır (her serviste <tag>env_file</tag>). <tag>.env</tag> değişince konteynerleri <tag>--force-recreate</tag> ile yeniden oluşturun — yalnızca rebuild enjekte edilen env'yi güncellemez.",
         "bundledTitle": "Dahili Postgres",
         "externalTitle": "Mevcut Postgres",
         "externalP1": "Harici veritabanı için <tag>ESR_COMPOSE_DATABASE_URL</tag> ayarlayın ve dahili veritabanı profili olmadan başlatın:",
         "resourcesTitle": "Konteyner kaynak limitleri (isteğe bağlı)",
         "resourcesP1": "Paylaşımlı host'ta servis başına CPU ve RAM tavanı koyun. <tag>docker/docker-compose.resources.example.yml</tag> dosyasını kopyalayın veya düzenleyin (varsayılan katman: ~100 namespace bundled), ardından birleştirerek başlatın:",
         "resourcesTipTitle": "Limitler vs ayrı Postgres",
-        "resourcesTipBody": "Docker limitleri tek VM'de konteyner başına tavan koyar (Linux cgroups). ~1000 namespace'te ayrı Postgres sunucusu veya yönetilen veritabanının yerini tutmaz — bunun için ESR_DATABASE_URL ile harici Postgres kullanın. ~1000 orta yük değerleri örnek dosyadaki katman yorumlarında.",
+        "resourcesTipBody": "Docker limitleri tek VM'de konteyner başına tavan koyar (Linux cgroups). ~1000 namespace'te ayrı Postgres sunucusu veya yönetilen veritabanının yerini tutmaz — bunun için <tag>ESR_COMPOSE_DATABASE_URL</tag> ile harici Postgres kullanın. ~1000 orta yük değerleri örnek dosyadaki katman yorumlarında.",
         "tipTitle": "Web portalı",
         "tipBody": "Compose dosyası dokümantasyon portalını da 3000 portunda başlatır. Üretimde <tag>ESR_PUBLIC_URL</tag>'yi genel relay URL'nize ayarlayın (örn. <tag>https://alanadiniz.com</tag>); web portalı bunu <tag>NEXT_PUBLIC_API_URL</tag> olarak kullanır.",
         "steps": {
@@ -458,7 +462,7 @@
           },
           "s3": {
             "title": "Servisleri başlatın",
-            "body": "Migrasyonlar API başlangıcında otomatik çalışır. API varsayılan olarak 8080 portunu dinler."
+            "body": "Göreli yolların (örn. <tag>ESR_BLOB_PATH=./data/blobs</tag>) doğru bind-mount olması için <tag>--project-directory .</tag> kullanın. Migrasyonlar API başlangıcında çalışır."
           }
         }
       },
@@ -487,12 +491,17 @@
       },
       "config": {
         "title": "Temel yapılandırma",
-        "p1": "Ortam değişkenleri <tag>packages/server/config.example.yaml</tag> dosyasını geçersiz kılar. Sık kullanılan ayarlar (isteğe bağlı revizyon retention: <tag>ESR_REVISION_RETENTION_DAYS</tag>, <tag>ESR_REVISION_RETENTION_COUNT</tag>):",
+        "p1": "Ortam değişkenleri <tag>packages/server/config.example.yaml</tag> dosyasını geçersiz kılar. Host dev için <tag>ESR_DATABASE_URL</tag> (<tag>pnpm dev</tag>); bundled Docker Postgres için <tag>POSTGRES_*</tag> ve Compose'un ürettiği <tag>ESR_DATABASE_*</tag> parçaları. Sık kullanılan ayarlar:",
         "warnTitle": "Üretim gizlileri",
         "warnBody": "Gerçek token'ları asla commit etmeyin. <tag>ESR_ADMIN_TOKEN</tag> sızdırılırsa yenileyin — tüm admin ve operatör paneli erişimini korur.",
+        "postgresTipTitle": "Postgres volume şifresi",
+        "postgresTipBody": "Bundled Postgres şifresi <tag>postgres_data</tag> volume'ü ilk oluşturulduğunda sabitlenir. Sonradan <tag>.env</tag> içinde <tag>POSTGRES_PASSWORD</tag> değiştirmek mevcut volume'ü güncellemez — kimlik bilgilerini hizalayın veya volume'ü yeniden oluşturun (veri kaybı).",
         "rows": {
-          "database": "PostgreSQL bağlantı dizesi",
-          "publicUrl": "Genel temel URL (CLI, portal ve CORS kontrollerinde kullanılır)",
+          "database": "Host dev PostgreSQL bağlantı dizesi (<tag>localhost</tag>)",
+          "postgres": "Bundled Postgres konteyner kimlik bilgileri — API URL şifre URL-encode edilerek bunlardan üretilir",
+          "composeDatabaseUrl": "Konteynerden harici Postgres için isteğe bağlı tam URL; şifredeki özel karakterleri URL-encode edin",
+          "publishPorts": "API (<tag>8080</tag>) ve web portalı (<tag>3000</tag>) için host portları — nginx upstream'leri buraya işaret eder",
+          "publicUrl": "Genel API temel URL'si (CLI, portal ve web konteynerinde <tag>NEXT_PUBLIC_API_URL</tag>)",
           "adminToken": "Admin API ve operatör paneli girişi için Bearer token",
           "blobPath": "Şifreli zarf blob'ları için dosya sistemi yolu",
           "freeLimit": "Namespace başına ücretsiz cihaz slotu (varsayılan 2)",
@@ -507,8 +516,56 @@
           "appsLocalhost": "<tag>ESR_APPS__ALLOW_LOCALHOST_ORIGINS</tag> — DNS doğrulamasız <tag>http://localhost</tag> (yalnızca dev)",
           "appsNativeSecret": "<tag>ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET</tag> — kimlik doğrulamasız rotalarda <tag>X-ESR-Client-Secret</tag> zorunlu",
           "appsNativeReview": "<tag>ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW</tag> — native bundle'lar uygulama <tag>active</tag> olmadan önce operatör onayı (varsayılan true)",
-          "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 karakter; self-service <tag>/developer</tag> portalı için"
+          "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 karakter; self-service <tag>/developer</tag> portalı için",
+          "trustProxy": "<tag>true</tag> iken rate limit'ler nginx veya yük dengeleyici arkasında <tag>X-Forwarded-For</tag> ile gerçek istemci IP'sini kullanır"
         }
+      },
+      "updates": {
+        "title": "Canlı servisleri güncelleme",
+        "p1": "Üretim sunucusunda <tag>git pull</tag> veya <tag>.env</tag> değişikliğinden sonra compose'u repo kökünden çalıştırın. Kısaltma için <tag>dc</tag> shell alias'ı tanımlayın (Docker bölümü). Harici Postgres kullanıyorsanız <tag>--profile bundled-db</tag> atlayın.",
+        "verifyTitle": "Örnek komutlar",
+        "p2": "Migrasyonlar API başlangıcında çalışır — Docker'da ayrı migrate adımı yok. Uygulama deploy'ları genelde host portları veya genel URL'ler değişmedikçe <tag>nginx reload</tag> gerektirmez.",
+        "rows": {
+          "code": "Uygulama kodu (API ve/veya web)",
+          "envOnly": "Yalnızca .env (kod değişikliği yok)",
+          "apiOnly": "Yalnızca API",
+          "webOnly": "Yalnızca web portalı",
+          "compose": "Compose dosyası veya Dockerfile",
+          "postgresCreds": ".env içinde Postgres kimlik bilgileri"
+        },
+        "commands": {
+          "code": "$dc --profile bundled-db up -d --build --force-recreate api web",
+          "envOnly": "$dc --profile bundled-db up -d --force-recreate api web",
+          "apiOnly": "$dc --profile bundled-db up -d --build --force-recreate api",
+          "webOnly": "$dc --profile bundled-db up -d --build --force-recreate web",
+          "compose": "$dc --profile bundled-db up -d --build --force-recreate",
+          "postgresCreds": "Mevcut volume ile hizalayın veya volume'ü yeniden oluşturun, ardından $dc --profile bundled-db up -d --force-recreate postgres api"
+        }
+      },
+      "reverseProxy": {
+        "title": "Reverse proxy (nginx)",
+        "p1": "TLS'i host'ta nginx (veya Caddy) ile sonlandırın; Docker'ın yayınladığı portların önüne koyun. Örnek config'ler repoda <tag>docker/nginx/</tag> — upstream portlarını <tag>WEB_PUBLISH_PORT</tag> ve <tag>ESR_PUBLISH_PORT</tag> ile eşleştirin.",
+        "headers": {
+          "publicUrl": "Genel URL",
+          "upstream": "nginx upstream (host)",
+          "service": "Compose servisi"
+        },
+        "rows": {
+          "webUrl": "https://senkron.la (web domain'iniz)",
+          "webUpstream": "127.0.0.1:WEB_PUBLISH_PORT (örn. 3000)",
+          "webService": "web — docs, operatör, geliştirici UI",
+          "apiUrl": "https://sync.senkron.la (API domain'iniz)",
+          "apiUpstream": "127.0.0.1:ESR_PUBLISH_PORT (örn. 8080)",
+          "apiService": "api — REST + WebSocket bildirimleri"
+        },
+        "envTitle": "İlgili .env değerleri",
+        "envP1": "<tag>ESR_PUBLIC_URL</tag>'yi genel API URL'nize, <tag>ESR_CORS_ORIGINS</tag>'i web origin'inize ayarlayın; rate limit'lerin gerçek istemci IP'sini görmesi için <tag>ESR_TRUST_PROXY=true</tag>. Compose, web konteynerinde <tag>NEXT_PUBLIC_API_URL</tag>'yi <tag>ESR_PUBLIC_URL</tag>'den türetir.",
+        "installTitle": "Örnek config kurulumu",
+        "cloudflareTitle": "Cloudflare",
+        "cloudflareBody": "DNS proxied (turuncu bulut); SSL/TLS modu <tag>Full (strict)</tag>; WebSocket açık (varsayılan). Gerçek istemci IP'si için <tag>docker/nginx/cloudflare-real-ip.conf</tag> dahil edin.",
+        "tlsTitle": "TLS sertifikası",
+        "tlsBody": "Tek Let's Encrypt sertifikası <tag>senkron.la</tag>, <tag>www.senkron.la</tag> ve <tag>sync.senkron.la</tag>'yı kapsayabilir — her iki nginx config'i de <tag>/etc/letsencrypt/live/senkron.la/</tag> kullanır. nginx 1.18.x'te <tag>listen 443 ssl http2;</tag> kullanın (ayrı <tag>http2 on;</tag> değil).",
+        "p2": "nginx config değişince: <tag>sudo nginx -t && sudo systemctl reload nginx</tag>. Ayrıntılı anlatım: <tag>docker/nginx/README.md</tag> ve <tag>docs/OPERATOR.md</tag> § Reverse proxy."
       },
       "rateLimits": {
         "title": "Rate limitler",

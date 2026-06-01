@@ -11,6 +11,14 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.13]
+
+### Changed
+
+- **docs:** `.env.example` — document `ESR_TRUST_PROXY` for production reverse-proxy deployments
+- **docs:** OPERATOR guide — single repo-root `.env`, live service updates, nginx reverse proxy (Cloudflare, TLS); server config docs (EN/TR) aligned with Compose env model
+- **web:** ESR setup guide — configuration table (POSTGRES_*, ESR_COMPOSE_DATABASE_URL, publish ports), **Updating live services** and **Reverse proxy** sections; compose alias and update snippets
+
 ## [0.1.12]
 
 ### Added

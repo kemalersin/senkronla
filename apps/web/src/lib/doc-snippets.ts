@@ -867,12 +867,19 @@ const envelope = {
 
 export function createEsrGuideSnippets(exampleOrigin = 'https://yourdomain.com') {
   const origin = exampleOrigin.replace(/\/$/, '')
+  const dc =
+    'docker compose --project-directory . -f docker/docker-compose.yml --env-file .env'
   return {
+    composeAlias: `# optional shell alias (repo root)\ndc='${dc}'`,
     dockerEnv: `cp .env.example .env`,
-    dockerBundled: `docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up --build`,
-    dockerResources: `docker compose --project-directory . -f docker/docker-compose.yml -f docker/docker-compose.resources.example.yml \\\n  --env-file .env --profile bundled-db up --build`,
-    dockerExternal: `# macOS/Windows — Postgres on host\n# Add to .env:\nESR_COMPOSE_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr\n\ndocker compose --project-directory . -f docker/docker-compose.yml --env-file .env up api web`,
-    localPostgres: `docker compose --project-directory . -f docker/docker-compose.yml --env-file .env --profile bundled-db up postgres -d`,
+    dockerBundled: `${dc} --profile bundled-db up -d --build`,
+    dockerResources: `${dc} -f docker/docker-compose.resources.example.yml \\\n  --profile bundled-db up -d --build`,
+    dockerExternal: `# macOS/Windows — Postgres on host\n# Add to .env:\nESR_COMPOSE_DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/esr\n\n${dc} up -d --build api web`,
+    localPostgres: `${dc} --profile bundled-db up postgres -d`,
+    dockerUpdateCode: `git pull\n${dc} --profile bundled-db up -d --build --force-recreate api web`,
+    dockerUpdateEnv: `${dc} --profile bundled-db up -d --force-recreate api web`,
+    dockerUpdateApi: `${dc} --profile bundled-db up -d --build --force-recreate api`,
+    nginxInstall: `sudo cp docker/nginx/cloudflare-real-ip.conf /etc/nginx/snippets/\nsudo cp docker/nginx/senkron.la.conf /etc/nginx/sites-available/\nsudo cp docker/nginx/sync.senkron.la.conf /etc/nginx/sites-available/\nsudo ln -sf /etc/nginx/sites-available/senkron.la /etc/nginx/sites-enabled/\nsudo ln -sf /etc/nginx/sites-available/sync.senkron.la /etc/nginx/sites-enabled/\nsudo nginx -t && sudo systemctl reload nginx`,
     localDev: `pnpm install\ncp .env.example .env\npnpm dev`,
     healthCheck: `curl -s ${origin}/health`,
     migrate: `pnpm --filter @senkronla/server migrate`,

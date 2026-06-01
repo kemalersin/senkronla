@@ -4,7 +4,7 @@ Example configs for terminating TLS on the origin while **Cloudflare** proxies p
 
 | Public URL | nginx `server_name` | Upstream (host) | Service |
 |------------|---------------------|-----------------|---------|
-| https://senkron.la | `senkron.la` | `127.0.0.1:3002` | `@senkronla/web` (`WEB_PUBLISH_PORT`) |
+| https://senkron.la | `senkron.la` | `127.0.0.1:3000` | `@senkronla/web` (`WEB_PUBLISH_PORT`) |
 | https://sync.senkron.la | `sync.senkron.la` | `127.0.0.1:8080` | `@senkronla/server` (`ESR_PUBLISH_PORT`) |
 
 Adjust upstream ports if your `.env` uses different `WEB_PUBLISH_PORT` / `ESR_PUBLISH_PORT`.
@@ -31,7 +31,7 @@ Optional hardening:
 ```bash
 ESR_PUBLIC_URL=https://sync.senkron.la
 ESR_CORS_ORIGINS=https://senkron.la
-WEB_PUBLISH_PORT=3002
+WEB_PUBLISH_PORT=3000
 ESR_PUBLISH_PORT=8080
 ```
 
@@ -73,3 +73,15 @@ curl -s https://sync.senkron.la/health
 WebSocket path (after pairing): `wss://sync.senkron.la/v1/namespaces/{namespaceId}/notifications`
 
 See [docs/en/13-WEBSOCKET-NOTIFICATIONS.md](../../docs/en/13-WEBSOCKET-NOTIFICATIONS.md) §8.1 for protocol details.
+
+## Updating live services
+
+Docker Compose application deploys (API/web image rebuild, `.env` changes) **do not** require nginx reload unless you change host ports (`WEB_PUBLISH_PORT` / `ESR_PUBLISH_PORT`) or public URLs that nginx references.
+
+When only nginx config changes:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+For compose update commands see [docs/OPERATOR.md](../../docs/OPERATOR.md) § Updating live services.

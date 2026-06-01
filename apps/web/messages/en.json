@@ -355,6 +355,8 @@
       "docker": "Docker",
       "local": "Local dev",
       "config": "Configuration",
+      "updates": "Updating live services",
+      "reverseProxy": "Reverse proxy",
       "rateLimits": "Rate limits",
       "verify": "Verify",
       "production": "Production",
@@ -368,7 +370,9 @@
       "quota": "Quota",
       "default": "Default",
       "scope": "Scope",
-      "window": "Window"
+      "window": "Window",
+      "change": "Change",
+      "command": "Command"
     },
     "sections": {
       "overview": {
@@ -428,23 +432,23 @@
         "portsP1": "Expose only HTTPS (and optionally the web portal) publicly; keep Postgres internal:",
         "ports": {
           "api": "API (relay)",
-          "apiDetail": "8080 — internal; terminate TLS at 443 on the reverse proxy",
+          "apiDetail": "8080 by default (<tag>ESR_PUBLISH_PORT</tag>) — internal; terminate TLS at 443 on the reverse proxy",
           "web": "Web portal (optional)",
-          "webDetail": "3000 — docs, operator, and developer UI when started via Docker Compose",
+          "webDetail": "3000 by default (<tag>WEB_PUBLISH_PORT</tag>) — docs, operator, and developer UI when started via Docker Compose",
           "postgres": "PostgreSQL",
           "postgresDetail": "5432 — internal only; do not expose publicly"
         }
       },
       "docker": {
         "title": "Docker Compose (recommended)",
-        "p1": "The fastest path for a full stack — API, web portal, and optional bundled Postgres:",
+        "p1": "Run all compose commands from the <tag>repo root</tag>. One <tag>.env</tag> file serves both <tag>pnpm dev</tag> and Docker (<tag>env_file</tag> on each service). After changing <tag>.env</tag>, recreate containers with <tag>--force-recreate</tag> — rebuild alone does not refresh injected env.",
         "bundledTitle": "Bundled Postgres",
         "externalTitle": "Existing Postgres",
         "externalP1": "Set <tag>ESR_COMPOSE_DATABASE_URL</tag> for an external database and start without the bundled database profile:",
         "resourcesTitle": "Container resource limits (optional)",
         "resourcesP1": "On a shared host, cap CPU and RAM per service. Copy or edit <tag>docker/docker-compose.resources.example.yml</tag> (default tier: ~100 namespaces bundled), then merge when starting:",
         "resourcesTipTitle": "Limits vs separate Postgres",
-        "resourcesTipBody": "Docker limits cap each container on one VM (Linux cgroups). They do not replace a separate Postgres host or managed database at ~1000 namespaces — use external Postgres via ESR_DATABASE_URL for that. See the tier comments in the example file for ~1000 moderate values.",
+        "resourcesTipBody": "Docker limits cap each container on one VM (Linux cgroups). They do not replace a separate Postgres host or managed database at ~1000 namespaces — use external Postgres via <tag>ESR_COMPOSE_DATABASE_URL</tag> for that. See the tier comments in the example file for ~1000 moderate values.",
         "tipTitle": "Web portal",
         "tipBody": "The compose file also starts the docs portal on port 3000. In production set <tag>ESR_PUBLIC_URL</tag> to your public relay URL (e.g. <tag>https://yourdomain.com</tag>); the web portal uses it as <tag>NEXT_PUBLIC_API_URL</tag>.",
         "steps": {
@@ -458,7 +462,7 @@
           },
           "s3": {
             "title": "Start services",
-            "body": "Migrations run automatically on API startup. API listens on port 8080 by default."
+            "body": "Use <tag>--project-directory .</tag> so relative paths (e.g. <tag>ESR_BLOB_PATH=./data/blobs</tag>) bind-mount correctly. Migrations run on API startup."
           }
         }
       },
@@ -487,12 +491,17 @@
       },
       "config": {
         "title": "Key configuration",
-        "p1": "Environment variables override <tag>packages/server/config.example.yaml</tag>. Common settings (including optional revision retention via <tag>ESR_REVISION_RETENTION_DAYS</tag> and <tag>ESR_REVISION_RETENTION_COUNT</tag>):",
+        "p1": "Environment variables override <tag>packages/server/config.example.yaml</tag>. Use <tag>ESR_DATABASE_URL</tag> for host dev (<tag>pnpm dev</tag>); bundled Docker Postgres uses <tag>POSTGRES_*</tag> and Compose-built <tag>ESR_DATABASE_*</tag> parts. Common settings:",
         "warnTitle": "Production secrets",
         "warnBody": "Never commit real tokens. Rotate <tag>ESR_ADMIN_TOKEN</tag> if leaked — it gates all admin and operator portal access.",
+        "postgresTipTitle": "Postgres volume password",
+        "postgresTipBody": "The bundled Postgres password is fixed when the <tag>postgres_data</tag> volume is first created. Changing <tag>POSTGRES_PASSWORD</tag> in <tag>.env</tag> later does not alter an existing volume — align credentials or recreate the volume (data loss).",
         "rows": {
-          "database": "PostgreSQL connection string",
-          "publicUrl": "Public base URL (used in CLI, portal, and CORS checks)",
+          "database": "Host dev PostgreSQL connection string (<tag>localhost</tag>)",
+          "postgres": "Bundled Postgres container credentials — API URL is built from these with URL-encoded password",
+          "composeDatabaseUrl": "Optional full URL for external Postgres from containers; URL-encode special characters in the password",
+          "publishPorts": "Host ports published for API (<tag>8080</tag>) and web portal (<tag>3000</tag>) — nginx upstreams point here",
+          "publicUrl": "Public API base URL (CLI, portal, and <tag>NEXT_PUBLIC_API_URL</tag> in web container)",
           "adminToken": "Bearer token for admin API and operator portal login",
           "blobPath": "Filesystem path for encrypted envelope blobs",
           "freeLimit": "Free device slots per namespace (default 2)",
@@ -507,8 +516,56 @@
           "appsLocalhost": "<tag>ESR_APPS__ALLOW_LOCALHOST_ORIGINS</tag> — allow <tag>http://localhost</tag> without DNS verify (dev only)",
           "appsNativeSecret": "<tag>ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET</tag> — require <tag>X-ESR-Client-Secret</tag> on unauthenticated routes",
           "appsNativeReview": "<tag>ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW</tag> — operator must approve native bundles before app becomes <tag>active</tag> (default true)",
-          "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 chars; required for <tag>/developer</tag> portal when self-service"
+          "developerJwt": "<tag>ESR_DEVELOPER_JWT_SECRET</tag> — min 32 chars; required for <tag>/developer</tag> portal when self-service",
+          "trustProxy": "When <tag>true</tag>, rate limits use client IP from <tag>X-Forwarded-For</tag> behind nginx or a load balancer"
         }
+      },
+      "updates": {
+        "title": "Updating live services",
+        "p1": "On a production host after <tag>git pull</tag> or <tag>.env</tag> changes, run compose from the repo root. Define a shell alias <tag>dc</tag> (see Docker section) for brevity. Omit <tag>--profile bundled-db</tag> when using external Postgres.",
+        "verifyTitle": "Example commands",
+        "p2": "Migrations run on API startup — no separate migrate step in Docker. Application deploys usually do not require <tag>nginx reload</tag> unless host ports or public URLs change.",
+        "rows": {
+          "code": "Application code (API and/or web)",
+          "envOnly": ".env only (no code change)",
+          "apiOnly": "API only",
+          "webOnly": "Web portal only",
+          "compose": "Compose file or Dockerfile",
+          "postgresCreds": "Postgres credentials in .env"
+        },
+        "commands": {
+          "code": "$dc --profile bundled-db up -d --build --force-recreate api web",
+          "envOnly": "$dc --profile bundled-db up -d --force-recreate api web",
+          "apiOnly": "$dc --profile bundled-db up -d --build --force-recreate api",
+          "webOnly": "$dc --profile bundled-db up -d --build --force-recreate web",
+          "compose": "$dc --profile bundled-db up -d --build --force-recreate",
+          "postgresCreds": "Align with existing volume or recreate volume, then $dc --profile bundled-db up -d --force-recreate postgres api"
+        }
+      },
+      "reverseProxy": {
+        "title": "Reverse proxy (nginx)",
+        "p1": "Terminate TLS on the host with nginx (or Caddy) in front of Docker-published ports. Example configs: <tag>docker/nginx/</tag> in the repo — adjust upstream ports to match <tag>WEB_PUBLISH_PORT</tag> and <tag>ESR_PUBLISH_PORT</tag>.",
+        "headers": {
+          "publicUrl": "Public URL",
+          "upstream": "nginx upstream (host)",
+          "service": "Compose service"
+        },
+        "rows": {
+          "webUrl": "https://senkron.la (your web domain)",
+          "webUpstream": "127.0.0.1:WEB_PUBLISH_PORT (e.g. 3000)",
+          "webService": "web — docs, operator, developer UI",
+          "apiUrl": "https://sync.senkron.la (your API domain)",
+          "apiUpstream": "127.0.0.1:ESR_PUBLISH_PORT (e.g. 8080)",
+          "apiService": "api — REST + WebSocket notifications"
+        },
+        "envTitle": "Related .env values",
+        "envP1": "Set <tag>ESR_PUBLIC_URL</tag> to your public API URL, <tag>ESR_CORS_ORIGINS</tag> to your web origin, and <tag>ESR_TRUST_PROXY=true</tag> so rate limits see the real client IP. Compose maps <tag>NEXT_PUBLIC_API_URL</tag> from <tag>ESR_PUBLIC_URL</tag> for the web container.",
+        "installTitle": "Install example configs",
+        "cloudflareTitle": "Cloudflare",
+        "cloudflareBody": "DNS proxied (orange cloud); SSL/TLS mode <tag>Full (strict)</tag>; WebSockets enabled (default). Include <tag>docker/nginx/cloudflare-real-ip.conf</tag> so nginx logs real client IPs.",
+        "tlsTitle": "TLS certificate",
+        "tlsBody": "One Let's Encrypt certificate can cover <tag>senkron.la</tag>, <tag>www.senkron.la</tag>, and <tag>sync.senkron.la</tag> — both nginx configs then use <tag>/etc/letsencrypt/live/senkron.la/</tag>. On nginx 1.18.x use <tag>listen 443 ssl http2;</tag> (not standalone <tag>http2 on;</tag>).",
+        "p2": "Reload after nginx config changes: <tag>sudo nginx -t && sudo systemctl reload nginx</tag>. Full walkthrough: <tag>docker/nginx/README.md</tag> and <tag>docs/OPERATOR.md</tag> § Reverse proxy."
       },
       "rateLimits": {
         "title": "Rate limits",

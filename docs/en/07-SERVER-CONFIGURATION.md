@@ -138,41 +138,49 @@ websocket:
 
 > **Schema note:** Authoritative keys are in `packages/server/src/config/schema.ts`. Blocks marked “not implemented” above (`blob.s3`, `payment`) are design placeholders — do not copy them into production YAML expecting the server to load them.
 
-## 3. Environment variables (minimum docker)
+## 3. Environment variables (repo-root `.env`)
+
+One `.env` at the repo root serves **host dev** (`pnpm dev`) and **Docker Compose**. Copy from `.env.example`.
 
 ```bash
-ESR_DATABASE_URL=postgresql://esr:esr@postgres:5432/esr
-ESR_ADMIN_TOKEN=change-me-long-random
-ESR_UNLOCK_HMAC_SECRET=change-me-long-random
-ESR_BLOB_PATH=/var/lib/senkronla/blobs   # host path; container sees /data/blobs
+# Host dev — API on localhost
+ESR_DATABASE_URL=postgresql://esr:esr@localhost:5432/esr
+
+# Bundled Postgres (Docker) — API URL built from these; special chars in password are URL-encoded
+POSTGRES_USER=esr
+POSTGRES_PASSWORD=change-me
+POSTGRES_DB=esr
+# Optional external DB from containers (URL-encode password if needed):
+# ESR_COMPOSE_DATABASE_URL=postgresql://esr:secret@host.docker.internal:5432/esr
+
+ESR_PUBLISH_PORT=8080
+WEB_PUBLISH_PORT=3000
 ESR_PUBLIC_URL=https://sync.senkron.la
+ESR_ADMIN_TOKEN=change-me-long-random-min-32-chars
+ESR_UNLOCK_HMAC_SECRET=change-me-long-random-min-32-chars
+ESR_BLOB_PATH=./data/blobs
+ESR_TRUST_PROXY=true
 ESR_DEFAULT_FREE_DEVICE_LIMIT=2
-ESR_ON_LIMIT_MODE=payment          # payment | block
-ESR_SLOT_PACKAGES=3,5,10
+ESR_ON_LIMIT_MODE=payment
+ESR_CORS_ORIGINS=https://senkron.la
 ESR_WEBSOCKET_ENABLED=true
-ESR_WS_PING_INTERVAL=30
 ESR_MAX_ENVELOPE_BYTES=52428800
-ESR_MAX_DOCUMENTS_PER_NAMESPACE=32      # 0 = unlimited
-ESR_ALLOWED_DOCUMENT_IDS=primary,settings   # optional comma-separated allowlist
-# ESR_REVISION_RETENTION_DAYS=0         # auto-purge non-head revisions older than N days after each push (0 = keep all)
-# ESR_REVISION_RETENTION_COUNT=0        # keep last N revisions per document after each push (0 = off; head counts toward N)
 
 # Application registry (v1.3 — optional; see doc 16)
 ESR_APPS__ENABLED=false
-ESR_APPS__REGISTRATION_MODE=operator_managed   # operator_managed | self_service
-ESR_APPS__ALLOW_LOCALHOST_ORIGINS=false
-# ESR_APPS__LEGACY_DEFAULT_APP_ID=esr_app_primary
-# ESR_APPS__NATIVE__REQUIRE_CLIENT_SECRET=false
-# ESR_APPS__NATIVE__REQUIRE_MANUAL_REVIEW=true
+ESR_APPS__REGISTRATION_MODE=operator_managed
 ESR_DEVELOPER_JWT_SECRET=change-me-long-random-min-32-chars
-# ESR_APPS__DEVELOPER_PORTAL__JWT_SECRET=...   # alias for ESR_DEVELOPER_JWT_SECRET
-# ESR_APPS__LIMITS__PER_APP__NAMESPACES_PER_DAY=100
-# ESR_APPS__LIMITS__PER_APP__PAIRING_TOKENS_PER_HOUR=30
-# ESR_APPS__LIMITS__PER_APP__RECOVER_PER_HOUR=5
-# apps.verification.*, limits.perDeveloper.*, developerPortal.enabled/sessionTtlHours/requireEmailVerification, seed — YAML only
 ```
 
+Compose command (from repo root): `docker compose --project-directory . -f docker/docker-compose.yml --env-file .env …`
+
+After `.env` changes: `up -d --force-recreate api web`. See [OPERATOR.md](../OPERATOR.md) § Updating live services.
+
 ## 4. docker-compose.yml (reference)
+
+> **Current file:** [`docker/docker-compose.yml`](../../docker/docker-compose.yml) — repo-root `.env`, `env_file: ${PWD}/.env`, bundled DB via `POSTGRES_*` / `ESR_DATABASE_*` parts, optional `ESR_COMPOSE_DATABASE_URL` for external Postgres. Run from repo root with `--project-directory .`.
+
+The sketch below is illustrative (includes optional Caddy); production often uses host nginx instead — see [OPERATOR.md](../OPERATOR.md) § Reverse proxy.
 
 ```yaml
 services:
