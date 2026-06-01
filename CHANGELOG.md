@@ -11,6 +11,10 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Changed
+
+- **docs:** Enrich root README with architecture diagrams (system, push/pull, WebSocket), deployment sketch, and [senkron.la](https://senkron.la) links
+
 ## [0.1.11]
 
 ### Added

@@ -4,13 +4,158 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22+-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Website](https://img.shields.io/badge/website-senkron.la-6366f1)](https://senkron.la)
 [![Buy me a coffee](https://img.shields.io/badge/☕-Buy_me_a_coffee-FFDD00)](https://buy.polar.sh/polar_cl_bgVnJBChysBLb4AeFnjxdmiBepqUoTyWkZraz39sSUf)
 
-Open-source, self-hosted, zero-knowledge **Envelope Sync Relay** for offline-first applications.
+Open-source, self-hosted, zero-knowledge **Envelope Sync Relay (ESR)** for offline-first applications.
 
-**Source:** [github.com/kemalersin/senkronla](https://github.com/kemalersin/senkronla)
+**Website:** [senkron.la](https://senkron.la) · **Source:** [github.com/kemalersin/senkronla](https://github.com/kemalersin/senkronla)
 
-Senkronla stores opaque encrypted document envelopes (`ESR-DOC1`) and coordinates revision, device pairing, and slot licensing. The server never reads payload content.
+Your app encrypts and owns the data model. Senkronla stores opaque `ESR-DOC1` envelopes, coordinates revisions, manages device pairing and slot limits, and notifies other clients — **without reading payload content**.
+
+## At a glance
+
+| | |
+|---|---|
+| **Deploy** | Self-hosted relay (Docker or Node.js + Postgres) |
+| **Client** | [`@senkronla/client`](https://senkron.la/sdk) — `EsrSync` facade, offline queue, conflict callbacks |
+| **Protocol** | REST `/v1` + optional WebSocket notifications (push-to-pull) |
+| **Docs** | [Integration guides](https://senkron.la/guides) · [API](https://senkron.la/api) · [ESR setup](https://senkron.la/guides/esr) |
+| **Operator** | Web portal at [`/operator`](https://senkron.la/operator) + admin API |
+
+## Architecture
+
+Senkronla splits responsibility between your application, the client SDK, and a self-hosted relay. Full spec: [02 — Architecture](./docs/envelope-sync-relay/en/02-ARCHITECTURE.md).
+
+### System overview
+
+```mermaid
+flowchart TB
+  subgraph clients [Clients — any application]
+    C1[Device A — Host]
+    C2[Device B]
+    C3[Device C]
+  end
+
+  subgraph relay [Envelope Sync Relay — self-hosted]
+    API[HTTP API]
+    AUTH[Device Token Auth]
+    SLOT[Slot / License Engine]
+    REV[Revision Index]
+    BLOB[Blob Store]
+    CFG[Config Loader]
+    WS[WebSocket Hub]
+    API --> AUTH
+    API --> SLOT
+    API --> REV
+    API --> BLOB
+    CFG --> SLOT
+    API --> WS
+  end
+
+  subgraph data [Persistence]
+    PG[(PostgreSQL)]
+    FS[(Blob Volume)]
+  end
+
+  C1 & C2 & C3 -->|HTTPS JSON| API
+  WS -.->|head_changed| C2
+  WS -.->|head_changed| C3
+  REV --> PG
+  AUTH --> PG
+  SLOT --> PG
+  BLOB --> FS
+```
+
+| Layer | Role |
+|-------|------|
+| **Application** | Snapshots, encryption, merge/conflict UX |
+| **Client SDK** | Push/pull, pairing, recovery, local revision state |
+| **Relay server** | Opaque blob store, revision index, devices, slots, rate limits |
+
+### Push / pull flow
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant API
+  participant Rev as Revision Index
+  participant Blob
+
+  Note over Client,Blob: PULL
+  Client->>API: GET .../head/meta
+  API->>Rev: read head revision
+  Rev-->>API: revision, sha256, size
+  API-->>Client: meta (no payload)
+  alt revision changed
+    Client->>API: GET .../head
+    API->>Blob: read envelope
+    Blob-->>API: ESR-DOC1 JSON
+    API-->>Client: full envelope
+    Client->>Client: decrypt payload, import document
+  end
+
+  Note over Client,Blob: PUSH
+  Client->>Client: build envelope, new revision
+  Client->>API: PUT .../documents/{id} (expectedRevision, envelope)
+  API->>Rev: compare expectedRevision vs head
+  alt mismatch
+    API-->>Client: 409 Conflict + remote head meta
+  else match
+    API->>API: verify contentSha256
+    API->>Blob: write
+    API->>Rev: update head
+    API-->>Client: 201 + new revision
+  end
+```
+
+Client sync loop:
+
+```
+1. GET head/meta
+2. IF remote revision != known: GET head → import (conflict check client-side)
+3. IF local changes: PUT document (expectedRevision = last known remote)
+4. IF 409: conflict UI — remote wins | local wins | cancel
+```
+
+### Real-time notifications
+
+WebSocket carries **metadata only**; document bytes always travel over HTTP.
+
+```mermaid
+sequenceDiagram
+  participant A as Client A
+  participant R as ESR Relay
+  participant B as Client B
+
+  A->>R: PUT document (HTTP)
+  R->>R: update head
+  R-->>B: WS head_changed (meta only)
+  B->>R: GET head/meta + GET head (HTTP)
+  B->>B: import document
+```
+
+### Deployment (typical)
+
+```
+docker compose:
+  - api        (@senkronla/server — port 8080)
+  - web        (@senkronla/web — senkron.la UI)
+  - postgres:16
+  - volume: /data/blobs
+```
+
+TLS termination via Caddy or nginx in front of the API and web portal. Operator guide: [docs/OPERATOR.md](./docs/OPERATOR.md) · live docs: [senkron.la/guides/esr](https://senkron.la/guides/esr).
+
+## Features
+
+- **Zero-knowledge** — server stores encrypted envelopes; no payload decryption
+- **Multi-document** — multiple named snapshots per namespace (`primary`, `settings`, …)
+- **Device pairing & recovery** — host/guest pairing codes + recovery phrase
+- **Slot licensing** — configurable free device limit; payment or block mode
+- **Revision history** — optional retention by age or count; operator purge tools
+- **App registry** (optional) — register web/native apps, verified origins, developer portal
+- **Operator tools** — limits overrides, revision cleanup, unlock codes, audit views
 
 ## Monorepo
 
@@ -20,9 +165,9 @@ Senkronla stores opaque encrypted document envelopes (`ESR-DOC1`) and coordinate
 | `@senkronla/server` | Fastify REST API + WebSocket notification hub |
 | `@senkronla/client` | Client SDK — `EsrSync` facade, RelayClient, SyncEngine |
 | `@senkronla/cli` | Operator CLI — unlock code generation |
-| `@senkronla/web` | Operator portal + developer docs (EN/TR) |
+| `@senkronla/web` | [senkron.la](https://senkron.la) — docs, operator portal, developer portal |
 
-## Quick Start
+## Quick start
 
 ### Prerequisites
 
@@ -39,7 +184,7 @@ pnpm dev
 
 - API: http://localhost:8080
 - Swagger UI: http://localhost:8080/docs
-- Web portal: http://localhost:3000
+- Web portal: http://localhost:3000 (same UI as [senkron.la](https://senkron.la) when deployed)
 
 **Requires Postgres** for the API (migrations run on startup). Start bundled Postgres:
 
@@ -76,10 +221,15 @@ docker compose up api web
 
 ## Documentation
 
-- **Specification:** [docs/envelope-sync-relay/README.md](./docs/envelope-sync-relay/README.md)
-- **Operator guide:** [docs/OPERATOR.md](./docs/OPERATOR.md)
-- **OpenAPI:** [openapi.yaml](./openapi.yaml) (served at `/docs`)
-- **Implementation plan:** [docs/envelope-sync-relay/en/11-IMPLEMENTATION-PLAN.md](./docs/envelope-sync-relay/en/11-IMPLEMENTATION-PLAN.md)
+| Resource | Link |
+|----------|------|
+| Website (guides, API, SDK) | [senkron.la](https://senkron.la) |
+| Quick start checklist | [senkron.la/quick-start](https://senkron.la/quick-start) |
+| Relay deployment guide | [senkron.la/guides/esr](https://senkron.la/guides/esr) |
+| Specification (repo) | [docs/envelope-sync-relay/README.md](./docs/envelope-sync-relay/README.md) |
+| Operator guide | [docs/OPERATOR.md](./docs/OPERATOR.md) |
+| OpenAPI | [openapi.yaml](./openapi.yaml) (also at `/docs` on running API) |
+| Implementation plan | [docs/envelope-sync-relay/en/11-IMPLEMENTATION-PLAN.md](./docs/envelope-sync-relay/en/11-IMPLEMENTATION-PLAN.md) |
 
 ## Scripts
 
