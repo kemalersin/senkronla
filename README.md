@@ -3,11 +3,9 @@
 [![Version](https://img.shields.io/github/package-json/v/kemalersin/senkronla?label=version)](package.json)
 [![npm client](https://img.shields.io/npm/v/@senkronla/client?label=%40senkronla%2Fclient)](https://www.npmjs.com/package/@senkronla/client)
 [![npm protocol](https://img.shields.io/npm/v/@senkronla/protocol?label=%40senkronla%2Fprotocol)](https://www.npmjs.com/package/@senkronla/protocol)
-[![npm cli](https://img.shields.io/npm/v/@senkronla/cli?label=%40senkronla%2Fcli)](https://www.npmjs.com/package/@senkronla/cli)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Website](https://img.shields.io/badge/website-senkron.la-6366f1)](https://senkron.la)
 [![Buy me a coffee](https://img.shields.io/badge/☕-Buy_me_a_coffee-FFDD00)](https://buy.polar.sh/polar_cl_bgVnJBChysBLb4AeFnjxdmiBepqUoTyWkZraz39sSUf)
 
 Open-source, self-hosted, zero-knowledge **Envelope Sync Relay (ESR)** for offline-first applications.
