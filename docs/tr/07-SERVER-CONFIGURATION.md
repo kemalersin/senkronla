@@ -14,7 +14,7 @@ Environment override: `ESR_*` prefix (nested `__` veya `.` — implementer dokü
 server:
   host: "0.0.0.0"
   port: 8080
-  publicUrl: "https://sync.example.com"   # checkout redirect, QR
+  publicUrl: "https://sync.senkron.la"   # checkout redirect, QR
   trustProxy: true                         # behind reverse proxy
 
 database:
@@ -142,7 +142,7 @@ ESR_DATABASE_URL=postgresql://esr:esr@postgres:5432/esr
 ESR_ADMIN_TOKEN=change-me-long-random
 ESR_UNLOCK_HMAC_SECRET=change-me-long-random
 ESR_BLOB_PATH=/data/blobs
-ESR_PUBLIC_URL=https://sync.example.com
+ESR_PUBLIC_URL=https://sync.senkron.la
 ESR_DEFAULT_FREE_DEVICE_LIMIT=2
 ESR_ON_LIMIT_MODE=payment          # payment | block
 ESR_SLOT_PACKAGES=3,5,10
@@ -225,7 +225,7 @@ volumes:
 ## 5. Caddyfile örneği
 
 ```
-sync.example.com {
+sync.senkron.la {
   reverse_proxy api:8080
 }
 ```

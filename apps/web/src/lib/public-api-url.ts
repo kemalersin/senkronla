@@ -18,7 +18,7 @@ export function getPublicApiOrigin(): string {
   return raw.replace(/\/$/, '').replace(/\/v1\/?$/, '')
 }
 
-/** REST base URL shown in SDK/API docs, e.g. https://sync.example.com/v1 */
+/** REST base URL shown in SDK/API docs, e.g. https://sync.senkron.la/v1 */
 export function getRelayApiBaseUrl(): string {
   return `${getPublicApiOrigin()}/v1`
 }

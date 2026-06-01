@@ -113,7 +113,7 @@ export interface EsrSyncDocumentSlot {
 }
 
 export interface EsrSyncConnectOptions {
-  /** E.g. https://sync.example.com/v1 — no trailing slash */
+  /** E.g. https://sync.senkron.la/v1 — no trailing slash */
   relayUrl: string
 
   /** Single-document shorthand (first slot = `primary`) */

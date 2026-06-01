@@ -69,7 +69,7 @@ Spec v1.2 supports multiple documents per namespace (`primary`, `settings`, …)
 
 Before shipping production integration:
 
-- [ ] Running relay with base URL ending in `/v1` (e.g. `https://sync.example.com/v1`)
+- [ ] Running relay with base URL ending in `/v1` (e.g. `https://sync.senkron.la/v1`)
 - [ ] Stable **`namespaceId`** (UUID v4) per customer workspace — same across reinstalls
 - [ ] **`DocumentAdapter`** ([SDK](sdk-en.md)) or REST envelope builder ([API](api-en.md)) — production **`ENV-ENC1`** encryption
 - [ ] **Sync password UX** — app-provided; pairing/recovery do not transfer it; all devices must share the same password

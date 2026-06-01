@@ -113,7 +113,7 @@ export interface EsrSyncDocumentSlot {
 }
 
 export interface EsrSyncConnectOptions {
-  /** Örn. https://sync.example.com/v1 — sondaki slash yok */
+  /** Örn. https://sync.senkron.la/v1 — sondaki slash yok */
   relayUrl: string
 
   /** Tek belge kısayolu (ilk slot = `primary`) */

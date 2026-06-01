@@ -442,7 +442,7 @@ Katman A private self-hosted için yeterli. Public hosted relay için Katman B �
 
 ```typescript
 await EsrSync.connect({
-  relayUrl: 'https://sync.example.com',
+  relayUrl: 'https://sync.senkron.la',
   appId: 'esr_app_mynotes_mobile',
   appPlatform: 'ios',
   bundleId: 'com.example.mynotes',

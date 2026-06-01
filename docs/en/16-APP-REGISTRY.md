@@ -453,7 +453,7 @@ Tier A sufficient for self-hosted private relays. Tier B recommended for public 
 
 ```typescript
 await EsrSync.connect({
-  relayUrl: 'https://sync.example.com',
+  relayUrl: 'https://sync.senkron.la',
   appId: 'esr_app_mynotes_mobile',
   appPlatform: 'ios',
   bundleId: 'com.example.mynotes',

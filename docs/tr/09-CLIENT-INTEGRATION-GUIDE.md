@@ -127,7 +127,7 @@ Recovery phrase her zaman `generateRecoveryPhrase()` ile üretilir (profil parol
 import { RelayClient } from '@senkronla/client'
 
 const client = new RelayClient({
-  baseUrl: 'https://sync.example.com/v1',
+  baseUrl: 'https://sync.senkron.la/v1',
   getDeviceToken: () => localStorage.getItem('esr.deviceToken'),
   onDeviceToken: (token) => localStorage.setItem('esr.deviceToken', token),
   clientDeviceId: getOrCreateClientDeviceId(),
@@ -388,7 +388,7 @@ async function recoverNamespace(
 import { NotificationClient } from '@esr/client'
 
 const notifications = new NotificationClient({
-  relayUrl: 'https://sync.example.com/v1',
+  relayUrl: 'https://sync.senkron.la/v1',
   client,
   namespaceId: adapter.namespaceId(),
   documentIds: ['primary', 'settings'],

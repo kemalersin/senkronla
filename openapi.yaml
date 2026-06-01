@@ -20,7 +20,7 @@ info:
     See 13-WEBSOCKET-NOTIFICATIONS.md — not covered by this OpenAPI file.
 
 servers:
-  - url: https://sync.example.com/v1
+  - url: https://sync.senkron.la/v1
     description: Production
   - url: http://localhost:8080/v1
     description: Local development
@@ -636,7 +636,7 @@ paths:
       servers:
         - url: http://localhost:8080
           description: Local development (root — not under /v1)
-        - url: https://sync.example.com
+        - url: https://sync.senkron.la
           description: Production (root)
       description: |
         No authentication. Returns `503` when database or blob storage checks fail (`status: degraded`).

@@ -46,7 +46,7 @@ wss://{host}/v1/namespaces/{namespaceId}/notifications
 
 ```http
 GET /v1/namespaces/{namespaceId}/notifications HTTP/1.1
-Host: sync.example.com
+Host: sync.senkron.la
 Upgrade: websocket
 Connection: Upgrade
 Sec-WebSocket-Protocol: esr-notifications-v1
@@ -281,7 +281,7 @@ ESR_WS_PING_INTERVAL=30
 ### 8.1 Reverse proxy (Caddy)
 
 ```
-sync.example.com {
+sync.senkron.la {
   reverse_proxy api:8080
 }
 ```
