@@ -52,6 +52,8 @@ sudo ln -sf /etc/nginx/sites-available/sync.senkron.la /etc/nginx/sites-enabled/
 #   sudo certbot certonly --standalone -d senkron.la -d www.senkron.la -d sync.senkron.la
 # Both nginx configs use /etc/letsencrypt/live/senkron.la/{fullchain,privkey}.pem
 
+# nginx 1.18.x (Ubuntu 22.04): use `listen 443 ssl http2;` (not standalone `http2 on;`).
+
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
