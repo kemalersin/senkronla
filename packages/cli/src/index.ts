@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
+import pkg from '../package.json' with { type: 'json' }
 import { runGenerateUnlockCode } from './commands/generate-unlock-code.js'
 
 const args = process.argv.slice(2)
 
 if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
-  console.log(`Senkronla CLI v0.1.0
+  console.log(`Senkronla CLI v${pkg.version}
 
 Usage:
   senkronla generate-unlock-code --namespace-id <uuid> --slots <number>

@@ -13,6 +13,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 - ESR setup guide — system requirements, resource sizing (~1000 namespace moderate/heavy rows), and ports under Prerequisites
 - ESR setup guide — optional Docker Compose CPU/RAM limits (`docker-compose.resources.example.yml`)
+- SDK install section — npm install commands, Node 22+, links to `@senkronla/*` on npm registry
 - Agent docs and spec page GitHub links — point to `docs/en/` and `docs/tr/` after docs folder restructure
 
 ## [0.1.11]

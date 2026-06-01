@@ -214,7 +214,21 @@ Exceeded limits return **429** `RATE_LIMIT_EXCEEDED` with a `Retry-After` header
 
 ## Unlock codes
 
-Generate a code after manual payment or support verification:
+Generate a code after manual payment or support verification.
+
+**npm (recommended for operators):**
+
+```bash
+export ESR_ADMIN_TOKEN="your-admin-token"
+export ESR_PUBLIC_URL="https://sync.example.com"
+
+npx @senkronla/cli generate-unlock-code \
+  --namespace-id 550e8400-e29b-41d4-a716-446655440000 \
+  --slots 3 \
+  --note "Invoice #1234"
+```
+
+**Monorepo development:**
 
 ```bash
 pnpm --filter @senkronla/cli exec senkronla generate-unlock-code \

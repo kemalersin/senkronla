@@ -180,6 +180,12 @@ export const SDK_SAMPLE_LEGEND = `// Code sample legend
 //   appStore, appUi, appSession — placeholder names; wire to the app's state/UI/auth
 //   EsrSync, createDocumentAdapter, … — SDK (@senkronla/client)`
 
+export const npmInstallSnippets = {
+  client: `npm install @senkronla/client\n# or\npnpm add @senkronla/client`,
+  protocol: `npm install @senkronla/protocol\n# or\npnpm add @senkronla/protocol`,
+  cli: `npm install -g @senkronla/cli\n# or\nnpx @senkronla/cli --help`,
+} as const
+
 export function createGuideSnippets(relayUrl: string) {
   return {
     minimalSetup: `${SDK_SAMPLE_LEGEND}
@@ -870,7 +876,7 @@ export function createEsrGuideSnippets(exampleOrigin = 'https://yourdomain.com')
     localDev: `pnpm install\ncp .env.example .env\npnpm dev`,
     healthCheck: `curl -s ${origin}/health`,
     migrate: `pnpm --filter @senkronla/server migrate`,
-    unlockCode: `pnpm --filter @senkronla/cli exec senkronla generate-unlock-code \\\n  --namespace-id 550e8400-e29b-41d4-a716-446655440000 \\\n  --slots 3 \\\n  --note "Invoice #1234"`,
+    unlockCode: `export ESR_ADMIN_TOKEN="your-admin-token"\nexport ESR_PUBLIC_URL="${origin}"\n\nnpx @senkronla/cli generate-unlock-code \\\n  --namespace-id 550e8400-e29b-41d4-a716-446655440000 \\\n  --slots 3 \\\n  --note "Invoice #1234"`,
     rateLimitConfig: `limits:
   rateLimit:
     enabled: true

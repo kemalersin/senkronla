@@ -208,7 +208,7 @@
           },
           "s2": {
             "title": "Install the SDK",
-            "body": "Add <tag>@senkronla/client</tag> to your app (or plan REST calls for non-JS clients)."
+            "body": "Install <tag>@senkronla/client</tag> from npm (<tag>npm install @senkronla/client</tag>) or plan REST calls for non-JS clients."
           },
           "s3": {
             "title": "Implement DocumentAdapter",
@@ -808,12 +808,13 @@
       },
       "install": {
         "title": "Install",
-        "p1": "Requires Node 18+ or a modern browser with fetch and Web Crypto.",
+        "p1": "Requires Node.js 22+ or a modern browser with fetch and Web Crypto.",
         "p2": "<tag>@senkronla/client</tag> includes TypeScript types and everything needed for a typical <tag>EsrSync</tag> integration. The SDK builds and decrypts <tag>ESR-DOC1</tag> / <tag>ENV-ENC1</tag> envelopes on push and pull — you do not need a second package for that path.",
         "protocolTitle": "REST-only integrations",
         "protocolP1Before": "Add <tag>@senkronla/protocol</tag> when you call the relay over HTTP yourself, without <tag>EsrSync</tag> — for example a native app in Swift or Kotlin, a server-side job, or a custom fetch client. The protocol package provides low-level helpers such as <tag>buildEnvEnc1Payload</tag>, <tag>sha256Hex</tag>, and schema validation; you assemble the outer envelope and send ",
         "protocolP1After": " yourself.",
-        "protocolP2": "Most web and Node apps should start with the SDK only. For a full REST walkthrough, see <apiEncryptionLink>API — Envelope encryption</apiEncryptionLink>."
+        "protocolP2": "Most web and Node apps should start with the SDK only. For a full REST walkthrough, see <apiEncryptionLink>API — Envelope encryption</apiEncryptionLink>.",
+        "npmRegistry": "Packages are published on npm under the <tag>@senkronla</tag> scope — <clientNpmLink>@senkronla/client</clientNpmLink>, <protocolNpmLink>@senkronla/protocol</protocolNpmLink>, and <cliNpmLink>@senkronla/cli</cliNpmLink> (operator CLI)."
       },
       "connect": {
         "title": "EsrSync.connect options",
@@ -821,7 +822,7 @@
         "p2": "Use <tag>onStatusChange</tag> for a global indicator, <tag>onDocumentStatusChange</tag> per document when using <tag>documents[]</tag>, and <tag>onError</tag> for logging. See <appRegistryLink>Application registry</appRegistryLink> for registration and native fields.",
         "exampleTitle": "Full connect example (web SPA)",
         "options": {
-          "relayUrl": "Base URL ending in <tag>/v1</tag>, e.g. https://sync.example.com/v1",
+          "relayUrl": "Base URL ending in <tag>/v1</tag>, e.g. https://sync.senkron.la/v1",
           "appId": "Public app id (<tag>esr_app_…</tag>) — required when relay has <tag>apps.enabled</tag>",
           "appPlatform": "Native only: <tag>ios</tag>, <tag>android</tag>, or <tag>desktop</tag>",
           "bundleId": "Native only: bundle ID, package name, or desktop application ID registered for the app",

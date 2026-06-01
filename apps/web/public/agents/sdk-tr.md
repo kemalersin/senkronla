@@ -28,18 +28,24 @@ JS/TS yığınları için varsayılan yol: **`EsrSync`** facade. SDK çalıştı
 ## Kurulum
 
 ```bash
+npm install @senkronla/client
+# veya
 pnpm add @senkronla/client
 ```
 
-Node 18+ veya `fetch` ve Web Crypto destekleyen modern tarayıcı gerekir.
+Node.js 22+ veya `fetch` ve Web Crypto destekleyen modern tarayıcı gerekir.
 
 **`@senkronla/client`** TypeScript tiplerini ve tipik bir `EsrSync` entegrasyonu için gereken her şeyi içerir. SDK push/pull sırasında `ESR-DOC1` / `ENV-ENC1` zarflarını oluşturur ve çözer — bu yol için ikinci bir paket gerekmez.
+
+npm'de yayında: [@senkronla/client](https://www.npmjs.com/package/@senkronla/client) · [@senkronla/protocol](https://www.npmjs.com/package/@senkronla/protocol) · [@senkronla/cli](https://www.npmjs.com/package/@senkronla/cli)
 
 ### Yalnızca REST entegrasyonu
 
 `EsrSync` kullanmadan relay'e doğrudan HTTP ile istek atıyorsanız **`@senkronla/protocol`** ekleyin — örneğin Swift/Kotlin native uygulama, sunucu tarafı iş veya özel bir fetch istemcisi:
 
 ```bash
+npm install @senkronla/protocol
+# veya
 pnpm add @senkronla/protocol
 ```
 

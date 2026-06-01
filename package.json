@@ -13,7 +13,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yaml,yml}\"",
     "example:multi-document": "pnpm --filter @senkronla/server exec tsx examples/multi-document-sync.ts",
-    "publish:packages": "pnpm build && pnpm --filter @senkronla/protocol publish --access public --no-git-checks && pnpm --filter @senkronla/client publish --access public --no-git-checks",
+    "publish:packages": "pnpm build && pnpm --filter @senkronla/protocol publish --access public --no-git-checks && pnpm --filter @senkronla/client publish --access public --no-git-checks && pnpm --filter @senkronla/cli publish --access public --no-git-checks",
     "version": "node scripts/promote-changelog-unreleased.mjs"
   },
   "devDependencies": {

@@ -208,7 +208,7 @@
           },
           "s2": {
             "title": "SDK'yı kurun",
-            "body": "Uygulamanıza <tag>@senkronla/client</tag> ekleyin (veya JS dışı istemciler için REST çağrıları planlayın)."
+            "body": "npm'den <tag>@senkronla/client</tag> kurun (<tag>npm install @senkronla/client</tag>) veya JS dışı istemciler için REST çağrıları planlayın."
           },
           "s3": {
             "title": "DocumentAdapter uygulayın",
@@ -808,12 +808,13 @@
       },
       "install": {
         "title": "Kurulum",
-        "p1": "Node 18+ veya fetch ve Web Crypto destekleyen modern bir tarayıcı gerektirir.",
+        "p1": "Node.js 22+ veya fetch ve Web Crypto destekleyen modern bir tarayıcı gerektirir.",
         "p2": "<tag>@senkronla/client</tag> TypeScript tiplerini ve tipik bir <tag>EsrSync</tag> entegrasyonu için gereken her şeyi içerir. SDK push/pull sırasında <tag>ESR-DOC1</tag> / <tag>ENV-ENC1</tag> zarflarını oluşturur ve çözer — bu yol için ikinci bir paket gerekmez.",
         "protocolTitle": "Yalnızca REST entegrasyonu",
         "protocolP1Before": "<tag>EsrSync</tag> kullanmadan relay'e doğrudan HTTP ile istek atıyorsanız <tag>@senkronla/protocol</tag> ekleyin — örneğin Swift/Kotlin native uygulama, sunucu tarafı iş veya özel bir fetch istemcisi. Protocol paketi <tag>buildEnvEnc1Payload</tag>, <tag>sha256Hex</tag> ve şema doğrulama gibi düşük seviye yardımcılar sağlar; dış zarfı siz birleştirip ",
         "protocolP1After": " gönderirsiniz.",
-        "protocolP2": "Web ve Node uygulamalarının çoğu yalnızca SDK ile başlamalıdır. Tam REST akışı için <apiEncryptionLink>API — Zarf şifreleme</apiEncryptionLink> bölümüne bakın."
+        "protocolP2": "Web ve Node uygulamalarının çoğu yalnızca SDK ile başlamalıdır. Tam REST akışı için <apiEncryptionLink>API — Zarf şifreleme</apiEncryptionLink> bölümüne bakın.",
+        "npmRegistry": "Paketler npm'de <tag>@senkronla</tag> scope'u altında — <clientNpmLink>@senkronla/client</clientNpmLink>, <protocolNpmLink>@senkronla/protocol</protocolNpmLink> ve <cliNpmLink>@senkronla/cli</cliNpmLink> (operatör CLI)."
       },
       "connect": {
         "title": "EsrSync.connect seçenekleri",
@@ -821,7 +822,7 @@
         "p2": "Genel gösterge için <tag>onStatusChange</tag>, <tag>documents[]</tag> ile <tag>onDocumentStatusChange</tag>, günlük için <tag>onError</tag> kullanın. Kayıt ve native alanlar için <appRegistryLink>Uygulama kaydı</appRegistryLink> bölümüne bakın.",
         "exampleTitle": "Tam connect örneği (web SPA)",
         "options": {
-          "relayUrl": "<tag>/v1</tag> ile biten temel URL, örn. https://sync.example.com/v1",
+          "relayUrl": "<tag>/v1</tag> ile biten temel URL, örn. https://sync.senkron.la/v1",
           "appId": "Public app id (<tag>esr_app_…</tag>) — relay'de <tag>apps.enabled</tag> açıkken zorunlu",
           "appPlatform": "Yalnızca native: <tag>ios</tag>, <tag>android</tag> veya <tag>desktop</tag>",
           "bundleId": "Yalnızca native: kayıtlı bundle ID, paket adı veya masaüstü uygulama kimliği",

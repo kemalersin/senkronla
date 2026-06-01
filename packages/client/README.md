@@ -1,5 +1,8 @@
 # @senkronla/client
 
+[![npm version](https://img.shields.io/npm/v/@senkronla/client)](https://www.npmjs.com/package/@senkronla/client)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/kemalersin/senkronla/blob/main/LICENSE)
+
 Client SDK for [Senkronla](https://senkron.la) — connect to a self-hosted **Envelope Sync Relay (ESR)**, sync JSON document snapshots per namespace, handle pairing, recovery, conflicts, and optional WebSocket notifications.
 
 Your app owns the data model and encryption choices. The relay stores opaque `ESR-DOC1` envelopes; this SDK handles transport, revision tracking, and user-facing sync lifecycle.
@@ -26,7 +29,7 @@ import {
   generateNamespaceId,
 } from '@senkronla/client'
 
-const namespaceId = generateNamespaceId() // persist before ensureNamespace
+const namespaceId = gsync.senkron.laId() // persist before ensureNamespace
 
 const sync = await EsrSync.connect({
   relayUrl: 'https://sync.example.com/v1',
@@ -69,7 +72,7 @@ Implement sync by:
 3. Handle `onRecoveryPhrase` and `onConflict` (required)
 
 ## Multi-document
-
+sync.senkron.la
 ```typescript
 const sync = await EsrSync.connect({
   relayUrl: 'https://sync.example.com/v1',

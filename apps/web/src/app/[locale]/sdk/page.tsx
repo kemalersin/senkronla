@@ -6,7 +6,7 @@ import { DocSection } from '@/components/doc-section'
 import { DocsLayout } from '@/components/docs-layout'
 import { DocsTable } from '@/components/docs-table'
 import { Link } from '@/i18n/navigation'
-import { createGuideSnippets, SDK_SAMPLE_LEGEND } from '@/lib/doc-snippets'
+import { createGuideSnippets, npmInstallSnippets, SDK_SAMPLE_LEGEND } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
 import { createPageMetadata } from '@/lib/page-metadata'
 import { getRelayApiBaseUrl } from '@/lib/public-api-url'
@@ -104,6 +104,21 @@ export default async function SdkPage({ params }: PageProps) {
     relayUrl,
     appRegistryLink: (chunks) => <a href="#app-registry">{chunks}</a>,
     apiEncryptionLink: (chunks) => <Link href="/api#encryption">{chunks}</Link>,
+    clientNpmLink: (chunks) => (
+      <a href="https://www.npmjs.com/package/@senkronla/client" target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
+    protocolNpmLink: (chunks) => (
+      <a href="https://www.npmjs.com/package/@senkronla/protocol" target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
+    cliNpmLink: (chunks) => (
+      <a href="https://www.npmjs.com/package/@senkronla/cli" target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
   })
   const encryptionRich = withDocRich({
     relayUrl,
@@ -237,7 +252,7 @@ export default async function SdkPage({ params }: PageProps) {
 
       <DocSection id="install" title={t('sections.install.title')}>
         <p>{t('sections.install.p1')}</p>
-        <CodeBlock code="pnpm add @senkronla/client" language="bash" />
+        <CodeBlock code={npmInstallSnippets.client} language="bash" />
         <p>{t.rich('sections.install.p2', withDocRich())}</p>
         <p className="doc-subheading">{t('sections.install.protocolTitle')}</p>
         <p>
@@ -245,8 +260,9 @@ export default async function SdkPage({ params }: PageProps) {
           <DocTag>PUT .../documents/{'{documentId}'}</DocTag>
           {t('sections.install.protocolP1After')}
         </p>
-        <CodeBlock code="pnpm add @senkronla/protocol" language="bash" />
+        <CodeBlock code={npmInstallSnippets.protocol} language="bash" />
         <p>{t.rich('sections.install.protocolP2', sdkRich)}</p>
+        <p>{t.rich('sections.install.npmRegistry', sdkRich)}</p>
       </DocSection>
 
       <DocSection id="connect" title={t('sections.connect.title')}>

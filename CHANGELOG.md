@@ -13,8 +13,9 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Added
 
-- **protocol:** npm package README and `publishConfig` for registry publish
 - **client:** npm package README and `publishConfig` for registry publish
+- **cli:** npm package README and `publishConfig` for registry publish
+- **docs:** README npm badges; SDK install docs link to npm registry
 
 ### Changed
 

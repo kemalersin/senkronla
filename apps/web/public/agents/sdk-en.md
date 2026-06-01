@@ -28,18 +28,24 @@ Default path for JS/TS stacks: **`EsrSync`** facade. Use [REST](api-en.md) only 
 ## Install
 
 ```bash
+npm install @senkronla/client
+# or
 pnpm add @senkronla/client
 ```
 
-Requires Node 18+ or a modern browser with `fetch` and Web Crypto.
+Requires Node.js 22+ or a modern browser with `fetch` and Web Crypto.
 
 **`@senkronla/client`** includes TypeScript types and everything needed for a typical `EsrSync` integration. The SDK builds and decrypts `ESR-DOC1` / `ENV-ENC1` envelopes on push and pull — you do not need a second package for that path.
+
+Published on npm: [@senkronla/client](https://www.npmjs.com/package/@senkronla/client) · [@senkronla/protocol](https://www.npmjs.com/package/@senkronla/protocol) · [@senkronla/cli](https://www.npmjs.com/package/@senkronla/cli)
 
 ### REST-only integrations
 
 Add **`@senkronla/protocol`** when you call the relay over HTTP yourself, without `EsrSync` — for example a native app in Swift or Kotlin, a server-side job, or a custom fetch client:
 
 ```bash
+npm install @senkronla/protocol
+# or
 pnpm add @senkronla/protocol
 ```
 
@@ -99,7 +105,7 @@ const document = createDocumentAdapter({
   encrypt: true,
   // app: sync password — SDK never generates it
   resolvePassword: async () => appSession.getSyncPassword(),
-  // app: serialize / restore app state as JSON
+  // app: serialize /sync.senkron.late as JSON
   exportDocument: () => appStore.exportJson(),
   importDocument: (json) => appStore.importJson(json),
 })
@@ -137,7 +143,7 @@ import {
   EsrSync,
   createDocumentAdapter,
   createMemoryStorageAdapter,
-} from '@senkronla/client'
+} from '@senkronla/clsync.senkron.la
 
 let appState = { notes: ['Welcome'] }
 let settings = { theme: 'light' as const }
@@ -227,7 +233,7 @@ Non-`primary` ids use envelope `schemaVersion: 2` (SDK handles this automaticall
 | `enabled` | no | `true` | Set `false` to defer sync until ready |
 | `fetch` | no | `globalThis.fetch` | Override for tests or custom runtimes |
 
-\* Provide exactly one of `document` or `documents`.
+\* Provide exactly onsync.senkron.laor `documents`.
 
 ### Full connect example (web SPA)
 
@@ -290,7 +296,7 @@ App headers are required on all `/v1` routes (including unauthenticated create/p
 - Create/rotate via `POST .../rotate-secret` or operator/developer portal
 - Pass to `EsrSync.connect({ clientSecret })` or `X-ESR-Client-Secret`
 - Never embed in web builds
-
+sync.senkron.la
 ### SDK examples
 
 ```typescript
@@ -300,7 +306,7 @@ await EsrSync.connect({
   appId: 'esr_app_mynotes',
   document,
   storage,
-  onRecoveryPhrase,
+  onRecoveryPhrase,sync.senkron.la
   onConflict,
 })
 

@@ -1,6 +1,9 @@
 # Senkronla
 
 [![Version](https://img.shields.io/github/package-json/v/kemalersin/senkronla?label=version)](package.json)
+[![npm client](https://img.shields.io/npm/v/@senkronla/client?label=%40senkronla%2Fclient)](https://www.npmjs.com/package/@senkronla/client)
+[![npm protocol](https://img.shields.io/npm/v/@senkronla/protocol?label=%40senkronla%2Fprotocol)](https://www.npmjs.com/package/@senkronla/protocol)
+[![npm cli](https://img.shields.io/npm/v/@senkronla/cli?label=%40senkronla%2Fcli)](https://www.npmjs.com/package/@senkronla/cli)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
@@ -18,7 +21,7 @@ Your app encrypts and owns the data model. Senkronla stores opaque `ESR-DOC1` en
 | Topic | Summary |
 | --- | --- |
 | **Deploy** | Self-hosted relay — [ESR setup](https://senkron.la/guides/esr#prerequisites): Docker Compose or Node.js 22+, PostgreSQL 16+, persistent blob storage, TLS in production |
-| **Client** | [`@senkronla/client`](https://senkron.la/sdk) — `EsrSync` facade, offline queue, conflict callbacks |
+| **Client** | [`@senkronla/client`](https://www.npmjs.com/package/@senkronla/client) on npm — [`EsrSync`](https://senkron.la/sdk) facade, offline queue, conflict callbacks |
 | **Protocol** | REST `/v1` + optional WebSocket notifications (push-to-pull) |
 | **Docs** | [Integration guides](https://senkron.la/guides) · [API](https://senkron.la/api) · [ESR setup](https://senkron.la/guides/esr) |
 | **Operator** | Web portal at [`/operator`](https://senkron.la/operator) + admin API |
@@ -161,11 +164,21 @@ TLS termination via Caddy or nginx in front of the API and web portal. Operator 
 
 | Package | Description |
 |---------|-------------|
-| `@senkronla/protocol` | Envelope protocol, crypto, identity utilities |
+| [`@senkronla/protocol`](https://www.npmjs.com/package/@senkronla/protocol) | Envelope protocol, crypto, identity utilities |
+| [`@senkronla/client`](https://www.npmjs.com/package/@senkronla/client) | Client SDK — `EsrSync` facade, RelayClient, SyncEngine |
+| [`@senkronla/cli`](https://www.npmjs.com/package/@senkronla/cli) | Operator CLI — unlock code generation |
 | `@senkronla/server` | Fastify REST API + WebSocket notification hub |
-| `@senkronla/client` | Client SDK — `EsrSync` facade, RelayClient, SyncEngine |
-| `@senkronla/cli` | Operator CLI — unlock code generation |
 | `@senkronla/web` | [senkron.la](https://senkron.la) — docs, operator portal, developer portal |
+
+### npm packages
+
+Published on [npm](https://www.npmjs.org/package/@senkronla/client) under the `@senkronla` scope:
+
+```bash
+npm install @senkronla/client      # application SDK (includes protocol)
+npm install @senkronla/protocol    # envelope/crypto helpers only
+npm install -g @senkronla/cli        # operator CLI (unlock codes)
+```
 
 ## Quick start
 

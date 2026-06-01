@@ -1,5 +1,8 @@
 # @senkronla/protocol
 
+[![npm version](https://img.shields.io/npm/v/@senkronla/protocol)](https://www.npmjs.com/package/@senkronla/protocol)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/kemalersin/senkronla/blob/main/LICENSE)
+
 **ESR-DOC1** envelope parsing, inner payload encoding, recovery cryptography, and shared types for [Senkronla](https://senkron.la) — a self-hosted, zero-knowledge envelope sync relay.
 
 Use this package when you talk to the relay over HTTP yourself (custom fetch client, native mobile app, server-side job) and need spec-accurate envelope and recovery helpers. For a full sync SDK with pairing, push/pull, and WebSocket notifications, use [`@senkronla/client`](https://www.npmjs.com/package/@senkronla/client) instead.

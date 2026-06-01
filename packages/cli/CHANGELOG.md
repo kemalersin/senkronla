@@ -9,6 +9,16 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.11]
+
+### Added
+
+- npm package README and registry metadata for public publish on `@senkronla/cli`
+
+### Changed
+
+- CLI `--help` version string tracks `package.json` version
+
 ## [0.1.0]
 
 ### Added
