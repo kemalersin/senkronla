@@ -48,9 +48,9 @@ sudo cp docker/nginx/sync.senkron.la.conf /etc/nginx/sites-available/sync.senkro
 sudo ln -sf /etc/nginx/sites-available/senkron.la /etc/nginx/sites-enabled/
 sudo ln -sf /etc/nginx/sites-available/sync.senkron.la /etc/nginx/sites-enabled/
 
-# Certificates (DNS must already point here, or use Cloudflare DNS validation)
-sudo certbot certonly --nginx -d senkron.la -d www.senkron.la
-sudo certbot certonly --nginx -d sync.senkron.la
+# Certificates — one cert covers senkron.la, www.senkron.la, sync.senkron.la:
+#   sudo certbot certonly --standalone -d senkron.la -d www.senkron.la -d sync.senkron.la
+# Both nginx configs use /etc/letsencrypt/live/senkron.la/{fullchain,privkey}.pem
 
 sudo nginx -t && sudo systemctl reload nginx
 ```
