@@ -552,10 +552,10 @@
         },
         "rows": {
           "webUrl": "https://senkron.la (web domain'iniz)",
-          "webUpstream": "127.0.0.1:WEB_PUBLISH_PORT (örn. 3000)",
+          "webUpstream": "127.0.0.1:WEB_PUBLISH_PORT",
           "webService": "web — docs, operatör, geliştirici UI",
           "apiUrl": "https://sync.senkron.la (API domain'iniz)",
-          "apiUpstream": "127.0.0.1:ESR_PUBLISH_PORT (örn. 8080)",
+          "apiUpstream": "127.0.0.1:ESR_PUBLISH_PORT",
           "apiService": "api — REST + WebSocket bildirimleri"
         },
         "envTitle": "İlgili .env değerleri",
