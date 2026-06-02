@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- Social share images — `og-image.png` and `twitter-card.png` (1200×630, brand-themed) served from `public/`; pages now emit `openGraph.images` and a `summary_large_image` Twitter card
+- `metadataBase` from `NEXT_PUBLIC_SITE_URL` (fallback `https://senkron.la`) so OG/Twitter image URLs resolve to absolute paths
 
 ## [0.1.14]
 

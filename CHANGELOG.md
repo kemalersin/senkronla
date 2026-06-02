@@ -14,6 +14,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 ### Added
 
 - **docs:** README — [Kurtarma Planı](https://github.com/kemalersin/kurtarma-plani) as a client-only, local-first example app; screenshots under `docs/screenshots/`
+- **web:** Brand-themed social share images (`og-image.png`, `twitter-card.png`) with `openGraph.images`, `summary_large_image` Twitter card, and `metadataBase` from `NEXT_PUBLIC_SITE_URL`
 
 ## [0.1.14]
 

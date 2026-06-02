@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 628" font-family="'DM Sans', system-ui, sans-serif">
+  <defs>
+    <linearGradient id="x-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0c0f14"/>
+      <stop offset="1" stop-color="#10151d"/>
+    </linearGradient>
+    <radialGradient id="x-glow" cx="0.18" cy="0" r="0.75">
+      <stop offset="0" stop-color="#3dd6c6" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#3dd6c6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="x-sq" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3dd6c6"/>
+      <stop offset="1" stop-color="#0c857b"/>
+    </linearGradient>
+    <linearGradient id="x-env" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3dd6c6"/>
+      <stop offset="1" stop-color="#11756b"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="628" fill="url(#x-bg)"/>
+  <rect x="0" y="0" width="1200" height="628" fill="url(#x-glow)"/>
+  <rect x="0" y="616" width="1200" height="12" fill="#3dd6c6"/>
+
+  <!-- brand mark + wordmark -->
+  <g transform="translate(80,70)">
+    <rect width="52" height="52" rx="12" fill="url(#x-sq)"/>
+    <g transform="translate(10,10)">
+      <path d="M16.34 24.45Q14.13 24.45 12.50 23.74Q10.86 23.04 9.94 21.79Q9.01 20.54 8.88 18.98L13.17 18.98Q13.33 19.58 13.71 20.08Q14.10 20.58 14.74 20.86Q15.38 21.15 16.27 21.15Q17.14 21.15 17.68 20.91Q18.22 20.67 18.50 20.26Q18.77 19.84 18.77 19.39Q18.77 18.72 18.38 18.35Q18 17.98 17.26 17.76Q16.53 17.54 15.47 17.31Q14.32 17.09 13.22 16.75Q12.11 16.42 11.25 15.90Q10.38 15.39 9.87 14.59Q9.36 13.79 9.36 12.61Q9.36 11.17 10.13 10.03Q10.90 8.90 12.37 8.22Q13.84 7.55 15.92 7.55Q18.83 7.55 20.53 8.86Q22.22 10.18 22.54 12.48L18.48 12.48Q18.29 11.74 17.63 11.31Q16.98 10.88 15.89 10.88Q14.74 10.88 14.13 11.30Q13.52 11.71 13.52 12.38Q13.52 12.83 13.92 13.18Q14.32 13.54 15.06 13.78Q15.79 14.02 16.85 14.24Q18.70 14.62 20.11 15.12Q21.52 15.62 22.32 16.53Q23.12 17.44 23.12 19.17Q23.12 20.70 22.29 21.90Q21.46 23.10 19.94 23.78Q18.42 24.45 16.34 24.45" fill="#0c0f14"/>
+    </g>
+    <text x="68" y="36" font-size="30" font-weight="700" letter-spacing="-0.5" fill="#e8edf5">senkron<tspan fill="#3dd6c6">la</tspan></text>
+  </g>
+
+  <text x="80" y="168" font-size="15" font-weight="600" letter-spacing="3" fill="#3dd6c6">ENVELOPE SYNC RELAY</text>
+
+  <!-- headline (serif) -->
+  <text x="78" y="272" font-size="60" font-weight="700" fill="#e8edf5" font-family="'Source Serif 4', Georgia, serif">Gizlili&#287;i bozmadan,</text>
+  <text x="78" y="344" font-size="60" font-weight="700" fill="#3dd6c6" font-family="'Source Serif 4', Georgia, serif">cihazlar aras&#305; senkron</text>
+
+  <!-- lead -->
+  <text x="80" y="404" font-size="22" fill="#8b9cb3">Veri cihazda &#351;ifrelenir. Relay yaln&#305;zca kapal&#305; zarf&#305; ta&#351;&#305;r,</text>
+  <text x="80" y="436" font-size="22" fill="#8b9cb3">i&#231;ine bakmaz. A&#231;&#305;k kaynak, self-hosted.</text>
+
+  <!-- chips -->
+  <g transform="translate(80,486)" font-family="'IBM Plex Mono', ui-monospace, monospace">
+    <rect x="0" y="0" width="150" height="42" rx="21" fill="#161d28" stroke="#3dd6c6" stroke-opacity="0.45"/>
+    <text x="75" y="27" text-anchor="middle" font-size="15" font-weight="500" fill="#3dd6c6">senkron.la</text>
+    <rect x="166" y="0" width="184" height="42" rx="21" fill="#161d28" stroke="#243044"/>
+    <text x="258" y="27" text-anchor="middle" font-size="15" font-weight="500" fill="#8b9cb3">&#246;rnek: kurtar.co</text>
+    <rect x="366" y="0" width="176" height="42" rx="21" fill="#161d28" stroke="#243044"/>
+    <text x="454" y="27" text-anchor="middle" font-size="15" font-weight="500" fill="#8b9cb3">a&#231;&#305;k kaynak / MIT</text>
+  </g>
+
+  <!-- envelope motif -->
+  <g transform="translate(905,314)">
+    <circle cx="0" cy="0" r="190" fill="#3dd6c6" fill-opacity="0.08"/>
+    <line x1="0" y1="0" x2="-150" y2="-140" stroke="#3dd6c6" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="3 8"/>
+    <line x1="0" y1="0" x2="165" y2="-95" stroke="#3dd6c6" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="3 8"/>
+    <line x1="0" y1="0" x2="150" y2="140" stroke="#3dd6c6" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="3 8"/>
+    <line x1="0" y1="0" x2="-160" y2="110" stroke="#3dd6c6" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="3 8"/>
+
+    <g fill="#161d28" stroke="#3dd6c6" stroke-width="2.5">
+      <rect x="-184" y="-162" width="62" height="44" rx="7"/>
+      <rect x="138" y="-122" width="46" height="62" rx="9"/>
+      <rect x="126" y="108" width="62" height="44" rx="7"/>
+      <rect x="-190" y="86" width="46" height="62" rx="9"/>
+    </g>
+
+    <g transform="translate(-100,-72)">
+      <rect x="0" y="0" width="200" height="144" rx="18" fill="url(#x-env)"/>
+      <path d="M0 14 L100 86 L200 14" fill="none" stroke="#0c0f14" stroke-opacity="0.5" stroke-width="4"/>
+      <circle cx="100" cy="100" r="27" fill="#0c0f14"/>
+      <rect x="88" y="94" width="24" height="21" rx="4" fill="#3dd6c6"/>
+      <path d="M91 94 a9 9 0 0 1 18 0" fill="none" stroke="#3dd6c6" stroke-width="4"/>
+      <text x="100" y="-16" text-anchor="middle" font-size="16" font-weight="700" fill="#3dd6c6" font-family="'IBM Plex Mono', monospace">ESR-DOC1</text>
+    </g>
+  </g>
+</svg>
