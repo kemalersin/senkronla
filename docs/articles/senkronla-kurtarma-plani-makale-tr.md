@@ -1,5 +1,7 @@
 # Veriyi kullanıcıda bırakıp yine de cihazlar arası senkronu çözmek: Senkronla'yı neden yazdım?
 
+![Senkronla: gizliliği bozmadan cihazlar arası senkron](./assets/00-kapak.svg)
+
 Her şey küçük ve biraz da inatçı bir cümleyle başladı: "Kullanıcının borçları, hesapları, gelir gider geçmişi onun cihazında kalsın." Bir kişisel finans uygulaması yapıyordum ve bu cümleden taviz vermek istemiyordum. Yani veriyi bir sunucuya yığıp orada açık açık tutmaya niyetim yoktu.
 
 Ama dürüst olalım, ben de herkes gibi sabah telefonda girdiğim bir kaydı akşam masaüstünde görmek istiyorum. İşte o klasik ikilem tam buradan giriyor sahneye: ya gizlilikten ödün ver ya da senkrondan vazgeç. Bana ikisini birden isteyen şımarık kullanıcı diyebilirsiniz, itiraz etmem.
@@ -20,7 +22,7 @@ Kısa cevap: açık kaynaklı, kendi sunucunuzda barındırabileceğiniz bir sen
 
 Literatürde buna zero-knowledge yaklaşımı deniyor. Ben sevdiğim için "kasıtlı cahillik" diyorum: katman ne kadar az şey bilirse, kötü bir günde o kadar az şey sızdırabilir.
 
-Şunu da netleştireyim, çünkü en çok yanlış anlaşılan kısım bu: Senkronla bir "not uygulaması backend'i" ya da hazır bir "finans API'si" değil. İş mantığı, veri modeli, şifreleme, hepsi uygulama tarafında kalıyor. Senkronla yalnızca o ince ve sessiz taşıyıcı olmaya talip. Kulağa mütevazı geliyor, öyle de olsun zaten.
+Şunu da netleştireyim, çünkü en çok yanlış anlaşılan kısım bu: Senkronla bir "not uygulaması backend'i" ya da hazır bir "finans API'si" değil. İş mantığı, veri modeli, şifreleme, hepsi uygulama tarafında kalıyor. Senkronla yalnızca o ince ve sessiz taşıyıcı olmaya talip. Kulağa mütevazı geliyor, öyle de olmalı zaten.
 
 Pratik bilgiler:
 
@@ -67,7 +69,7 @@ Entegrasyonda beni en çok gülümseten birkaç ayrıntı:
 
 **Cihaz eşleştirme zahmetsiz.** Ana cihaz 6 haneli bir kod ve bir QR üretiyor, ikinci cihaz "katıl" akışıyla aynı namespace'e giriyor. Telefonla QR'ı okutup masaüstüne bağlanmak, kahveyi karıştırmaktan kısa sürüyor.
 
-**Canlı bildirim gerçekten canlı.** Arayüzde "Relay bağlı, canlı bildirim aktif" yazısını görünce push-to-pull devreye giriyor ve bir cihazdaki değişiklik diğerinde neredeyse anında beliriyor. İlk kez iki ekranı yan yana koyup test ettiğimde gereğinden fazla heyecanlandım, orası ayrı.
+**Canlı bildirim gerçekten canlı.** Arayüzde "Relay bağlı, canlı bildirim aktif" yazısını görünce push-to-pull devreye giriyor ve bir cihazdaki değişiklik diğerinde neredeyse anında beliriyor. İlk kez iki ekranı yan yana koyup test ettiğimde biraz heyecanlandığımı itiraf edeyim.
 
 **Slot kotası şeffaf.** Kullanıcı "2/3 cihaz" gibi net bir gösterge görüyor. Ücretsiz kota relay tarafında yönetiliyor, uygulamanın ayrıca bunu takip etme derdi yok.
 
@@ -81,6 +83,8 @@ Entegrasyonda beni en çok gülümseten birkaç ayrıntı:
 
 Açık olayım, Senkronla her projeye lazım değil. Çekiç elinde diye her şeyi çivi sanma tuzağına düşmeyelim. Ama şu tariflerden biri sizinkine benziyorsa bir uğrayın derim:
 
+![Senkronla'nın işine yarayacağı dört profil: çevrimdışı uygulama, hassas veri, self-hosted relay, indie ve açık kaynak](./assets/05-kimler-icin.svg)
+
 - Çevrimdışı da çalışması gereken web ya da mobil uygulamalar yapıyorsanız.
 - Not, bütçe, sağlık, üretkenlik gibi hassas veriyle çalışıyorsanız ve veriyi sunucuda açıkta tutmak içinize sinmiyorsa.
 - Kendi sunucunuzda barındırdığınız ya da tek kiracılı bir relay arıyorsanız.
@@ -91,6 +95,8 @@ Senkronla MIT lisanslı. Teknik şartname, OpenAPI tanımı, operatör portalı 
 ## Toparlarsak
 
 Bu yazıyı yazma sebebim aslında tek bir yaygın yanlış inancı kırmak: veriyi kullanıcının cihazında tutmakla cihazlar arası senkronu birbirine düşman sanmak. Oysa aralarına yeterince ince, kapalı ve mümkün olduğunca "hiçbir şey bilmeyen" bir katman koyduğunuzda, hem gizlilik nefes alıyor hem de sizin operasyonel yükünüz hafifliyor. İkisini aynı anda elde etmek tahmin ettiğinizden kolay.
+
+![Gizlilik ve senkronun kesişiminde Senkronla: ikisini aynı anda elde edebilirsiniz](./assets/06-toparlarsak.svg)
 
 Senkronla'yı işte bu yüzden paylaşıyorum. Kurtarma Planı entegrasyonunu da "tamam anladık, peki gerçek bir uygulamada nasıl hissettiriyor?" sorusuna somut bir cevap olsun diye anlattım.
 
