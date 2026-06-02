@@ -9,6 +9,17 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+
+## [0.1.14]
+
+### Fixed
+
+- Operator overview — unlock code form on mobile (≤900px) keeps Namespace ID and device slots on one row; Note spans the full width below
+- Operator settings drawer — Revisions tab keeps stable height while settings load; spinner is centered over hidden content
+- Operator tables on mobile (≤900px) — sticky first column is disabled; the whole table scrolls horizontally
+- Guide pages on small viewports (≤640px) — doc tables scroll horizontally via the table wrapper only; label column sizes to content, description columns fixed at 26rem with text wrap
+- Guide pages above small (>640px) — doc table first column shrink-wraps labels without breaking; remaining columns use the rest of the row width
+
 ### Changed
 
 - SDK reference — expanded WebSocket notifications section (push-to-pull model, connect options, message types, wire example, spec links)

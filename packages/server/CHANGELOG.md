@@ -9,6 +9,9 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+
+## [0.1.14]
+
 ### Changed
 
 - Operator rate limits panel — grouped usage from `rate_limit_usage_buckets` (`GET /admin/rate-limit-usage`); excludes `global_ip`; no violation log writes

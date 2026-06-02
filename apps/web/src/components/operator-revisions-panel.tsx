@@ -183,7 +183,25 @@ export function OperatorRevisionsPanel({
         ? t('scopeNamespace')
         : t('scopeApp')
 
-  const isModalLoading = variant === 'modal' && !settingsLoaded
+  const isContentPending = !settingsLoaded
+
+  const autoRetentionBlock = (
+    <div className="operator-revisions-auto-retention">
+      <p className="operator-revisions-auto-retention-label">{t('autoRetentionTitle')}</p>
+      <ul className="operator-revisions-auto-retention-list">
+        <li>
+          {retentionDays && retentionDays > 0
+            ? t('autoRetentionDays', { days: retentionDays })
+            : t('autoRetentionDaysDisabled')}
+        </li>
+        <li>
+          {retentionCount && retentionCount > 0
+            ? t('autoRetentionCount', { count: retentionCount })
+            : t('autoRetentionCountDisabled')}
+        </li>
+      </ul>
+    </div>
+  )
 
   const panelContent = (
     <>
@@ -201,45 +219,9 @@ export function OperatorRevisionsPanel({
       ) : null}
 
       {variant === 'drawer' ? (
-        <div className="operator-revisions-settings-slot" aria-live="polite">
-          {!settingsLoaded ? (
-            <div className="operator-revisions-settings-loading">
-              <OperatorSpinner label={t('loadingSettings')} />
-            </div>
-          ) : (
-            <div className="operator-revisions-auto-retention">
-              <p className="operator-revisions-auto-retention-label">{t('autoRetentionTitle')}</p>
-              <ul className="operator-revisions-auto-retention-list">
-                <li>
-                  {retentionDays && retentionDays > 0
-                    ? t('autoRetentionDays', { days: retentionDays })
-                    : t('autoRetentionDaysDisabled')}
-                </li>
-                <li>
-                  {retentionCount && retentionCount > 0
-                    ? t('autoRetentionCount', { count: retentionCount })
-                    : t('autoRetentionCountDisabled')}
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
+        <div className="operator-revisions-settings-slot">{autoRetentionBlock}</div>
       ) : (
-        <div className="operator-revisions-auto-retention">
-          <p className="operator-revisions-auto-retention-label">{t('autoRetentionTitle')}</p>
-          <ul className="operator-revisions-auto-retention-list">
-            <li>
-              {retentionDays && retentionDays > 0
-                ? t('autoRetentionDays', { days: retentionDays })
-                : t('autoRetentionDaysDisabled')}
-            </li>
-            <li>
-              {retentionCount && retentionCount > 0
-                ? t('autoRetentionCount', { count: retentionCount })
-                : t('autoRetentionCountDisabled')}
-            </li>
-          </ul>
-        </div>
+        autoRetentionBlock
       )}
 
       <div className="operator-revisions-panel-form">
@@ -326,11 +308,16 @@ export function OperatorRevisionsPanel({
     <div
       className={`operator-revisions-panel${
         variant === 'drawer' ? ' operator-revisions-panel--drawer' : ' operator-revisions-panel--modal'
-      }`}
+      }${isContentPending && variant === 'drawer' ? ' is-loading' : ''}`}
     >
+      {variant === 'drawer' && isContentPending ? (
+        <div className="operator-revisions-drawer-loading" aria-live="polite" aria-busy="true">
+          <OperatorSpinner label={t('loadingSettings')} />
+        </div>
+      ) : null}
       <div
-        className={`operator-revisions-panel-content${isModalLoading ? ' is-pending' : ''}`}
-        aria-hidden={isModalLoading ? true : undefined}
+        className={`operator-revisions-panel-content${isContentPending ? ' is-pending' : ''}`}
+        aria-hidden={isContentPending ? true : undefined}
       >
         {panelContent}
       </div>

@@ -11,6 +11,9 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+
+## [0.1.14]
+
 ### Changed
 
 - **web:** SDK reference — expanded WebSocket notifications section (push-to-pull, options, wire protocol)

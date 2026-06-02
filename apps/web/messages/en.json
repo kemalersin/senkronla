@@ -1557,7 +1557,7 @@
       "documents": "Documents",
       "pendingCodes": "Pending codes",
       "unlockEvents": "Unlock events",
-      "rateLimitEvents": "Usage (24h, excl. global_ip)"
+      "rateLimitEvents": "Usage (24h)"
     },
     "columns": {
       "namespace": "Namespace",

@@ -1558,7 +1558,7 @@
       "documents": "Doküman",
       "pendingCodes": "Bekleyen kod",
       "unlockEvents": "Açılış olayı",
-      "rateLimitEvents": "Kullanım (24s, global_ip hariç)"
+      "rateLimitEvents": "Kullanım (24 saat)"
     },
     "columns": {
       "namespace": "Namespace",
