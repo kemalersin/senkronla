@@ -11,6 +11,9 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Added
+
+- **docs:** README — [Kurtarma Planı](https://github.com/kemalersin/kurtarma-plani) as a client-only, local-first example app; screenshots under `docs/screenshots/`
 
 ## [0.1.14]
 

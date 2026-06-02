@@ -157,6 +157,22 @@ TLS termination via Caddy or nginx in front of the API and web portal. Operator 
 - **App registry** (optional) — register web/native apps, verified origins, developer portal
 - **Operator tools** — limits overrides, revision cleanup, unlock codes, audit views
 
+## Apps using Senkronla
+
+**[Kurtarma Planı](https://github.com/kemalersin/kurtarma-plani)** — open-source, **client-only**, **local-first** personal finance SPA (Vue 3, IndexedDB, single-file static build). The app encrypts snapshots client-side and syncs opaque envelopes through [`@senkronla/client`](https://www.npmjs.com/package/@senkronla/client) (`EsrSync`) against a public relay ([`sync.senkron.la`](https://sync.senkron.la/v1)); file-based sync remains available as a fallback.
+
+- **Repository:** [github.com/kemalersin/kurtarma-plani](https://github.com/kemalersin/kurtarma-plani)
+- **Live demo:** [kurtar.co](https://kurtar.co/)
+- **App registry:** `esr_app_kurtar_co` — verified origins `kurtar.co` / `www.kurtar.co`
+
+| Operator — registered web app | In-app sync settings |
+| --- | --- |
+| ![Kurtarma Planı in the operator app registry](./docs/screenshots/kurtar_co_00.png) | ![Senkronla relay URL and app ID in settings](./docs/screenshots/kurtar_co_01.png) |
+
+| Device pairing (host code + QR) | Connected relay devices |
+| --- | --- |
+| ![Pairing code and QR payload](./docs/screenshots/kurtar_co_02.png) | ![Slot usage and device list](./docs/screenshots/kurtar_co_03.png) |
+
 ## Monorepo
 
 | Package | Description |
