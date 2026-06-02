@@ -13,6 +13,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Changed
 
+- **web:** SDK reference — expanded WebSocket notifications section (push-to-pull, options, wire protocol)
 - **server:** Operator rate limits tab — grouped usage only (no `global_ip`, no violation log)
 - **server:** Rate limit counters in `rate_limit_usage_buckets`; `rate_limit_events` no longer written on 429
 

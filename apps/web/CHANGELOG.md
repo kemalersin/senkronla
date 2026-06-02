@@ -11,6 +11,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
+- SDK reference — expanded WebSocket notifications section (push-to-pull model, connect options, message types, wire example, spec links)
 - Operator rate limits tab — grouped usage via `/api/operator/rate-limit-usage`; overview stat shows 24h hits (excl. `global_ip`)
 - ESR setup guide and operator labels — rate limits monitoring text updated for usage buckets
 

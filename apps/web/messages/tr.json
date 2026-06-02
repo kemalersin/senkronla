@@ -894,6 +894,11 @@
           "onDocumentStatusChange": "İsteğe bağlı — sizin arayüzünüz. Çoklu belge rozetleri için <tag>(documentId, status)</tag>.",
           "pushDebounceMs": "Varsayılan 2000. <tag>notifyLocalChange()</tag> sonrası push gecikmesi.",
           "notificationsEnabled": "Varsayılan true. CLI araçları veya testler için false yapın.",
+          "notificationMode": "<tag>ws_with_poll_fallback</tag> veya <tag>poll_only</tag> zorla; varsayılan <tag>GET /health</tag> → <tag>websocket</tag> sorgular",
+          "websocketEnabled": "<tag>false</tag> — WebSocket'i atla (yalnızca poll); bildirimleri tamamen kapatmaz",
+          "pullIntervalDisconnectedMs": "WebSocket kapalıyken poll aralığı — varsayılan <tag>45000</tag> ms",
+          "pullIntervalConnectedMs": "WebSocket bağlıyken güvenlik poll'u — varsayılan <tag>300000</tag> ms",
+          "pauseSchedulerWhenHidden": "Varsayılan true — sekme gizliyken WebSocket ve arka plan poll'unu duraklat",
           "persistRecoveryPhrase": "Varsayılan true. İfadeyi <tag>EsrStorage</tag>'da saklar (güvenlik etkilerini değerlendirin)."
         }
       },
@@ -1069,12 +1074,55 @@
         "manualExample": "Manuel çözüm"
       },
       "notifications": {
-        "title": "Canlı bildirimler",
-        "p1": "Etkinleştirildiğinde SDK <tag>.../notifications</tag> adresine <tag>WebSocket</tag> açar ve <tag>head_changed</tag> dinler.",
-        "p2": "<tag>WebSocket</tag> başarısız olursa HTTP polling'e düşer (<tag>ws_with_poll_fallback</tag> modu). WS yalnızca bildirir — veriyi yine HTTP ile çekersiniz.",
-        "li1": "<tag>head_changed</tag> → ilgili <tag>documentId</tag> için otomatik pull (tam <tag>sync()</tag> değil)",
-        "li2": "<tag>limits_changed</tag> → slot sayısı güncellendi (<tag>onDeviceLimit</tag> veya limit polling'inde yönetin)",
-        "li3": "İsteğe bağlı <tag>subscribe</tag> + <tag>documentIds[]</tag> — <tag>auth_ok</tag> sonrası <tag>head_changed</tag> filtresi"
+        "title": "Canlı bildirimler (WebSocket)",
+        "p1": "Varsayılan olarak <tag>EsrSync</tag>, <tag>push-to-pull</tag> kanalıyla uzak değişiklikleri güncel tutar: relay hafif sinyalleri WebSocket üzerinden gönderir; SDK belge verisini her zaman HTTP ile çeker.",
+        "modelTitle": "Push-to-pull modeli",
+        "modelP1": "WebSocket çerçeveleri anlık görüntü veya zarf taşımaz. <tag>head_changed</tag> sonrası SDK ilgili <tag>documentId</tag> için <tag>GET .../head/meta</tag> çalıştırır ve revizyon daha yeniyse pull yapar — <tag>sync()</tag> ile aynı pull yolu, tek belge kapsamında.",
+        "operatorTitle": "Relay yeteneği",
+        "operatorP1": "<tag>connect()</tag> sırasında SDK <tag>GET /health</tag> → <tag>websocket</tag> okur. Operatör WebSocket'i kapattıysa (<tag>ESR_WEBSOCKET_ENABLED=false</tag> veya config), mod otomatik <tag>poll_only</tag> olur — kod değişikliği gerekmez.",
+        "optionsTitle": "Bildirim seçenekleri",
+        "connectExampleTitle": "Bildirim ayarlarıyla bağlan",
+        "flowTitle": "Bağlantı akışı (otomatik)",
+        "flowSteps": {
+          "health": "<tag>/health</tag> sorgula → <tag>ws_with_poll_fallback</tag> veya <tag>poll_only</tag> seç",
+          "connect": "<tag>esr-notifications-v1</tag> alt protokolüyle <tag>wss://…/v1/namespaces/'{namespaceId}'/notifications</tag> aç",
+          "auth": "Soket açılınca <tag>'{\"type\":\"auth\",\"token\":\"dvt_…\"}'</tag> gönder (SDK token'ı <tag>EsrStorage</tag>'dan okur)",
+          "subscribe": "<tag>auth_ok</tag> sonrası bağlı belge slotları için <tag>'{\"type\":\"subscribe\",\"documentIds\":[\"primary\", …]}'</tag> gönder",
+          "events": "<tag>head_changed</tag> / <tag>limits_changed</tag> işle; <tag>ping</tag>'e <tag>pong</tag> ile yanıt ver"
+        },
+        "messagesTitle": "WebSocket mesaj tipleri",
+        "messageRows": {
+          "headChanged": "<tag>head_changed</tag> — bir <tag>documentId</tag> için revizyon meta; HTTP pull tetikler",
+          "limitsChanged": "<tag>limits_changed</tag> — <tag>maxDevices</tag>, <tag>activeDevices</tag>, <tag>purchasedSlots</tag> güncellendi",
+          "ping": "<tag>ping</tag> / <tag>pong</tag> — bağlantı canlılığı",
+          "authOk": "<tag>auth_ok</tag> — kimlik doğrulandı; SDK bağlantıyı hazır sayar ve <tag>subscribe</tag> gönderir",
+          "authFail": "<tag>auth_fail</tag> — bağlantı kapanır; SDK HTTP poll'a düşer"
+        },
+        "sdkBehaviorTitle": "SDK'nın sizin için yaptıkları",
+        "behaviorRows": {
+          "pull": "<tag>head_changed</tag> → sync engine ile tek belge pull (çoklu belgeli tam <tag>sync()</tag> değil)",
+          "conflict": "Revizyon uyuşmazlığı <tag>onConflict</tag> çağırabilir — manuel sync ile aynı UX",
+          "status": "Bildirim soketi açıkken toplam durum <tag>ws_connected</tag> olur (<tag>onStatusChange</tag>)",
+          "scheduler": "Bildirimler etkinken arka plan sync, bildirim poll aralıklarına devredilir",
+          "hidden": "Sekme gizli → WebSocket ve poll duraklar (<tag>pauseSchedulerWhenHidden</tag>, varsayılan true); odaklanınca devam"
+        },
+        "fallbackTitle": "Polling yedeklemesi",
+        "fallbackP1": "WebSocket kapalı, başarısız veya sekme arka plandayken SDK bağlı her belge için <tag>GET head/meta</tag> poll eder. Varsayılanlar: bağlantı yokken <tag>45 sn</tag>, WebSocket açıkken güvenlik aralığı <tag>5 dk</tag>.",
+        "reconnectTitle": "Yeniden bağlanma",
+        "reconnectP1": "Kapanma veya hata sonrası SDK üstel geri çekilme ile yeniden bağlanır (1 sn taban, 60 sn üst sınır, jitter) ve WebSocket dönene kadar anında head kontrolü çalıştırır.",
+        "wsExampleTitle": "Tel protokolü örneği",
+        "specP1": "Tam protokol: <specLink>13-WEBSOCKET-NOTIFICATIONS.md</specLink>.",
+        "specP2": "REST uç noktası: <apiWebSocketLink>API — WebSocket bildirimleri</apiWebSocketLink>.",
+        "disableTitle": "Bildirimleri kapatma",
+        "disableP1": "CLI araçları, birim testleri veya yalnızca manuel <tag>sync()</tag> için <tag>notificationsEnabled: false</tag> kullanın.",
+        "options": {
+          "notificationsEnabled": "Varsayılan <tag>true</tag>. <tag>false</tag> — WebSocket ve poll tamamen kapalı",
+          "notificationMode": "<tag>ws_with_poll_fallback</tag> veya <tag>poll_only</tag> zorla; varsayılan <tag>/health</tag> sorgular",
+          "websocketEnabled": "<tag>false</tag> — poll yedeklemesini kapatmadan WebSocket'i atla",
+          "pullIntervalDisconnectedMs": "WebSocket kapalıyken poll aralığı — varsayılan <tag>45000</tag> ms",
+          "pullIntervalConnectedMs": "WebSocket bağlıyken güvenlik poll'u — varsayılan <tag>300000</tag> ms",
+          "pauseSchedulerWhenHidden": "Varsayılan <tag>true</tag> — sekme gizliyken WebSocket ve arka plan poll'unu duraklat"
+        }
       },
       "status": {
         "title": "Durum değerleri",

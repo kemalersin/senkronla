@@ -409,6 +409,22 @@ appUi.showPairingScreen({ code, qrPayload, expiresAt })`,
   importDocument: (json) => appStore.importSnapshot(json),
 })`,
 
+    notificationConnectOptions: `const sync = await EsrSync.connect({
+  relayUrl: '${relayUrl}',
+  appId: 'esr_app_mynotes',
+  document,
+  storage: createLocalStorageAdapter('myapp'),
+  onRecoveryPhrase: async ({ phrase }) => appUi.showRecoveryModal(phrase),
+  onConflict: async (ctx) => appUi.askKeepLocalOrRemote(ctx.remoteMeta.writtenAt),
+  onStatusChange: (status) => appUi.setSyncIndicator(status), // 'ws_connected' when WS open
+  notificationsEnabled: true, // default — set false for CLI/tests
+  // notificationMode: 'poll_only', // force HTTP-only; default probes GET /health
+  // websocketEnabled: false,       // skip WS probe — same as poll_only
+  pullIntervalDisconnectedMs: 45_000, // poll when WS down (default)
+  pullIntervalConnectedMs: 300_000,   // safety poll while WS up (default)
+  pauseSchedulerWhenHidden: true,     // pause WS + poll when tab hidden
+})`,
+
     buildEncryptedEnvelope: `import { buildEnvelope, extractDocument } from '@senkronla/client'
 
 // app: same password source as resolvePassword()

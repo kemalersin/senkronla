@@ -6,7 +6,8 @@ import { DocSection } from '@/components/doc-section'
 import { DocsLayout } from '@/components/docs-layout'
 import { DocsTable } from '@/components/docs-table'
 import { Link } from '@/i18n/navigation'
-import { createGuideSnippets, npmInstallSnippets, SDK_SAMPLE_LEGEND } from '@/lib/doc-snippets'
+import { DocEndpointHeading, DocHttpExample } from '@/components/doc-http-example'
+import { createApiSnippets, createGuideSnippets, npmInstallSnippets, SDK_SAMPLE_LEGEND } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
 import { createPageMetadata } from '@/lib/page-metadata'
 import { getRelayApiBaseUrl } from '@/lib/public-api-url'
@@ -92,13 +93,19 @@ export default async function SdkPage({ params }: PageProps) {
   setRequestLocale(locale)
 
   const t = await getTranslations('sdk')
+  const tApi = await getTranslations('api')
   const tGuides = await getTranslations('guides')
   const relayUrl = getRelayApiBaseUrl()
   const snippets = createGuideSnippets(relayUrl)
+  const apiSnippets = createApiSnippets(relayUrl)
   const specHref =
     locale === 'tr'
       ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md'
       : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md'
+  const wsSpecHref =
+    locale === 'tr'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/13-WEBSOCKET-NOTIFICATIONS.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/13-WEBSOCKET-NOTIFICATIONS.md'
   const rich = withDocRich({ relayUrl })
   const sdkRich = withDocRich({
     relayUrl,
@@ -136,6 +143,20 @@ export default async function SdkPage({ params }: PageProps) {
     developerLink: (chunks) => <Link href="/developer">{chunks}</Link>,
     operatorLink: (chunks) => <Link href="/operator">{chunks}</Link>,
   })
+  const notificationRich = withDocRich({
+    relayUrl,
+    specLink: (chunks) => (
+      <a href={wsSpecHref} target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
+    apiWebSocketLink: (chunks) => <Link href="/api#websocket">{chunks}</Link>,
+  })
+
+  const exampleProps = {
+    requestLabel: tApi('table.request'),
+    responseLabel: tApi('table.response'),
+  }
 
   const nav = sectionKeys.map((key) => ({
     id: key,
@@ -181,7 +202,37 @@ export default async function SdkPage({ params }: PageProps) {
     ['onDocumentStatusChange', t.rich('sections.connect.options.onDocumentStatusChange', withDocRich())],
     ['pushDebounceMs', t.rich('sections.connect.options.pushDebounceMs', withDocRich())],
     ['notificationsEnabled', t.rich('sections.connect.options.notificationsEnabled', withDocRich())],
+    ['notificationMode', t.rich('sections.connect.options.notificationMode', withDocRich())],
+    ['websocketEnabled', t.rich('sections.connect.options.websocketEnabled', withDocRich())],
+    ['pullIntervalDisconnectedMs', t.rich('sections.connect.options.pullIntervalDisconnectedMs', withDocRich())],
+    ['pullIntervalConnectedMs', t.rich('sections.connect.options.pullIntervalConnectedMs', withDocRich())],
+    ['pauseSchedulerWhenHidden', t.rich('sections.connect.options.pauseSchedulerWhenHidden', withDocRich())],
     ['persistRecoveryPhrase', t.rich('sections.connect.options.persistRecoveryPhrase', withDocRich())],
+  ]
+
+  const notificationOptionRows = [
+    ['notificationsEnabled', t.rich('sections.notifications.options.notificationsEnabled', notificationRich)],
+    ['notificationMode', t.rich('sections.notifications.options.notificationMode', notificationRich)],
+    ['websocketEnabled', t.rich('sections.notifications.options.websocketEnabled', notificationRich)],
+    ['pullIntervalDisconnectedMs', t.rich('sections.notifications.options.pullIntervalDisconnectedMs', notificationRich)],
+    ['pullIntervalConnectedMs', t.rich('sections.notifications.options.pullIntervalConnectedMs', notificationRich)],
+    ['pauseSchedulerWhenHidden', t.rich('sections.notifications.options.pauseSchedulerWhenHidden', notificationRich)],
+  ]
+
+  const notificationMessageRows = [
+    ['head_changed', t.rich('sections.notifications.messageRows.headChanged', notificationRich)],
+    ['limits_changed', t.rich('sections.notifications.messageRows.limitsChanged', notificationRich)],
+    ['ping / pong', t.rich('sections.notifications.messageRows.ping', notificationRich)],
+    ['auth_ok', t.rich('sections.notifications.messageRows.authOk', notificationRich)],
+    ['auth_fail', t.rich('sections.notifications.messageRows.authFail', notificationRich)],
+  ]
+
+  const notificationBehaviorRows = [
+    [t.rich('sections.notifications.behaviorRows.pull', notificationRich)],
+    [t.rich('sections.notifications.behaviorRows.conflict', notificationRich)],
+    [t.rich('sections.notifications.behaviorRows.status', notificationRich)],
+    [t.rich('sections.notifications.behaviorRows.scheduler', notificationRich)],
+    [t.rich('sections.notifications.behaviorRows.hidden', notificationRich)],
   ]
 
   const methodRows = methodExampleKeys.map((key) => [
@@ -441,13 +492,47 @@ onConflict: async (ctx) => {
       </DocSection>
 
       <DocSection id="notifications" title={t('sections.notifications.title')}>
-        <p>{t.rich('sections.notifications.p1', withDocRich())}</p>
-        <p>{t.rich('sections.notifications.p2', withDocRich())}</p>
+        <p>{t.rich('sections.notifications.p1', notificationRich)}</p>
+        <p className="doc-subheading">{t('sections.notifications.modelTitle')}</p>
+        <p>{t.rich('sections.notifications.modelP1', notificationRich)}</p>
+        <p className="doc-subheading">{t('sections.notifications.operatorTitle')}</p>
+        <p>{t.rich('sections.notifications.operatorP1', notificationRich)}</p>
+        <p className="doc-subheading">{t('sections.notifications.optionsTitle')}</p>
+        <DocsTable
+          headers={[t('table.option'), t('table.description')]}
+          rows={notificationOptionRows}
+        />
+        <p className="doc-subheading">{t('sections.notifications.connectExampleTitle')}</p>
+        <CodeBlock code={snippets.notificationConnectOptions} language="typescript" />
+        <p className="doc-subheading">{t('sections.notifications.flowTitle')}</p>
+        <ol className="doc-list ordered">
+          <li>{t.rich('sections.notifications.flowSteps.health', notificationRich)}</li>
+          <li>{t.rich('sections.notifications.flowSteps.connect', notificationRich)}</li>
+          <li>{t.rich('sections.notifications.flowSteps.auth', notificationRich)}</li>
+          <li>{t.rich('sections.notifications.flowSteps.subscribe', notificationRich)}</li>
+          <li>{t.rich('sections.notifications.flowSteps.events', notificationRich)}</li>
+        </ol>
+        <p className="doc-subheading">{t('sections.notifications.messagesTitle')}</p>
+        <DocsTable
+          headers={[t('table.code'), t('table.meaning')]}
+          rows={notificationMessageRows}
+        />
+        <p className="doc-subheading">{t('sections.notifications.sdkBehaviorTitle')}</p>
         <ul className="doc-list">
-          <li>{t.rich('sections.notifications.li1', withDocRich())}</li>
-          <li>{t.rich('sections.notifications.li2', withDocRich())}</li>
-          <li>{t.rich('sections.notifications.li3', withDocRich())}</li>
+          {notificationBehaviorRows.map((row, index) => (
+            <li key={index}>{row[0]}</li>
+          ))}
         </ul>
+        <p className="doc-subheading">{t('sections.notifications.fallbackTitle')}</p>
+        <p>{t.rich('sections.notifications.fallbackP1', notificationRich)}</p>
+        <p className="doc-subheading">{t('sections.notifications.reconnectTitle')}</p>
+        <p>{t.rich('sections.notifications.reconnectP1', notificationRich)}</p>
+        <DocEndpointHeading label={t('sections.notifications.wsExampleTitle')} />
+        <DocHttpExample {...exampleProps} {...apiSnippets.websocketConnect} />
+        <p>{t.rich('sections.notifications.specP1', notificationRich)}</p>
+        <p>{t.rich('sections.notifications.specP2', notificationRich)}</p>
+        <p className="doc-subheading">{t('sections.notifications.disableTitle')}</p>
+        <p>{t.rich('sections.notifications.disableP1', notificationRich)}</p>
       </DocSection>
 
       <DocSection id="status" title={t('sections.status.title')}>

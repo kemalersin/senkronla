@@ -894,6 +894,11 @@
           "onDocumentStatusChange": "Optional — your UI. <tag>(documentId, status)</tag> for multi-document badges.",
           "pushDebounceMs": "Default 2000. Delay before pushing after <tag>notifyLocalChange()</tag>.",
           "notificationsEnabled": "Default true. Set false for CLI tools or tests.",
+          "notificationMode": "Force <tag>ws_with_poll_fallback</tag> or <tag>poll_only</tag>; default probes <tag>GET /health</tag> → <tag>websocket</tag>",
+          "websocketEnabled": "Set <tag>false</tag> to skip WebSocket (poll-only) without disabling notifications entirely",
+          "pullIntervalDisconnectedMs": "Poll interval when WebSocket is down — default <tag>45000</tag> ms",
+          "pullIntervalConnectedMs": "Safety poll while WebSocket is connected — default <tag>300000</tag> ms",
+          "pauseSchedulerWhenHidden": "Default true — pause WebSocket and background poll when the browser tab is hidden",
           "persistRecoveryPhrase": "Default true. Stores phrase in <tag>EsrStorage</tag> (consider security implications)."
         }
       },
@@ -1069,12 +1074,55 @@
         "manualExample": "Manual resolution"
       },
       "notifications": {
-        "title": "Live notifications",
-        "p1": "When enabled, the SDK opens a <tag>WebSocket</tag> to <tag>.../notifications</tag> and listens for <tag>head_changed</tag>.",
-        "p2": "If <tag>WebSocket</tag> fails, it falls back to HTTP polling (<tag>ws_with_poll_fallback</tag> mode). WS only notifies — you still pull via HTTP.",
-        "li1": "<tag>head_changed</tag> → automatic pull for that <tag>documentId</tag> (not a full <tag>sync()</tag>)",
-        "li2": "<tag>limits_changed</tag> → slot count updated (handle in <tag>onDeviceLimit</tag> or poll limits)",
-        "li3": "Optional <tag>subscribe</tag> with <tag>documentIds[]</tag> after <tag>auth_ok</tag> — filter <tag>head_changed</tag> by document"
+        "title": "Live notifications (WebSocket)",
+        "p1": "By default <tag>EsrSync</tag> keeps remote changes fresh with a <tag>push-to-pull</tag> channel: the relay pushes lightweight signals over WebSocket; the SDK always fetches document data over HTTP.",
+        "modelTitle": "Push-to-pull model",
+        "modelP1": "WebSocket frames never carry snapshots or envelopes. After <tag>head_changed</tag>, the SDK runs <tag>GET .../head/meta</tag> for that <tag>documentId</tag> and pulls when the revision is newer — the same pull path as <tag>sync()</tag>, scoped to one document.",
+        "operatorTitle": "Relay capability",
+        "operatorP1": "On <tag>connect()</tag> the SDK reads <tag>GET /health</tag> → <tag>websocket</tag>. When the operator disabled WebSocket (<tag>ESR_WEBSOCKET_ENABLED=false</tag> or config), mode becomes <tag>poll_only</tag> automatically — no code change required.",
+        "optionsTitle": "Notification options",
+        "connectExampleTitle": "Connect with notification tuning",
+        "flowTitle": "Connection flow (automatic)",
+        "flowSteps": {
+          "health": "Probe <tag>/health</tag> → choose <tag>ws_with_poll_fallback</tag> or <tag>poll_only</tag>",
+          "connect": "Open <tag>wss://…/v1/namespaces/'{namespaceId}'/notifications</tag> with subprotocol <tag>esr-notifications-v1</tag>",
+          "auth": "On socket open, send <tag>'{\"type\":\"auth\",\"token\":\"dvt_…\"}'</tag> (SDK reads token from <tag>EsrStorage</tag>)",
+          "subscribe": "After <tag>auth_ok</tag>, send <tag>'{\"type\":\"subscribe\",\"documentIds\":[\"primary\", …]}'</tag> for connected document slots",
+          "events": "Handle <tag>head_changed</tag> / <tag>limits_changed</tag>; reply to <tag>ping</tag> with <tag>pong</tag>"
+        },
+        "messagesTitle": "WebSocket message types",
+        "messageRows": {
+          "headChanged": "<tag>head_changed</tag> — revision meta for one <tag>documentId</tag>; triggers HTTP pull",
+          "limitsChanged": "<tag>limits_changed</tag> — <tag>maxDevices</tag>, <tag>activeDevices</tag>, <tag>purchasedSlots</tag> updated",
+          "ping": "<tag>ping</tag> / <tag>pong</tag> — connection keep-alive",
+          "authOk": "<tag>auth_ok</tag> — authenticated; SDK marks connection ready and sends <tag>subscribe</tag>",
+          "authFail": "<tag>auth_fail</tag> — connection closed; SDK falls back to HTTP poll"
+        },
+        "sdkBehaviorTitle": "What the SDK does for you",
+        "behaviorRows": {
+          "pull": "<tag>head_changed</tag> → pull one document via sync engine (not a full multi-document <tag>sync()</tag>)",
+          "conflict": "Revision mismatch may invoke <tag>onConflict</tag> — same UX as manual sync",
+          "status": "Aggregate status becomes <tag>ws_connected</tag> while the notification socket is open (<tag>onStatusChange</tag>)",
+          "scheduler": "When notifications are active, background sync defers to notification poll intervals",
+          "hidden": "Tab hidden → pause WebSocket and poll (<tag>pauseSchedulerWhenHidden</tag>, default true); resume on focus"
+        },
+        "fallbackTitle": "Polling fallback",
+        "fallbackP1": "When WebSocket is off, fails, or the tab is backgrounded, the SDK polls <tag>GET head/meta</tag> per connected document. Defaults: <tag>45 s</tag> while disconnected, <tag>5 min</tag> safety interval while WebSocket is up.",
+        "reconnectTitle": "Reconnect",
+        "reconnectP1": "On close or error the SDK reconnects with exponential backoff (1 s base, 60 s cap, jitter) and runs an immediate head check until WebSocket restores.",
+        "wsExampleTitle": "Wire protocol example",
+        "specP1": "Full protocol: <specLink>13-WEBSOCKET-NOTIFICATIONS.md</specLink>.",
+        "specP2": "REST endpoint reference: <apiWebSocketLink>API — WebSocket notifications</apiWebSocketLink>.",
+        "disableTitle": "Disabling notifications",
+        "disableP1": "Set <tag>notificationsEnabled: false</tag> for CLI tools, unit tests, or when you only call <tag>sync()</tag> manually.",
+        "options": {
+          "notificationsEnabled": "Default <tag>true</tag>. Set <tag>false</tag> to skip WebSocket and poll entirely",
+          "notificationMode": "Force <tag>ws_with_poll_fallback</tag> or <tag>poll_only</tag>; default probes <tag>/health</tag>",
+          "websocketEnabled": "Set <tag>false</tag> to skip WebSocket without turning off poll fallback",
+          "pullIntervalDisconnectedMs": "Poll interval when WebSocket is down — default <tag>45000</tag> ms",
+          "pullIntervalConnectedMs": "Safety poll while WebSocket is connected — default <tag>300000</tag> ms",
+          "pauseSchedulerWhenHidden": "Default <tag>true</tag> — pause WebSocket and background poll when tab hidden"
+        }
       },
       "status": {
         "title": "Status values",
