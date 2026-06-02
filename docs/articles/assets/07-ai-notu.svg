@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 170" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0c2f2c"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5eead4"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="170" rx="16" fill="url(#card)"/>
+  <rect x="1.5" y="1.5" width="957" height="167" rx="15" fill="none" stroke="#5eead4" stroke-opacity="0.25" stroke-width="2"/>
+
+  <!-- AI spark badge -->
+  <g transform="translate(92,85)">
+    <circle cx="0" cy="0" r="44" fill="#0b1220" stroke="url(#spark)" stroke-width="2.5"/>
+    <path d="M0 -26 C4 -8 8 -4 26 0 C8 4 4 8 0 26 C-4 8 -8 4 -26 0 C-8 -4 -4 -8 0 -26 Z" fill="url(#spark)"/>
+    <path d="M19 -28 C20 -21 21 -20 28 -19 C21 -18 20 -17 19 -10 C18 -17 17 -18 10 -19 C17 -20 18 -21 19 -28 Z" fill="#a5b4fc"/>
+  </g>
+
+  <!-- label -->
+  <text x="166" y="62" font-size="12.5" font-weight="700" letter-spacing="2.5" fill="#5eead4">YAPAY ZEK&#194; &#304;LE &#220;RET&#304;LD&#304;</text>
+
+  <!-- text -->
+  <text x="166" y="92" font-size="16" fill="#e2e8f0">Bu makaleyi, Senkronla ve Kurtarma Plan&#305;'n&#305;n kendi dok&#252;mantasyonunu</text>
+  <text x="166" y="118" font-size="16" fill="#e2e8f0">okuyarak <tspan font-weight="700" fill="#a5b4fc">Claude Opus 4.8</tspan> yazd&#305;.</text>
+  <text x="166" y="142" font-size="13.5" font-style="italic" fill="#94a3b8">Hatalar bana, g&#252;zel c&#252;mleler ona ait.</text>
+</svg>

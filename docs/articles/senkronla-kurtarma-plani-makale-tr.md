@@ -106,3 +106,7 @@ Denemek isterseniz başlangıç noktaları şunlar:
 - Kurtarma Planı: [kurtar.co](https://kurtar.co) ve [GitHub](https://github.com/kemalersin/kurtarma-plani)
 
 Geri bildirim, hata bildirimi ya da "bence şöyle olsaydı daha iyiydi" türünden fikirler her iki depoda da başımın üstünde yeri var. Açık kaynak yapmanın en keyifli tarafı zaten bu sohbet kısmı. Kod nasılsa yarın yine değişecek.
+
+---
+
+![Bu makale, projenin mevcut dokümantasyonu temel alınarak Claude Opus 4.8 ile üretilmiştir](./assets/07-ai-notu.svg)
