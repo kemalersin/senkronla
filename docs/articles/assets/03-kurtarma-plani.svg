@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="440" rx="16" fill="#f8fafc"/>
+  <text x="480" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Kurtarma Plan&#305;'n&#305;n senkron mimarisi</text>
+
+  <!-- Browser box -->
+  <rect x="40" y="78" width="340" height="300" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <rect x="40" y="78" width="340" height="34" rx="16" fill="#eef2ff"/>
+  <circle cx="62" cy="95" r="5" fill="#f87171"/>
+  <circle cx="80" cy="95" r="5" fill="#fbbf24"/>
+  <circle cx="98" cy="95" r="5" fill="#34d399"/>
+  <text x="240" y="100" text-anchor="middle" font-size="12.5" font-weight="600" fill="#4338ca">kurtar.co (taray&#305;c&#305;)</text>
+
+  <rect x="66" y="132" width="288" height="58" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="210" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Vue 3 SPA + finans motoru</text>
+  <text x="210" y="178" text-anchor="middle" font-size="12" fill="#64748b">bor&#231;, nakit ak&#305;&#351;&#305;, panel, analiz</text>
+
+  <rect x="66" y="202" width="138" height="56" rx="10" fill="#ecfeff" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="135" y="226" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0e7490">IndexedDB</text>
+  <text x="135" y="244" text-anchor="middle" font-size="11" fill="#0e7490">(Dexie)</text>
+
+  <rect x="216" y="202" width="138" height="56" rx="10" fill="#ccfbf1" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="285" y="226" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0f766e">EsrSync</text>
+  <text x="285" y="244" text-anchor="middle" font-size="11" fill="#0f766e">@senkronla/client</text>
+
+  <rect x="66" y="270" width="288" height="48" rx="10" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="210" y="290" text-anchor="middle" font-size="12" font-weight="700" fill="#c2410c">Yedek yol: dosya tabanl&#305; senkron</text>
+  <text x="210" y="307" text-anchor="middle" font-size="11" fill="#c2410c">File System Access / manuel mod</text>
+
+  <text x="210" y="352" text-anchor="middle" font-size="11.5" fill="#64748b">esr_app_kurtar_co &#183; origin do&#287;rulanm&#305;&#351;</text>
+
+  <!-- arrows to relay -->
+  <path d="M356 230 C440 230 470 175 560 175" fill="none" stroke="#14b8a6" stroke-width="2.5" marker-end="url(#a3t)"/>
+  <text x="470" y="205" text-anchor="middle" font-size="11.5" fill="#0f766e" font-weight="600">&#351;ifreli zarf (HTTPS)</text>
+  <path d="M560 215 C470 215 440 280 356 280" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#a3i)"/>
+  <text x="470" y="262" text-anchor="middle" font-size="11.5" fill="#6366f1" font-weight="600">WS: "de&#287;i&#351;ti" sinyali</text>
+
+  <!-- relay -->
+  <rect x="560" y="120" width="170" height="170" rx="16" fill="#0f172a"/>
+  <text x="645" y="156" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">sync.senkron.la</text>
+  <text x="645" y="176" text-anchor="middle" font-size="11.5" fill="#94a3b8">/v1 relay</text>
+  <rect x="585" y="196" width="120" height="32" rx="8" fill="#134e4a"/>
+  <text x="645" y="217" text-anchor="middle" font-size="11.5" fill="#5eead4" font-weight="600">slot kotas&#305; 2/3</text>
+  <rect x="585" y="236" width="120" height="32" rx="8" fill="#134e4a"/>
+  <text x="645" y="257" text-anchor="middle" font-size="11.5" fill="#5eead4" font-weight="600">revizyon takibi</text>
+
+  <!-- other devices -->
+  <rect x="780" y="120" width="140" height="80" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="850" y="150" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Masa&#252;st&#252;</text>
+  <text x="850" y="172" text-anchor="middle" font-size="11.5" fill="#64748b">e&#351;le&#351;mi&#351; cihaz</text>
+  <rect x="780" y="212" width="140" height="80" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="850" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Telefon</text>
+  <text x="850" y="264" text-anchor="middle" font-size="11.5" fill="#64748b">QR ile kat&#305;ld&#305;</text>
+  <path d="M732 175 L776 160" stroke="#94a3b8" stroke-width="2.2" marker-end="url(#a3g)"/>
+  <path d="M732 235 L776 250" stroke="#94a3b8" stroke-width="2.2" marker-end="url(#a3g)"/>
+
+  <text x="480" y="412" text-anchor="middle" font-size="12.5" fill="#64748b">Tek sat&#305;r finans API'si yazmadan masa&#252;st&#252; ve telefon aras&#305; senkron. Relay sadece ta&#351;&#305;y&#305;c&#305;.</text>
+
+  <defs>
+    <marker id="a3t" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="#14b8a6"/></marker>
+    <marker id="a3i" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="#6366f1"/></marker>
+    <marker id="a3g" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="#94a3b8"/></marker>
+  </defs>
+</svg>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="360" rx="16" fill="#f8fafc"/>
+  <text x="480" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Klasik "bulut senkronu" mu, kapal&#305; zarf m&#305;?</text>
+
+  <!-- left: classic -->
+  <rect x="40" y="70" width="420" height="252" rx="16" fill="#fff1f2" stroke="#fecdd3" stroke-width="2"/>
+  <text x="250" y="104" text-anchor="middle" font-size="16" font-weight="700" fill="#be123c">Sunucuda d&#252;z JSON</text>
+  <g font-size="13.5" fill="#9f1239">
+    <text x="70" y="146">&#8226; Hesaplar, bor&#231;lar, API anahtarlar&#305; a&#231;&#305;kta</text>
+    <text x="70" y="178">&#8226; Sunucu her &#351;eyi okuyabilir</text>
+    <text x="70" y="210">&#8226; S&#305;z&#305;nt&#305; = do&#287;rudan senin sorunun</text>
+    <text x="70" y="242">&#8226; Reg&#252;lasyon y&#252;k&#252; tavan yapar</text>
+  </g>
+  <text x="250" y="292" text-anchor="middle" font-size="12.5" fill="#be123c" font-style="italic">"Verinize biz de bakabiliriz" enerjisi</text>
+
+  <!-- right: senkronla -->
+  <rect x="500" y="70" width="420" height="252" rx="16" fill="#f0fdfa" stroke="#99f6e4" stroke-width="2"/>
+  <text x="710" y="104" text-anchor="middle" font-size="16" font-weight="700" fill="#0f766e">Kapal&#305; zarf (Senkronla)</text>
+  <g font-size="13.5" fill="#115e59">
+    <text x="530" y="146">&#8226; &#350;ifreleme cihazda, anahtar sizde</text>
+    <text x="530" y="178">&#8226; Relay sadece opak zarf&#305; ta&#351;&#305;r</text>
+    <text x="530" y="210">&#8226; S&#305;zsa bile i&#231;erik okunamaz</text>
+    <text x="530" y="242">&#8226; &#214;l&#231;eklemesi kolay, &#231;&#252;nk&#252; "aptal"</text>
+  </g>
+  <text x="710" y="292" text-anchor="middle" font-size="12.5" fill="#0f766e" font-style="italic">"Ne ta&#351;&#305;d&#305;&#287;&#305;m&#305; bilmiyorum" enerjisi (iyi anlamda)</text>
+</svg>
