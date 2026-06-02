@@ -6,8 +6,7 @@ import { DocSection } from '@/components/doc-section'
 import { DocsLayout } from '@/components/docs-layout'
 import { DocsTable } from '@/components/docs-table'
 import { Link } from '@/i18n/navigation'
-import { DocEndpointHeading, DocHttpExample } from '@/components/doc-http-example'
-import { createApiSnippets, createGuideSnippets, npmInstallSnippets, SDK_SAMPLE_LEGEND } from '@/lib/doc-snippets'
+import { createGuideSnippets, npmInstallSnippets, SDK_SAMPLE_LEGEND } from '@/lib/doc-snippets'
 import { withDocRich } from '@/lib/doc-rich-text'
 import { createPageMetadata } from '@/lib/page-metadata'
 import { getRelayApiBaseUrl } from '@/lib/public-api-url'
@@ -93,11 +92,9 @@ export default async function SdkPage({ params }: PageProps) {
   setRequestLocale(locale)
 
   const t = await getTranslations('sdk')
-  const tApi = await getTranslations('api')
   const tGuides = await getTranslations('guides')
   const relayUrl = getRelayApiBaseUrl()
   const snippets = createGuideSnippets(relayUrl)
-  const apiSnippets = createApiSnippets(relayUrl)
   const specHref =
     locale === 'tr'
       ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md'
@@ -152,11 +149,6 @@ export default async function SdkPage({ params }: PageProps) {
     ),
     apiWebSocketLink: (chunks) => <Link href="/api#websocket">{chunks}</Link>,
   })
-
-  const exampleProps = {
-    requestLabel: tApi('table.request'),
-    responseLabel: tApi('table.response'),
-  }
 
   const nav = sectionKeys.map((key) => ({
     id: key,
@@ -527,10 +519,12 @@ onConflict: async (ctx) => {
         <p>{t.rich('sections.notifications.fallbackP1', notificationRich)}</p>
         <p className="doc-subheading">{t('sections.notifications.reconnectTitle')}</p>
         <p>{t.rich('sections.notifications.reconnectP1', notificationRich)}</p>
-        <DocEndpointHeading label={t('sections.notifications.wsExampleTitle')} />
-        <DocHttpExample {...exampleProps} {...apiSnippets.websocketConnect} />
-        <p>{t.rich('sections.notifications.specP1', notificationRich)}</p>
-        <p>{t.rich('sections.notifications.specP2', notificationRich)}</p>
+        <DocCallout variant="info" title={t('sections.notifications.specTitle')}>
+          <ul className="doc-list doc-callout-links">
+            <li>{t.rich('sections.notifications.specP1', notificationRich)}</li>
+            <li>{t.rich('sections.notifications.specP2', notificationRich)}</li>
+          </ul>
+        </DocCallout>
         <p className="doc-subheading">{t('sections.notifications.disableTitle')}</p>
         <p>{t.rich('sections.notifications.disableP1', notificationRich)}</p>
       </DocSection>

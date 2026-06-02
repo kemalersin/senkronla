@@ -1110,9 +1110,9 @@
         "fallbackP1": "When WebSocket is off, fails, or the tab is backgrounded, the SDK polls <tag>GET head/meta</tag> per connected document. Defaults: <tag>45 s</tag> while disconnected, <tag>5 min</tag> safety interval while WebSocket is up.",
         "reconnectTitle": "Reconnect",
         "reconnectP1": "On close or error the SDK reconnects with exponential backoff (1 s base, 60 s cap, jitter) and runs an immediate head check until WebSocket restores.",
-        "wsExampleTitle": "Wire protocol example",
-        "specP1": "Full protocol: <specLink>13-WEBSOCKET-NOTIFICATIONS.md</specLink>.",
-        "specP2": "REST endpoint reference: <apiWebSocketLink>API — WebSocket notifications</apiWebSocketLink>.",
+        "specTitle": "Further reading",
+        "specP1": "Full protocol: <specLink>13-WEBSOCKET-NOTIFICATIONS.md</specLink>",
+        "specP2": "REST endpoint: <apiWebSocketLink>API — WebSocket notifications</apiWebSocketLink>",
         "disableTitle": "Disabling notifications",
         "disableP1": "Set <tag>notificationsEnabled: false</tag> for CLI tools, unit tests, or when you only call <tag>sync()</tag> manually.",
         "options": {

@@ -1110,9 +1110,9 @@
         "fallbackP1": "WebSocket kapalı, başarısız veya sekme arka plandayken SDK bağlı her belge için <tag>GET head/meta</tag> poll eder. Varsayılanlar: bağlantı yokken <tag>45 sn</tag>, WebSocket açıkken güvenlik aralığı <tag>5 dk</tag>.",
         "reconnectTitle": "Yeniden bağlanma",
         "reconnectP1": "Kapanma veya hata sonrası SDK üstel geri çekilme ile yeniden bağlanır (1 sn taban, 60 sn üst sınır, jitter) ve WebSocket dönene kadar anında head kontrolü çalıştırır.",
-        "wsExampleTitle": "Tel protokolü örneği",
-        "specP1": "Tam protokol: <specLink>13-WEBSOCKET-NOTIFICATIONS.md</specLink>.",
-        "specP2": "REST uç noktası: <apiWebSocketLink>API — WebSocket bildirimleri</apiWebSocketLink>.",
+        "specTitle": "Referanslar",
+        "specP1": "Tam protokol: <specLink>13-WEBSOCKET-NOTIFICATIONS.md</specLink>",
+        "specP2": "REST uç noktası: <apiWebSocketLink>API — WebSocket bildirimleri</apiWebSocketLink>",
         "disableTitle": "Bildirimleri kapatma",
         "disableP1": "CLI araçları, birim testleri veya yalnızca manuel <tag>sync()</tag> için <tag>notificationsEnabled: false</tag> kullanın.",
         "options": {
