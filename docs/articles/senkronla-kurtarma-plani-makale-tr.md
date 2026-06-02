@@ -45,7 +45,7 @@ Geleneksel senkronizasyonda sunucu genelde caka satar: "Doğru veri bende, geris
 
 Bu son madde benim için pazarlık konusu bile değildi. Hassas finans verisiyle uğraşırken "sunucu otomatik birleştirme yaptı ve bir şeyleri sessizce ezdi" cümlesinden daha ürkütücü az şey var. Senkronla'da birleştirme kararı sizde, sunucu sadece elini kaldırıp "burada bir çakışma var" diyor. Sonuçta relay'i rahatça ölçekleyebiliyorsunuz, çünkü orada ne karmaşık iş mantığı ne de şifre çözme dönüyor. Bütün o yük uygulamada, olması gereken yerde.
 
-İşin operatör tarafı da boşlanmamış. Tek bir namespace altında birden çok belge tutabiliyorsunuz (mesela `primary` ve `settings` ayrı), cihaz eşleştirme ve kurtarma ifadesi akışları hazır, slot lisanslama ile cihaz sayısını sınırlayabiliyorsunuz, uygulama kaydıyla da hangi origin'lerin bağlanabileceğini doğrulayabiliyorsunuz. Hepsi dokümanlarda ve operatör portalında duruyor.
+İşin operatör tarafı da boşlanmamış durumda. Tek bir namespace altında birden çok belge tutabiliyorsunuz (mesela `primary` ve `settings` ayrı), cihaz eşleştirme ve kurtarma ifadesi akışları hazır, slot lisanslama ile cihaz sayısını sınırlayabiliyorsunuz, uygulama kaydıyla da hangi origin'lerin bağlanabileceğini doğrulayabiliyorsunuz. Hepsi dokümanlarda ve operatör portalında duruyor.
 
 ## Teoriden sahaya: Kurtarma Planı
 
