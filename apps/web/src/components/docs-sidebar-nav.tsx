@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import type { DocsNavItem } from '@/components/docs-layout'
+import { DEMO_URL } from '@/lib/site-links'
 
 interface DocsSidebarNavProps {
   title: string
@@ -16,6 +17,7 @@ export function DocsSidebarNav({ title, nav }: DocsSidebarNavProps) {
   const isGuidesIndex = pathname === '/guides'
   const isEsrGuide = pathname === '/guides/esr'
   const isAgentsGuide = pathname === '/guides/agents'
+  const showTutorialLink = isGuidesIndex
   const showGuidesBackLink = !isGuidesIndex
   const showEsrLink = isGuidesIndex
   const showAgentsLink = isGuidesIndex
@@ -93,8 +95,18 @@ export function DocsSidebarNav({ title, nav }: DocsSidebarNavProps) {
             </a>
           ))}
         </nav>
-        {(showEsrLink || showAgentsLink || showGuidesBackLink) && (
+        {(showTutorialLink || showEsrLink || showAgentsLink || showGuidesBackLink) && (
           <div className="docs-sidebar-footer">
+            {showTutorialLink && (
+              <a
+                href={DEMO_URL}
+                className="docs-nav-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {tNav('tutorial')} →
+              </a>
+            )}
             {showEsrLink && (
               <Link href="/guides/esr" className="docs-nav-link" data-active={isEsrGuide ? 'true' : 'false'}>
                 {tNav('esr')} →

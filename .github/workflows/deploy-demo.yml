@@ -49,10 +49,11 @@ jobs:
 
           workdir=$(mktemp -d)
           cp apps/demo/dist/index.html "$workdir/"
+          cp apps/demo/CNAME "$workdir/"
 
           cd "$workdir"
           git init -b demo
-          git add index.html
+          git add index.html CNAME
           git commit -m "chore(demo): deploy ${GITHUB_SHA::7}"
 
           git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"

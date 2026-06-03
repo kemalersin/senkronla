@@ -54,7 +54,7 @@ Pushes to `main` (when demo or its SDK dependencies change) run [`.github/workfl
 
 1. In the repository: **Settings → Pages → Build and deployment → Deploy from a branch**.
 2. Branch: **`demo`**, folder: **`/ (root)`**.
-3. **Custom domain:** [demo.senkron.la](https://demo.senkron.la/) (GitHub Pages default: `https://<owner>.github.io/<repo>/`, e.g. `https://kemalersin.github.io/senkronla/`).
+3. **Custom domain:** [demo.senkron.la](https://demo.senkron.la/) — set once under **Settings → Pages → Custom domain**; the deploy workflow also publishes [`CNAME`](./CNAME) on the `demo` branch so force-pushes do not clear the domain (GitHub Pages drops the setting when `CNAME` is missing from the published branch).
 
 You can also trigger a deploy manually from the **Actions** tab (`Deploy demo` → **Run workflow**).
 

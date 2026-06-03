@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useDeveloperSession } from '@/hooks/use-developer-session'
-import { DONATE_URL, GITHUB_REPO_URL } from '@/lib/site-links'
+import { DONATE_URL, DEMO_URL, GITHUB_REPO_URL } from '@/lib/site-links'
 
 export function SiteFooter({
   initialDeveloperAuthenticated = false,
@@ -13,6 +13,7 @@ export function SiteFooter({
   developerPortalEnabled?: boolean
 }) {
   const t = useTranslations('footer')
+  const tNav = useTranslations('nav')
   const developerAuthenticated = useDeveloperSession(initialDeveloperAuthenticated)
 
   return (
@@ -26,6 +27,9 @@ export function SiteFooter({
         <div className="footer-links">
           <div>
             <h4>{t('developers')}</h4>
+            <a href={DEMO_URL} target="_blank" rel="noopener noreferrer">
+              {tNav('tutorial')}
+            </a>
             <Link href="/guides">{t('guides')}</Link>
             {developerPortalEnabled &&
               (!developerAuthenticated ? (

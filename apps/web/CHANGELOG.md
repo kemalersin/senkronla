@@ -9,6 +9,14 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.17]
+
+### Added
+
+- Site header nav — **Tutorial** / **Öğretici** link before Guides, opens [demo.senkron.la](https://demo.senkron.la/) in a new tab
+- Site footer — same **Tutorial** / **Öğretici** link under Developers, before Guides
+- Integration guides sidebar — **Tutorial** / **Öğretici** link below the section menu (opens [demo.senkron.la](https://demo.senkron.la/) in a new tab)
+
 ## [0.1.15]
 
 ### Added

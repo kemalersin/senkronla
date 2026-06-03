@@ -66,6 +66,7 @@
   },
   "nav": {
     "home": "Home",
+    "tutorial": "Tutorial",
     "guides": "Guides",
     "esr": "ESR",
     "agents": "Agents",

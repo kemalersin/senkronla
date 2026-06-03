@@ -11,6 +11,14 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.17]
+
+### Added
+
+- **web:** Site header nav — **Tutorial** / **Öğretici** link before Guides, opens [demo.senkron.la](https://demo.senkron.la/) in a new tab
+- **web:** Site footer — same **Tutorial** / **Öğretici** link under Developers, before Guides
+- **web:** Integration guides sidebar — **Tutorial** / **Öğretici** link below the section menu (opens [demo.senkron.la](https://demo.senkron.la/) in a new tab)
+
 ### Fixed
 
 - **demo:** Connect step Reconnect no longer fires three consecutive `head/meta` requests — removed duplicate focus/visibility pull handlers that overlapped with `EsrSyncScheduler`; reconnect preserves cached health response
@@ -19,6 +27,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 - **demo:** Intro and completion screen docs link label — EN “Guides”, TR “Rehberler”
 - **docs:** README and `apps/demo/README.md` — live SDK tutorial at [demo.senkron.la](https://demo.senkron.la/)
 - **docs:** README — centered **Interactive Tutorial** badge linking to [demo.senkron.la](https://demo.senkron.la/)
+- **ci:** Demo deploy publishes `CNAME` on the `demo` branch so GitHub Pages custom domain survives force-push
 
 ## [0.1.16]
 
