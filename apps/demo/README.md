@@ -4,6 +4,8 @@ An interactive, two-column tutorial for the [Senkronla](https://senkron.la) clie
 
 The build output is a **single static `index.html`** (all JS/CSS inlined via [`vite-plugin-singlefile`](https://github.com/richVue/vite-plugin-singlefile)), so it can be hosted anywhere as one file.
 
+**Live demo:** [demo.senkron.la](https://demo.senkron.la/)
+
 ## What it covers
 
 Twelve steps, each mapping a code snippet to a live result:
@@ -52,7 +54,7 @@ Pushes to `main` (when demo or its SDK dependencies change) run [`.github/workfl
 
 1. In the repository: **Settings → Pages → Build and deployment → Deploy from a branch**.
 2. Branch: **`demo`**, folder: **`/ (root)`**.
-3. The site is served at `https://<owner>.github.io/<repo>/` (for example `https://kemalersin.github.io/senkronla/`).
+3. **Custom domain:** [demo.senkron.la](https://demo.senkron.la/) (GitHub Pages default: `https://<owner>.github.io/<repo>/`, e.g. `https://kemalersin.github.io/senkronla/`).
 
 You can also trigger a deploy manually from the **Actions** tab (`Deploy demo` → **Run workflow**).
 

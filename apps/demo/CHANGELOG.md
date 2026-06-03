@@ -14,6 +14,9 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 - Connect step Reconnect no longer fires three consecutive `head/meta` requests — removed duplicate focus/visibility pull handlers that overlapped with `EsrSyncScheduler`; reconnect preserves cached health response
 - Page reload no longer double-fetches `GET /namespaces/{id}` and `/devices` — session bootstrap reuses the namespace refresh already performed in `connect()`
 - Connect no longer shows “Connected” when `GET /health` fails (network or CORS) — SDK session is not opened until the relay responds
+- Intro and completion screen docs link label — EN “Guides”, TR “Rehberler” (intro step uses `intro.links`, not `completion.links`)
+- README and `apps/demo/README.md` document the live demo at [demo.senkron.la](https://demo.senkron.la/)
+- README — centered **Interactive Tutorial** badge linking to [demo.senkron.la](https://demo.senkron.la/)
 
 ## [0.1.16]
 

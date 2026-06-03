@@ -13,6 +13,12 @@ Open-source, self-hosted, zero-knowledge **Envelope Sync Relay (ESR)** for offli
 
 Your app encrypts and owns the data model. Senkronla stores opaque `ESR-DOC1` envelopes, coordinates revisions, manages device pairing and slot limits, and notifies other clients — **without reading payload content**.
 
+<p align="center">
+  <a href="https://demo.senkron.la/">
+    <img alt="Interactive SDK tutorial — demo.senkron.la" src="https://img.shields.io/badge/Interactive_Tutorial-→-1677ff?style=for-the-badge&logo=github&logoColor=white">
+  </a>
+</p>
+
 ## At a glance
 
 | Topic | Summary |
@@ -159,6 +165,11 @@ TLS termination via Caddy or nginx in front of the API and web portal. Operator 
 
 ## Apps using Senkronla
 
+**[Interactive SDK demo](./apps/demo)** — an in-repo, single-file (`index.html`) tutorial that walks through the [`@senkronla/client`](https://www.npmjs.com/package/@senkronla/client) (`EsrSync`) flow step by step: documents, connection, namespace, recovery, sync, pairing, conflicts, encryption and live notifications. Built with Vite + React; light/dark themes and EN/TR localization.
+
+- **Live demo:** [demo.senkron.la](https://demo.senkron.la/)
+- **Run locally:** `pnpm --filter @senkronla/demo dev`
+
 **[Kurtarma Planı](https://github.com/kemalersin/kurtarma-plani)** — open-source, **client-only**, **local-first** personal finance SPA (Vue 3, IndexedDB, single-file static build). The app encrypts snapshots client-side and syncs opaque envelopes through [`@senkronla/client`](https://www.npmjs.com/package/@senkronla/client) (`EsrSync`) against a public relay ([`sync.senkron.la`](https://sync.senkron.la/v1)); file-based sync remains available as a fallback.
 
 - **Repository:** [github.com/kemalersin/kurtarma-plani](https://github.com/kemalersin/kurtarma-plani)
@@ -172,8 +183,6 @@ TLS termination via Caddy or nginx in front of the API and web portal. Operator 
 | Device pairing (host code + QR) | Connected relay devices |
 | --- | --- |
 | ![Pairing code and QR payload](./docs/screenshots/kurtar_co_02.png) | ![Slot usage and device list](./docs/screenshots/kurtar_co_03.png) |
-
-**[Interactive SDK demo](./apps/demo)** — an in-repo, single-file (`index.html`) tutorial that walks through the [`@senkronla/client`](https://www.npmjs.com/package/@senkronla/client) (`EsrSync`) flow step by step: documents, connection, namespace, recovery, sync, pairing, conflicts, encryption and live notifications. Built with Vite + React; light/dark themes and EN/TR localization. Run with `pnpm --filter @senkronla/demo dev`.
 
 ## Monorepo
 

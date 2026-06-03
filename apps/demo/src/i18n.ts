@@ -917,7 +917,7 @@ const EN: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
       start: 'Start the tour',
       links: {
         website: 'senkron.la',
-        docs: 'Documentation',
+        docs: 'Guides',
         github: 'GitHub',
         donate: 'Donate',
       },
@@ -1065,7 +1065,7 @@ const EN: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
       linksNav: 'Next steps',
       links: {
         website: 'senkron.la',
-        docs: 'Documentation',
+        docs: 'Guides',
         github: 'GitHub',
         donate: 'Donate',
       },
@@ -1132,7 +1132,7 @@ const TR: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
       start: 'Tura başla',
       links: {
         website: 'senkron.la',
-        docs: 'Belgeler',
+        docs: 'Rehberler',
         github: 'GitHub',
         donate: 'Bağış Yap',
       },
@@ -1281,7 +1281,7 @@ const TR: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
       linksNav: 'Sonraki adımlar',
       links: {
         website: 'senkron.la',
-        docs: 'Belgeler',
+        docs: 'Rehberler',
         github: 'GitHub',
         donate: 'Bağış Yap',
       },
