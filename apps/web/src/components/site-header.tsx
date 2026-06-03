@@ -42,6 +42,14 @@ function CloseIcon() {
   )
 }
 
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 4.75a.75.75 0 0 0-1.166.623v13.254a.75.75 0 0 0 1.166.623l11.5-6.627a.75.75 0 0 0 0-1.246L6 4.75z" />
+    </svg>
+  )
+}
+
 export function SiteHeader({
   locale,
   initialDeveloperAuthenticated = false,
@@ -69,7 +77,6 @@ export function SiteHeader({
     | { id: string; kind: 'external'; href: string; label: string }
 
   const links: NavItem[] = [
-    { id: 'home', kind: 'internal', href: '/', label: t('home') },
     { id: 'tutorial', kind: 'external', href: DEMO_URL, label: t('tutorial') },
     { id: 'guides', kind: 'internal', href: '/guides', label: t('guides') },
     { id: 'esr', kind: 'internal', href: '/guides/esr', label: t('esr') },
@@ -101,17 +108,21 @@ export function SiteHeader({
     return pathname === href || (href !== '/' && pathname.startsWith(href))
   }
 
-  function renderNavItem(link: NavItem, onNavigate?: () => void) {
+  function renderNavItem(link: NavItem, onNavigate?: () => void, mobile = false) {
     if (link.kind === 'external') {
+      const label = mobile && link.id === 'tutorial' ? t('tutorialMobile') : link.label
       return (
         <a
           key={link.id}
           href={link.href}
           target="_blank"
           rel="noopener noreferrer"
+          className={link.id === 'tutorial' ? 'header-tutorial-link' : undefined}
+          data-mobile={mobile ? 'true' : undefined}
           onClick={onNavigate}
         >
-          {link.label}
+          {link.id === 'tutorial' && <PlayIcon />}
+          {label}
         </a>
       )
     }
@@ -131,7 +142,7 @@ export function SiteHeader({
   function renderNavLinks(className: string, onNavigate?: () => void) {
     return (
       <nav className={className} aria-label="Main">
-        {links.map((link) => renderNavItem(link, onNavigate))}
+        {links.map((link) => renderNavItem(link, onNavigate, true))}
       </nav>
     )
   }
@@ -157,12 +168,14 @@ export function SiteHeader({
     return (
       <nav className={className} aria-label="Main">
         {links.map((link) => renderNavItem(link))}
-        {renderLoginLink()}
       </nav>
     )
   }
 
-  function renderUtilities({ includeSearch = true }: { includeSearch?: boolean } = {}) {
+  function renderUtilities({
+    includeSearch = true,
+    includeLogin = false,
+  }: { includeSearch?: boolean; includeLogin?: boolean } = {}) {
     return (
       <>
         {includeSearch && <DocSearchTrigger />}
@@ -189,6 +202,7 @@ export function SiteHeader({
             </Link>
           ))}
         </div>
+        {includeLogin && renderLoginLink()}
       </>
     )
   }
@@ -204,7 +218,7 @@ export function SiteHeader({
 
         {renderDesktopNav('nav site-header-nav')}
 
-        <div className="header-actions site-header-utilities">{renderUtilities()}</div>
+        <div className="header-actions site-header-utilities">{renderUtilities({ includeLogin: true })}</div>
 
         <div className="header-mobile-controls">
           <DocSearchTrigger variant="icon" />

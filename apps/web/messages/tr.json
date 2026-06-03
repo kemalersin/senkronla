@@ -67,6 +67,7 @@
   "nav": {
     "home": "Ana sayfa",
     "tutorial": "Öğretici",
+    "tutorialMobile": "Etkileşimli SDK öğreticisi",
     "guides": "Rehberler",
     "esr": "ESR",
     "agents": "Agents",

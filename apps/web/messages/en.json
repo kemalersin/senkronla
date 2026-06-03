@@ -67,6 +67,7 @@
   "nav": {
     "home": "Home",
     "tutorial": "Tutorial",
+    "tutorialMobile": "Interactive SDK tutorial",
     "guides": "Guides",
     "esr": "ESR",
     "agents": "Agents",
