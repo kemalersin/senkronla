@@ -11,6 +11,24 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.18]
+
+### Fixed
+
+- **client:** `flushPush()` refreshes aggregate status after push so `pending_push` clears to `ws_connected` / `idle`
+- **client:** page reload no longer double-fetches `head/meta` when notifications are enabled — demo uses `onHeadMeta`; notification connect skips redundant initial poll
+- **client:** encrypt/push flows use `deferNotificationConnect`, `flushPush` → `onHeadMeta`, and optional `skipInitialHeadCheck` to avoid duplicate head/meta on **Run**
+- **demo:** Sync step **Sync now** / **Şimdi senkronla** stays enabled when status is **pending push** / **gönderim bekliyor**
+- **demo:** Encrypt envelope step updates plaintext and encrypted envelope code blocks when the document changes
+- **demo:** Sync-data **Add and sync** / **Ekle ve senkronla** no longer sends duplicate PUT and `head/meta` requests; manual sync step response body stays in sync after add-and-sync
+- **demo:** Page reload preserves `rateLimits` in the manual sync response body (fetched from `head/meta`, not namespace snapshot)
+- **demo:** Manual sync **Sync now** / **Şimdi senkronla** refreshes the response body after push (local doc marked before `sync()`)
+- **demo:** Push/sync demo actions use `flushPush()` + one `head/meta` instead of `sync()` + `refreshHead()` (drops duplicate meta GET)
+- **demo:** Sync-data **Add and sync** / **Ekle ve senkronla** disabled when the note field is empty
+- **demo:** Status badges return to **ws_connected** / **idle** after push when notifications are on (depends on client `flushPush()` fix)
+- **demo:** Page reload with notifications enabled performs a single `head/meta` fetch for the sync response panel
+- **demo:** Push/sync demo buttons no longer double-fetch `head/meta` when notifications are off — rely on `flushPush()` → `onHeadMeta` only
+
 ## [0.1.17]
 
 ### Added

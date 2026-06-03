@@ -109,4 +109,62 @@ describe('EsrSync', () => {
 
     expect(sync.getStatus()).toBe('idle')
   })
+
+  it('flushPush clears pending_push after a successful push', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/namespaces') && init?.method === 'POST') {
+        return jsonResponse(201, {
+          namespaceId,
+          deviceToken: 'device-token',
+          deviceId: 'dev-1',
+          limits: {
+            freeDeviceLimit: 2,
+            purchasedSlots: 0,
+            maxDevices: 2,
+            activeDevices: 1,
+          },
+        })
+      }
+
+      if (url.includes('/documents/primary') && init?.method === 'PUT') {
+        return jsonResponse(201, {
+          revision: '01PUSH',
+          writtenAt: new Date().toISOString(),
+          contentSha256: 'abc',
+        })
+      }
+
+      return jsonResponse(404, { error: { code: 'NOT_FOUND', message: 'missing' } })
+    })
+
+    let local = { count: 0 }
+    const document = createDocumentAdapter({
+      namespaceId,
+      namespaceLabel: 'Workspace',
+      contentType: 'application/json',
+      exportDocument: async () => local,
+      importDocument: async (data) => {
+        local = data as { count: number }
+      },
+    })
+
+    const sync = await EsrSync.connect({
+      relayUrl: 'https://relay.test/v1',
+      document,
+      storage: createMemoryStorageAdapter(),
+      notificationsEnabled: false,
+      fetch: fetchMock as typeof fetch,
+      onConflict: async () => 'remote',
+      onRecoveryPhrase: async () => {},
+    })
+
+    await sync.ensureNamespace()
+    local = { count: 1 }
+    sync.markLocalChange()
+    expect(sync.getStatus()).toBe('pending_push')
+
+    await sync.flushPush()
+
+    expect(sync.getStatus()).toBe('idle')
+  })
 })

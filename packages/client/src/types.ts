@@ -195,6 +195,10 @@ export interface EsrSyncConnectOptions {
   onError?: (err: import('./errors.js').EsrError) => void
   onStatusChange?: (status: EsrSyncStatus) => void
   onDocumentStatusChange?: (documentId: string, status: EsrSyncStatus) => void
+  /** Called for every notification head/meta poll (including unchanged revision). */
+  onHeadMeta?: (notification: HeadChangedNotification) => void
+  /** When true, {@link EsrSync.startNotifications} must be called to connect the notification client. */
+  deferNotificationConnect?: boolean
 }
 
 export interface EnsureNamespaceResult {

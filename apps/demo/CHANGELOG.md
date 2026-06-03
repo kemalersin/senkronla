@@ -9,6 +9,22 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.18]
+
+### Fixed
+
+- Sync step **Sync now** stays enabled while status is **pending push** (local changes waiting to upload), even after an earlier sync in the same session
+- Encrypt envelope step rebuilds plaintext and encrypted envelope previews when the document, password, or encryption toggle changes (including after edits on the Document step)
+- Sync-data **Add and sync** no longer double-calls PUT and `head/meta` — `flushPush()` + `onHeadMeta` only (removed extra `refreshHead()` when notifications are off)
+- Page reload keeps relay `rateLimits` in the manual sync response panel — restore session via `GET head/meta` instead of namespace `head` snapshot
+- Manual sync **Sync now** marks local document changes before `sync()` so the response body updates (new revision and `rateLimits`) after edits on earlier steps
+- Encrypt envelope **Run** no longer repeats relay calls — reconnect skips namespace refresh; `flushPush()` plus one `head/meta` refresh
+- Sync-data **Add and sync** button is disabled while the note input is empty
+- Status badges no longer stay on **pending push** / **gönderim bekliyor** after a successful push when WebSocket notifications are enabled (client `flushPush()` fix)
+- Page reload no longer double-fetches `head/meta` when notifications are on — namespace refresh skips meta; `onHeadMeta` fills the sync response panel
+- Encrypt envelope **Run** defers notification head/meta until after push — single `head/meta` on **Çalıştır** when WebSocket is enabled
+- Push/sync buttons no longer call `refreshHead()` after `flushPush()` when notifications are off (fixes duplicate head/meta)
+
 ## [0.1.17]
 
 ### Fixed

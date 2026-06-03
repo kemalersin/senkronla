@@ -17,6 +17,8 @@ export interface NotificationClientOptions {
   getDeviceToken: () => Promise<string | null>
   /** Called when any tracked document head changes. */
   onHeadChanged: (notification: HeadChangedNotification) => void | Promise<void>
+  /** Called after each head/meta fetch (even when revision is unchanged). */
+  onHeadMeta?: (notification: HeadChangedNotification) => void | Promise<void>
   /** Documents to poll; defaults to `['primary']`. */
   documentIds?: string[]
   /** Send WS `subscribe` after auth (filters server push). Default true. */
@@ -29,6 +31,11 @@ export interface NotificationClientOptions {
   pauseWhenHidden?: boolean
   /** For tests — inject WebSocket constructor */
   WebSocketImpl?: typeof WebSocket
+}
+
+export interface NotificationConnectOptions {
+  /** Skip the post-auth head/meta catch-up when meta was just fetched by a push. */
+  skipInitialHeadCheck?: boolean
 }
 
 const WS_RECONNECT_BASE_MS = 1_000
@@ -69,13 +76,17 @@ export class NotificationClient {
   private headCheckTimer: ReturnType<typeof setTimeout> | undefined
   private headCheckInFlight: Promise<void> | null = null
   private headCheckQueued = false
+  private skipAuthHeadCheckOnce = false
 
   constructor(private readonly options: NotificationClientOptions) {
     this.documentIds =
       options.documentIds?.length ? [...options.documentIds] : ['primary']
   }
 
-  connect(): void {
+  connect(options?: NotificationConnectOptions): void {
+    if (options?.skipInitialHeadCheck) {
+      this.skipAuthHeadCheckOnce = true
+    }
     if (this.running) {
       return
     }
@@ -83,7 +94,6 @@ export class NotificationClient {
     this.running = true
     this.bindLifecycleHandlers()
     this.startPollLoop()
-    this.scheduleHeadCheck()
     this.connectWebSocket()
   }
 
@@ -185,6 +195,13 @@ export class NotificationClient {
     }
 
     const interval = this.currentPollInterval()
+    if (this.options.mode === 'poll_only') {
+      if (this.skipAuthHeadCheckOnce) {
+        this.skipAuthHeadCheckOnce = false
+      } else {
+        this.scheduleHeadCheck()
+      }
+    }
     this.pollTimer = setInterval(() => {
       if (this.options.pauseWhenHidden && typeof document !== 'undefined' && document.hidden) {
         return
@@ -301,7 +318,11 @@ export class NotificationClient {
       this.setWsConnected(true)
       this.sendSubscribeMessage()
       this.restartPollLoop()
-      this.scheduleHeadCheck()
+      if (this.skipAuthHeadCheckOnce) {
+        this.skipAuthHeadCheckOnce = false
+      } else {
+        this.scheduleHeadCheck()
+      }
       return
     }
 
@@ -458,6 +479,8 @@ export class NotificationClient {
         if (!meta) {
           continue
         }
+
+        await this.options.onHeadMeta?.({ documentId, meta })
 
         const last = this.lastRevisionByDocument.get(documentId)
         if (last !== meta.revision) {

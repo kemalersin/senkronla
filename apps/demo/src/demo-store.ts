@@ -321,12 +321,13 @@ export class DemoStore {
   }
 
   canSyncNow(): boolean {
-    return (
-      this.snapshot.connected &&
-      !this.snapshot.busy &&
-      this.snapshot.namespaceResponse !== null &&
-      !this.snapshot.syncUsedThisSession
-    )
+    if (!this.snapshot.connected || this.snapshot.busy || this.snapshot.namespaceResponse === null) {
+      return false
+    }
+    if (this.snapshot.status === 'pending_push') {
+      return true
+    }
+    return !this.snapshot.syncUsedThisSession
   }
 
   canApplyEncryption(): boolean {
@@ -389,6 +390,9 @@ export class DemoStore {
     if (!this.snapshot.connected) {
       return
     }
+    if (!this.snapshot.notificationsEnabled) {
+      await this.refreshHead()
+    }
     await this.buildEnvelopePreview()
   }
 
@@ -405,7 +409,6 @@ export class DemoStore {
       this.set({
         namespaceResponse: namespace,
         namespaceCreated: false,
-        ...(namespace.head ? { lastMeta: namespace.head } : {}),
         namespaceCommittedAtEpoch: this.snapshot.connectionEpoch,
       })
       await this.refreshDevices()
@@ -484,7 +487,6 @@ export class DemoStore {
   setWorkspaceName(workspace: string): void {
     this.set({ doc: { ...this.snapshot.doc, workspace } })
     this.persistDoc()
-    this.sync?.notifyLocalChange()
   }
 
   addNote(text: string): void {
@@ -495,14 +497,12 @@ export class DemoStore {
     const notes = [...this.snapshot.doc.notes, { id: randomId(), text: trimmed }]
     this.set({ doc: { ...this.snapshot.doc, notes } })
     this.persistDoc()
-    this.sync?.notifyLocalChange()
   }
 
   removeNote(id: string): void {
     const notes = this.snapshot.doc.notes.filter((note) => note.id !== id)
     this.set({ doc: { ...this.snapshot.doc, notes } })
     this.persistDoc()
-    this.sync?.notifyLocalChange()
   }
 
   // ---- Connection --------------------------------------------------------
@@ -564,7 +564,12 @@ export class DemoStore {
     return 'poll_only'
   }
 
-  async connect(options?: { preserveHealth?: boolean; silent?: boolean }): Promise<void> {
+  async connect(options?: {
+    preserveHealth?: boolean
+    silent?: boolean
+    skipNamespaceRefresh?: boolean
+    deferNotificationConnect?: boolean
+  }): Promise<void> {
     if (this.connectTask) {
       return this.connectTask
     }
@@ -574,9 +579,16 @@ export class DemoStore {
     return this.connectTask
   }
 
-  private async runConnect(options?: { preserveHealth?: boolean; silent?: boolean }): Promise<void> {
+  private async runConnect(options?: {
+    preserveHealth?: boolean
+    silent?: boolean
+    skipNamespaceRefresh?: boolean
+    deferNotificationConnect?: boolean
+  }): Promise<void> {
     const preserveHealth = options?.preserveHealth === true
     const silent = options?.silent === true
+    const skipNamespaceRefresh = options?.skipNamespaceRefresh === true
+    const deferNotificationConnect = options?.deferNotificationConnect === true
     this.set({
       ...(silent ? {} : { connecting: true }),
       error: null,
@@ -597,6 +609,7 @@ export class DemoStore {
           ? this.notificationModeFromHealth()
           : undefined,
         persistRecoveryPhrase: this.snapshot.persistRecoveryPhrase,
+        deferNotificationConnect,
         onStatusChange: (status) => {
           const effective =
             status === 'error' && this.snapshot.namespaceResponse === null ? 'idle' : status
@@ -610,6 +623,9 @@ export class DemoStore {
           this.set({ recoveryPhrase: phrase, recoveryPhraseAcknowledged: false })
         },
         onConflict: (ctx) => this.requestConflictResolution(ctx),
+        onHeadMeta: ({ meta }) => {
+          this.set({ lastMeta: meta })
+        },
         onError: (err) => {
           // Background scheduler may fire before ensureNamespace; that
           // "no token yet" case is expected in the tutorial, so ignore it.
@@ -640,7 +656,9 @@ export class DemoStore {
         this.set({ status: 'idle' })
       }
       this.persistPreferences({ wasConnected: true })
-      await this.refreshNamespaceFromRelay()
+      if (!skipNamespaceRefresh) {
+        await this.refreshNamespaceFromRelay()
+      }
     } catch (error) {
       this.set({ error: this.describeError(error), connected: false, status: 'not_connected' })
       this.persistPreferences({ wasConnected: false })
@@ -689,7 +707,6 @@ export class DemoStore {
       if (this.snapshot.namespaceResponse === null && result.namespace) {
         this.set({
           namespaceResponse: result.namespace,
-          ...(result.namespace.head ? { lastMeta: result.namespace.head } : {}),
         })
       }
 
@@ -700,9 +717,8 @@ export class DemoStore {
 
   async syncNow(): Promise<void> {
     await this.run(async () => {
+      await this.pushLocalChangesAndRefreshHead()
       this.set({ syncUsedThisSession: true })
-      await this.requireSync().sync()
-      await this.refreshHead()
     })
   }
 
@@ -710,8 +726,7 @@ export class DemoStore {
     await this.run(async () => {
       this.addNote(text)
       await this.buildEnvelopePreview()
-      await this.requireSync().sync()
-      await this.refreshHead()
+      await this.pushLocalChangesAndRefreshHead()
     })
   }
 
@@ -822,6 +837,14 @@ export class DemoStore {
     }
   }
 
+  /** One PUT + one head/meta via flushPush → onHeadMeta. */
+  private async pushLocalChangesAndRefreshHead(): Promise<void> {
+    const sync = this.requireSync()
+    sync.cancelDebouncedPush()
+    sync.markLocalChange()
+    await sync.flushPush()
+  }
+
   private async refreshDevices(): Promise<void> {
     try {
       const { devices } = await this.requireSync().listDevices()
@@ -886,12 +909,18 @@ export class DemoStore {
       return
     }
     await this.run(async () => {
-      await this.connect({ preserveHealth: true, silent: true })
+      await this.connect({
+        preserveHealth: true,
+        silent: true,
+        skipNamespaceRefresh: true,
+        deferNotificationConnect: this.snapshot.notificationsEnabled,
+      })
       await this.buildEnvelopePreview()
-      this.sync?.notifyLocalChange()
-      await this.requireSync().sync()
-      await this.refreshHead()
-      await this.refreshNamespaceFromRelay()
+      await this.pushLocalChangesAndRefreshHead()
+      if (this.snapshot.notificationsEnabled) {
+        this.requireSync().startNotifications({ skipInitialHeadCheck: true })
+        this.set({ notificationConnected: this.sync?.isNotificationConnected() ?? false })
+      }
       this.markEncryptionApplied()
       this.persistPreferences({
         encryptionEnabled: this.snapshot.encryptionEnabled,

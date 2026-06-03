@@ -9,6 +9,16 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.18]
+
+### Fixed
+
+- **`flushPush()`:** refresh aggregate status after push so `pending_push` clears to `ws_connected` / `idle` when local mutations are gone (demo tutorial push buttons with WebSocket enabled)
+- **`NotificationClient.connect()`:** drop redundant initial head/meta poll (WS mode uses post-auth check; poll-only uses poll loop start) — avoids duplicate `GET head/meta` alongside app bootstrap fetches
+- **`onHeadMeta`:** optional callback on every notification head/meta fetch (unchanged revision included)
+- **`deferNotificationConnect` / `startNotifications()`:** delay notification WS/poll until after an immediate push (avoids duplicate head/meta on encrypt-and-push flows)
+- **`flushPush()`:** after a successful push, invoke `onHeadMeta` once with fresh head/meta (demo response panel without a separate `refreshHead()`)
+
 ## [0.1.16]
 
 ### Fixed

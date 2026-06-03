@@ -77,6 +77,7 @@ export class EsrSync {
   private notifications: NotificationClient | null
   private scheduler: EsrSyncScheduler | null = null
   private enabled: boolean
+  private deferNotificationConnect: boolean
   private status: EsrSyncStatus = 'idle'
   private lastError: EsrError | null = null
 
@@ -87,6 +88,7 @@ export class EsrSync {
     sharedState: SyncStateStore,
     notifications: NotificationClient | null,
     enabled: boolean,
+    deferNotificationConnect: boolean,
   ) {
     this.options = options
     this.slots = slots
@@ -99,6 +101,7 @@ export class EsrSync {
     this.sharedState = sharedState
     this.notifications = notifications
     this.enabled = enabled
+    this.deferNotificationConnect = deferNotificationConnect
     this.status = enabled ? 'idle' : 'disabled'
   }
 
@@ -183,11 +186,23 @@ export class EsrSync {
 
             instanceRef.refreshAggregateStatus()
           },
+          onHeadMeta: (notification) => {
+            options.onHeadMeta?.(notification)
+          },
         })
       : null
 
     const enabled = options.enabled !== false
-    const instance = new EsrSync(options, slots, relay, sharedState, notifications, enabled)
+    const deferNotificationConnect = options.deferNotificationConnect === true
+    const instance = new EsrSync(
+      options,
+      slots,
+      relay,
+      sharedState,
+      notifications,
+      enabled,
+      deferNotificationConnect,
+    )
     instanceRef = instance
 
     if (enabled) {
@@ -224,9 +239,22 @@ export class EsrSync {
 
   enable(): void {
     this.enabled = true
-    this.notifications?.connect()
+    if (!this.deferNotificationConnect) {
+      this.notifications?.connect()
+    }
     this.scheduler?.start()
     this.setStatus(this.notifications?.isConnected() ? 'ws_connected' : 'idle')
+  }
+
+  /** Connect the notification client when {@link deferNotificationConnect} was used at connect time. */
+  startNotifications(options?: { skipInitialHeadCheck?: boolean }): void {
+    if (!this.enabled || !this.notifications) {
+      return
+    }
+
+    this.deferNotificationConnect = false
+    this.notifications.connect(options)
+    this.handleNotificationStateChange()
   }
 
   disable(): void {
@@ -456,11 +484,27 @@ export class EsrSync {
 
   async flushPush(documentId?: string): Promise<void> {
     const targets = this.slotsForDocument(documentId)
+    let pushed = false
 
     for (const slot of targets) {
+      const hadLocal = slot.state.hasLocalChanges()
       const result = await slot.engine.flushPush()
       if (result.status === 'conflict' && result.ctx) {
         await this.handleConflict(result.ctx)
+      }
+      if (result.status === 'ok' && hadLocal) {
+        pushed = true
+      }
+    }
+
+    this.refreshAggregateStatus()
+
+    if (pushed && this.options.onHeadMeta) {
+      for (const slot of targets) {
+        const meta = await this.relay.getHeadMeta(this.namespaceId, slot.documentId)
+        if (meta) {
+          await this.options.onHeadMeta({ documentId: slot.documentId, meta })
+        }
       }
     }
   }

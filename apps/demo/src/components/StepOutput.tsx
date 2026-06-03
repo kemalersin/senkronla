@@ -45,11 +45,11 @@ function ErrorText({ error }: { error: string | null }) {
 
 export function StepOutput({ step, state, ui, onNext, dark }: StepOutputProps) {
   useEffect(() => {
-    if ((step === 'syncData' || step === 'encryption') && !state.envelopePreview) {
-      void demoStore.buildEnvelopePreview()
+    if (step !== 'syncData' && step !== 'encryption') {
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+    void demoStore.buildEnvelopePreview()
+  }, [step, state.doc, state.syncPassword, state.encryptionEnabled])
 
   useEffect(() => {
     if (step !== 'namespace' || !state.connected || state.connecting) {
@@ -485,6 +485,7 @@ function SyncOutput({ state, ui, dark }: { state: DemoState; ui: UiMessages; dar
       </div>
       {state.lastMeta ? (
         <CodeBlock
+          key={state.lastMeta.revision}
           code={formatHeadMetaResponse(state.lastMeta)}
           language="json"
           dark={dark}
@@ -577,6 +578,7 @@ function SyncDataOutput({ state, ui, dark }: { state: DemoState; ui: UiMessages;
   const canPush =
     state.connected &&
     !state.busy &&
+    draft.trim().length > 0 &&
     (!state.encryptionEnabled || state.syncPassword.trim().length > 0)
   function submit(event: React.FormEvent) {
     event.preventDefault()
