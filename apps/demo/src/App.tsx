@@ -501,8 +501,15 @@ function JoinModal({
             <button type="button" className="btn btn-secondary" onClick={dismissModal} disabled={busy}>
               {ui.conflict.cancel}
             </button>
-            <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
-              {busy ? ui.common.busy : ui.header.joinSubmit}
+            <button type="submit" className="btn btn-primary join-submit" disabled={!canSubmit}>
+              {busy ? (
+                ui.common.busy
+              ) : (
+                <>
+                  <span className="join-submit-label">{ui.header.joinSubmit}</span>
+                  <span className="join-submit-label-short">{ui.header.join}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

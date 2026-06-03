@@ -14,6 +14,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 - Join modal — QR payload placeholder shows a full `esr://pair/v1/…` example (namespace ID, code, expiry, host)
 - Connect step — random friendly `deviceLabel` (e.g. `Alice laptop`) assigned once per browser, shown in the SDK snippet and passed to `EsrSync.connect`
 
+### Changed
+
+- Join modal submit button — **Join workspace** / **Çalışma alanına katıl** shortens to **Join** / **Katıl** on mobile (≤900px)
+
 ## [0.1.19]
 
 ### Added

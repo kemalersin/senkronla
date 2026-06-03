@@ -758,6 +758,10 @@ button {
   gap: 1rem;
 }
 
+.join-submit-label-short {
+  display: none;
+}
+
 .inline-form {
   display: flex;
   gap: 0.65rem;
@@ -1558,6 +1562,14 @@ button {
 
   .pane-footer-nav-icon {
     display: block;
+  }
+
+  .join-submit-label {
+    display: none;
+  }
+
+  .join-submit-label-short {
+    display: inline;
   }
 }
 
