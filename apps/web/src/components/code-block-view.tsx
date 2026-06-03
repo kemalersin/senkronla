@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useCallback, useLayoutEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { CodeBlockCopyButton } from '@/components/code-block-copy-button'
 import { usePathname } from '@/i18n/navigation'
 import type { CodeBlockLanguage } from '@/lib/code-block-types'
@@ -35,6 +35,8 @@ function fallbackHtml(code: string) {
   return `<pre class="code-block-fallback"><code>${escapeHtml(code)}</code></pre>`
 }
 
+const COPY_ACTIONS_VISIBLE_MS = 1_500
+
 export function CodeBlockView({
   code,
   language,
@@ -47,6 +49,29 @@ export function CodeBlockView({
   const navigationKey = `${locale}:${pathname}`
   const bodyRef = useRef<HTMLDivElement>(null)
   const requestIdRef = useRef(0)
+  const hideCopyActionsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [copyActionsVisible, setCopyActionsVisible] = useState(false)
+
+  const revealCopyActions = useCallback(() => {
+    setCopyActionsVisible(true)
+
+    if (hideCopyActionsTimerRef.current) {
+      clearTimeout(hideCopyActionsTimerRef.current)
+    }
+
+    hideCopyActionsTimerRef.current = setTimeout(() => {
+      setCopyActionsVisible(false)
+      hideCopyActionsTimerRef.current = null
+    }, COPY_ACTIONS_VISIBLE_MS)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (hideCopyActionsTimerRef.current) {
+        clearTimeout(hideCopyActionsTimerRef.current)
+      }
+    }
+  }, [])
 
   const paint = useCallback((html: string) => {
     if (bodyRef.current) {
@@ -105,16 +130,22 @@ export function CodeBlockView({
   }, [normalized, language, navigationKey, initialHtml, initialTheme, paint])
 
   return (
-    <div className="code-block">
-      <CodeBlockCopyButton code={normalized} />
-      <div
-        ref={bodyRef}
-        className="code-block-body"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{
-          __html: initialHtml || getCachedHighlightHtml(initialTheme, language, normalized) || fallbackHtml(normalized),
-        }}
-      />
+    <div
+      className="code-block"
+      data-copy-actions-visible={copyActionsVisible ? 'true' : undefined}
+      onPointerDown={revealCopyActions}
+    >
+      <CodeBlockCopyButton code={normalized} onCopy={revealCopyActions} />
+      <div className="code-block-scroll">
+        <div
+          ref={bodyRef}
+          className="code-block-body"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: initialHtml || getCachedHighlightHtml(initialTheme, language, normalized) || fallbackHtml(normalized),
+          }}
+        />
+      </div>
     </div>
   )
 }

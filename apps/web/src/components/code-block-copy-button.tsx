@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 
 interface CodeBlockCopyButtonProps {
   code: string
+  onCopy?: () => void
 }
 
 function CopyIcon() {
@@ -35,7 +36,7 @@ function CheckIcon() {
   )
 }
 
-export function CodeBlockCopyButton({ code }: CodeBlockCopyButtonProps) {
+export function CodeBlockCopyButton({ code, onCopy }: CodeBlockCopyButtonProps) {
   const t = useTranslations('codeBlock')
   const [copied, setCopied] = useState(false)
 
@@ -43,6 +44,7 @@ export function CodeBlockCopyButton({ code }: CodeBlockCopyButtonProps) {
     try {
       await navigator.clipboard.writeText(code)
       setCopied(true)
+      onCopy?.()
       window.setTimeout(() => setCopied(false), 2000)
     } catch {
       // ignore clipboard failures

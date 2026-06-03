@@ -11,10 +11,17 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.15]
+
 ### Added
 
 - **docs:** README — [Kurtarma Planı](https://github.com/kemalersin/kurtarma-plani) as a client-only, local-first example app; screenshots under `docs/screenshots/`
 - **web:** Brand-themed social share images (`og-image.png`, `twitter-card.png`) with `openGraph.images`, `summary_large_image` Twitter card, and `metadataBase` from `NEXT_PUBLIC_SITE_URL`
+
+### Fixed
+
+- **web:** Code block copy button pinned top-right while code scrolls horizontally on mobile
+- **web:** Code block copy button on touch devices reveals on tap and auto-hides after 3.5 s
 
 ## [0.1.14]
 
