@@ -1,6 +1,6 @@
 {
   "name": "@senkronla/client",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "Senkronla client SDK — RelayClient, SyncEngine, EsrSync facade",
   "license": "MIT",
   "author": "Kemal Ersin",
