@@ -11,6 +11,7 @@ interface StepSnippetsProps {
   copyLabel: string
   copiedLabel: string
   persistRecoveryPhrase?: boolean
+  deviceLabel?: string
 }
 
 export function StepSnippets({
@@ -22,11 +23,12 @@ export function StepSnippets({
   copyLabel,
   copiedLabel,
   persistRecoveryPhrase,
+  deviceLabel,
 }: StepSnippetsProps) {
   const snippet = SNIPPETS[step]
   const sdkCode =
-    step === 'connect' && persistRecoveryPhrase !== undefined
-      ? formatConnectSdkSnippet(persistRecoveryPhrase)
+    step === 'connect' && deviceLabel !== undefined
+      ? formatConnectSdkSnippet(persistRecoveryPhrase ?? false, deviceLabel)
       : snippet.sdk
   const yoursCode =
     step === 'connect' && persistRecoveryPhrase !== undefined

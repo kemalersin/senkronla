@@ -244,6 +244,19 @@ export interface ParsedPairingPayload {
   host?: string
 }
 
+/** Example `qrPayload` from `startPairing()` — used in Join modal placeholder and docs samples. */
+export const DEMO_PAIRING_QR_PAYLOAD = `esr://pair/v1/550e8400-e29b-41d4-a716-446655440000?code=482913&exp=1748427900&host=${encodeURIComponent('Alice laptop')}`
+
+const DEMO_DEVICE_NAMES = ['Alice', 'Bob', 'Carol', 'Deniz', 'Ece', 'Mehmet', 'Zeynep'] as const
+const DEMO_DEVICE_TYPES = ['laptop', 'phone', 'tablet', 'browser', 'desktop'] as const
+
+/** Friendly random label for the connect step — matches agent doc samples (`Alice laptop`, …). */
+export function randomDemoDeviceLabel(): string {
+  const name = DEMO_DEVICE_NAMES[Math.floor(Math.random() * DEMO_DEVICE_NAMES.length)]!
+  const type = DEMO_DEVICE_TYPES[Math.floor(Math.random() * DEMO_DEVICE_TYPES.length)]!
+  return `${name} ${type}`
+}
+
 /** Parse `esr://pair/v1/{namespaceId}?code=…&exp=…&host=…` from startPairing(). */
 export function parsePairingQrPayload(payload: string): ParsedPairingPayload | null {
   const trimmed = payload.trim()

@@ -8,7 +8,7 @@ import { IntroSiteLinks } from './components/IntroSiteLinks.tsx'
 import { StepSnippets } from './components/StepSnippets.tsx'
 import { StepOutput } from './components/StepOutput.tsx'
 import { demoStore, JOIN_PASSWORD_REQUIRED, loadStepIndex, persistStepIndex } from './demo-store.ts'
-import { parsePairingQrPayload } from './format-examples.ts'
+import { DEMO_PAIRING_QR_PAYLOAD, parsePairingQrPayload } from './format-examples.ts'
 import { detectLocale, MESSAGES, STEP_IDS, type Locale } from './i18n.ts'
 
 type Theme = 'light' | 'dark'
@@ -207,6 +207,7 @@ export function App() {
                   copyLabel={ui.common.copy}
                   copiedLabel={ui.common.copied}
                   persistRecoveryPhrase={state.persistRecoveryPhrase}
+                  deviceLabel={state.deviceLabel}
                 />
               )}
             </div>
@@ -445,9 +446,9 @@ function JoinModal({
             <label htmlFor="join-qr">{ui.header.joinQrLabel}</label>
             <textarea
               id="join-qr"
-              rows={2}
+              rows={3}
               autoFocus
-              placeholder={ui.header.joinQrPlaceholder}
+              placeholder={DEMO_PAIRING_QR_PAYLOAD}
               value={qrPayload}
               onChange={(event) => handleQrPayloadChange(event.target.value)}
             />

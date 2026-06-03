@@ -39,15 +39,17 @@ export interface StepSnippet {
   yours?: string
 }
 
-export function formatConnectSdkSnippet(persistRecoveryPhrase: boolean): string {
+export function formatConnectSdkSnippet(persistRecoveryPhrase: boolean, deviceLabel: string): string {
   const persistLine = persistRecoveryPhrase
-    ? '  persistRecoveryPhrase: true, // optional — also save phrase in StorageAdapter\n'
+    ? '  persistRecoveryPhrase: true, // optional — save phrase in StorageAdapter\n'
     : ''
+  const escapedLabel = deviceLabel.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
   return `import { EsrSync, createLocalStorageAdapter } from '@senkronla/client'
 
 const sync = await EsrSync.connect({
   relayUrl: 'https://sync.senkron.la/v1',
   appId: 'esr_app_demo', // required when the relay has apps.enabled
+  deviceLabel: '${escapedLabel}',
   storage: createLocalStorageAdapter(),
   document,
   onRecoveryPhrase,
@@ -116,7 +118,7 @@ function importDocument(data: DemoDoc) {
   },
   connect: {
     lang: 'typescript',
-    sdk: formatConnectSdkSnippet(false),
+    sdk: formatConnectSdkSnippet(false, 'Alice laptop'),
     yours: formatConnectYoursSnippet(false),
   },
   namespace: {
@@ -226,7 +228,6 @@ interface UiCopy {
     joinTitle: string
     joinDesc: string
     joinQrLabel: string
-    joinQrPlaceholder: string
     joinOrManual: string
     joinNamespaceLabel: string
     joinNamespacePlaceholder: string
@@ -869,7 +870,6 @@ const EN: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
       joinDesc:
         'Paste the QR payload from step 10, or enter the workspace namespace ID and 6-digit pairing code.',
       joinQrLabel: 'QR payload',
-      joinQrPlaceholder: 'esr://pair/v1/…?code=482913&exp=…',
       joinOrManual: 'Or enter manually',
       joinNamespaceLabel: 'Namespace ID',
       joinNamespacePlaceholder: '550e8400-e29b-41d4-a716-446655440000',
@@ -1085,7 +1085,6 @@ const TR: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
       joinDesc:
         '10. adımdaki QR payload’u yapıştır veya çalışma alanı namespace ID’si ile 6 haneli eşleştirme kodunu gir.',
       joinQrLabel: 'QR payload',
-      joinQrPlaceholder: 'esr://pair/v1/…?code=482913&exp=…',
       joinOrManual: 'Ya da elle gir',
       joinNamespaceLabel: 'Namespace ID',
       joinNamespacePlaceholder: '550e8400-e29b-41d4-a716-446655440000',

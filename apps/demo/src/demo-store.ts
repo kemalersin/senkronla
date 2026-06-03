@@ -16,7 +16,7 @@ import type {
   HeadMeta,
   PairingHostResult,
 } from '@senkronla/client'
-import { DEMO_SHA256_REMOTE, demoJsonForDisplay, formatWsNotification } from './format-examples.ts'
+import { DEMO_SHA256_REMOTE, demoJsonForDisplay, formatWsNotification, randomDemoDeviceLabel } from './format-examples.ts'
 
 export interface DemoNote {
   id: string
@@ -40,6 +40,7 @@ export interface DemoState {
   sdkVersion: string
   relayUrl: string
   appId: string
+  deviceLabel: string
   persistRecoveryPhrase: boolean
   appsEnabled: boolean | null
   healthResponse: unknown | null
@@ -94,6 +95,7 @@ const CONTENT_TYPE = 'application/vnd.senkronla-demo+json'
 interface DemoPreferences {
   relayUrl?: string
   appId?: string
+  deviceLabel?: string
   persistRecoveryPhrase?: boolean
   encryptionEnabled?: boolean
   syncPassword?: string
@@ -240,6 +242,7 @@ export class DemoStore {
       sdkVersion: CLIENT_SDK_VERSION,
       relayUrl: prefs.relayUrl ?? DEFAULT_RELAY,
       appId: prefs.appId ?? DEFAULT_APP_ID,
+      deviceLabel: prefs.deviceLabel ?? randomDemoDeviceLabel(),
       persistRecoveryPhrase: prefs.persistRecoveryPhrase ?? false,
       appsEnabled: null,
       healthResponse: null,
@@ -276,6 +279,9 @@ export class DemoStore {
       error: null,
     }
     this.bindCrossTabSync()
+    if (!prefs.deviceLabel) {
+      this.persistPreferences()
+    }
   }
 
   private bindCrossTabSync(): void {
@@ -362,6 +368,7 @@ export class DemoStore {
     writePreferences({
       relayUrl: this.snapshot.relayUrl,
       appId: this.snapshot.appId,
+      deviceLabel: this.snapshot.deviceLabel,
       persistRecoveryPhrase: this.snapshot.persistRecoveryPhrase,
       encryptionEnabled: this.snapshot.encryptionEnabled,
       syncPassword: this.snapshot.syncPassword,
@@ -602,6 +609,7 @@ export class DemoStore {
       const instance = await EsrSync.connect({
         relayUrl: this.snapshot.relayUrl,
         appId: this.snapshot.appId.trim() || undefined,
+        deviceLabel: this.snapshot.deviceLabel,
         storage: createLocalStorageAdapter(),
         document: this.buildAdapter(),
         notificationsEnabled: this.snapshot.notificationsEnabled,
@@ -755,7 +763,7 @@ export class DemoStore {
         await sync.relay.redeemPairingCode({
           namespaceId: ns,
           pairingCode: code,
-          deviceLabel: 'Demo device',
+          deviceLabel: this.snapshot.deviceLabel,
         })
       }
 
@@ -1026,6 +1034,7 @@ export class DemoStore {
       error: null,
       relayUrl: DEFAULT_RELAY,
       appId: DEFAULT_APP_ID,
+      deviceLabel: randomDemoDeviceLabel(),
       persistRecoveryPhrase: false,
       encryptionEnabled: false,
       syncPassword: '',
@@ -1038,6 +1047,7 @@ export class DemoStore {
     this.persistPreferences({
       relayUrl: DEFAULT_RELAY,
       appId: DEFAULT_APP_ID,
+      deviceLabel: this.snapshot.deviceLabel,
       persistRecoveryPhrase: false,
       encryptionEnabled: false,
       syncPassword: '',
