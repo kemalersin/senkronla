@@ -1140,15 +1140,30 @@
       },
       "errors": {
         "title": "Client error codes",
-        "p1": "All SDK errors are <tag>EsrError</tag> instances with a stable <tag>code</tag> string:",
-        "p2": "Server-side codes (full list) are on the API page — including relay quotas (default 50 MB envelope, rate limits). Branch on <tag>error.code</tag>, not HTTP status alone.",
+        "p1": "All SDK errors are <tag>EsrError</tag> instances with a stable <tag>code</tag> string. SDK-only codes:",
+        "p2": "Relay codes pass through unchanged — full list on the <apiLink>API page</apiLink> and in <errorCodesSpecLink>12-ERROR-CODES.md</errorCodesSpecLink>. Branch on <tag>error.code</tag>, not HTTP status alone.",
+        "relayTitle": "Common relay codes (via SDK)",
         "client": {
           "noToken": "No device token yet — call <tag>ensureNamespace</tag>, <tag>joinPairing</tag>, or <tag>recover</tag>",
           "offline": "Network down — retry <tag>sync()</tag> or <tag>sync(documentId)</tag> when online",
+          "noFetch": "Fetch API unavailable in this environment",
+          "httpError": "HTTP error without parseable <tag>error.code</tag>",
+          "syncFailed": "Unexpected sync failure",
           "namespaceExists": "Workspace already exists — use pairing or recovery instead of create",
           "conflictCancelled": "User cancelled conflict dialog — local edits still pending",
+          "noDocument": "<tag>EsrSync.connect</tag> requires <tag>document</tag> or <tag>documents</tag>",
+          "unknownDocumentId": "<tag>sync(documentId)</tag> not in configured documents",
+          "invalidDocumentId": "<tag>documentId</tag> format invalid",
+          "invalidDocumentSlot": "Invalid entry in <tag>documents[]</tag>",
+          "duplicateDocumentId": "Duplicate <tag>documentId</tag> in <tag>documents[]</tag>",
+          "namespaceMismatch": "Multi-document namespace configuration mismatch",
+          "encryptionPasswordRequired": "Password required for ENV-ENC1 encryption",
+          "unsupportedContent": "Unsupported inner content magic",
+          "invalidEnvelope": "Envelope build or parse failed",
           "revisionConflict": "Server revision moved — conflict flow required",
-          "deviceLimit": "Workspace full — show upgrade or device management UI"
+          "deviceLimit": "Workspace full — show upgrade or device management UI",
+          "deviceTokenInvalid": "Re-pair or recover — token invalid or revoked",
+          "documentNotFound": "No push yet for document — expected on first pull"
         }
       }
     }
@@ -1264,7 +1279,9 @@
           "developerUi": "<developerLink>/developer</developerLink> — when self-service enabled"
         },
         "errorsTitle": "App-related error codes",
-        "errorsP1": "Branch on <tag>error.code</tag>. Full list in <specLink>16-APP-REGISTRY.md</specLink> and <sdkAppLink>SDK — Application registry</sdkAppLink>.",
+        "errorsP1": "Branch on <tag>error.code</tag>. Full list in <errorCodesSpecLink>12-ERROR-CODES.md</errorCodesSpecLink> and <sdkAppLink>SDK — Application registry</sdkAppLink>.",
+        "developerErrorsTitle": "Developer portal error codes",
+        "developerErrorsP1": "Returned by <tag>/v1/developer/*</tag> when self-service registration is enabled.",
         "errors": {
           "appIdRequired": "Send <tag>X-ESR-App-Id</tag> — relay has app registry enabled",
           "originRequired": "Web client missing <tag>Origin</tag> header",
@@ -1272,11 +1289,26 @@
           "namespaceMismatch": "Namespace belongs to another app",
           "notFound": "Unknown <tag>appId</tag>",
           "suspended": "Operator suspended the app",
+          "archived": "App archived — mutations blocked",
           "pairingNotAllowed": "App not in pairing token <tag>allowedAppIds</tag>",
           "clientSecretInvalid": "Wrong native client secret",
           "notVerified": "App pending verification",
           "nativeIdRequired": "Missing <tag>X-ESR-Platform</tag> or <tag>X-ESR-Bundle-Id</tag>",
-          "bundleNotAllowed": "Bundle ID not registered or not approved for this app"
+          "bundleNotAllowed": "Bundle ID not registered or not approved for this app",
+          "originExists": "Origin already registered for this app",
+          "bundleExists": "Bundle already registered for this app",
+          "originVerificationFailed": "DNS or HTTPS origin verification failed"
+        },
+        "developerErrors": {
+          "invalidToken": "Email verification or password-reset token invalid or expired",
+          "invalidCredentials": "Wrong email or password",
+          "emailNotVerified": "Verify email before signing in",
+          "accountDisabled": "Operator disabled the account",
+          "forbidden": "App does not belong to signed-in developer",
+          "appLimitReached": "Per-developer app quota exceeded",
+          "emailExists": "Email already registered — sign in instead",
+          "portalDisabled": "Developer portal not enabled or JWT secret missing",
+          "mailNotConfigured": "Outbound mail not configured on relay"
         },
         "migrationTitle": "Migrating from v1.2",
         "migrationP1": "Ship clients with app headers first, then enable <tag>apps.enabled</tag>, register apps, and set <tag>legacyDefaultAppId</tag> for existing namespaces. Details: <specLink>16-APP-REGISTRY §19</specLink>.",
@@ -1461,17 +1493,25 @@
       },
       "errors": {
         "title": "Error codes",
-        "p1": "Always branch on <tag>error.code</tag>. Common codes:",
+        "p1": "Always branch on <tag>error.code</tag>. Sync API codes:",
+        "p2": "App registry, developer portal, WebSocket, and SDK-only codes: see sections above and <errorCodesSpecLink>12-ERROR-CODES.md</errorCodesSpecLink>.",
         "rows": {
           "validation": "Fix request body fields",
+          "unauthorized": "Send <tag>Authorization</tag> header",
           "token": "Re-pair or recover — token invalid or revoked",
           "recovery": "Wrong recovery phrase proof",
+          "forbidden": "Authorization denied",
           "limitPay": "Show upgrade / unlock UI",
           "limitBlock": "User must remove a device",
+          "lastDevice": "Cannot revoke the last remaining device",
+          "contentType": "<tag>contentType</tag> not in server whitelist",
+          "notFoundGeneric": "Record not found",
           "notFound": "Check <tag>namespaceId</tag>",
           "noDocument": "No push yet — expected on first pull",
+          "deviceNotFound": "Invalid device id",
           "exists": "Namespace taken — pair or recover instead",
           "conflict": "Re-read <tag>head/meta</tag>, run conflict UX",
+          "unlockRedeemed": "Unlock code already used",
           "tooLarge": "Envelope exceeds <tag>maxEnvelopeBytes</tag> (default 50 MB) — shrink snapshot or ask operator to raise limit",
           "envelope": "Fix envelope schema or hash",
           "rateLimit": "Quota exceeded — <tag>Retry-After</tag>, <tag>RateLimit-*</tag> headers, and <tag>error.details.rateLimit</tag> (<tag>remaining</tag> is 0)",
@@ -1480,7 +1520,8 @@
           "invalidDocumentId": "Path <tag>documentId</tag> format invalid",
           "documentLimit": "Too many documents in namespace — raise <tag>maxDocumentsPerNamespace</tag> or delete unused ids",
           "documentNotAllowed": "<tag>documentId</tag> not in server allowlist",
-          "envelopeDocumentMismatch": "Envelope <tag>documentId</tag> must match URL path"
+          "envelopeDocumentMismatch": "Envelope <tag>documentId</tag> must match URL path",
+          "internalError": "Unexpected server error — retry with exponential backoff"
         }
       }
     },

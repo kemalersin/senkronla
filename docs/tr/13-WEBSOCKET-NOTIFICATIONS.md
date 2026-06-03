@@ -321,10 +321,14 @@ Custom close codes (öneri):
 
 | code | Açıklama |
 |------|----------|
-| `WS_AUTH_REQUIRED` | İlk mesaj auth gelmedi |
-| `WS_AUTH_INVALID` | Token geçersiz |
+| `WS_AUTH_REQUIRED` | Auth mesajı zamanında alınmadı |
+| `WS_AUTH_INVALID` | Cihaz token geçersiz veya revoke |
 | `WS_NAMESPACE_MISMATCH` | Path vs token namespace |
-| `WS_DISABLED` | Sunucuda WS kapalı |
+| `WS_TOO_MANY_CONNECTIONS` | Cihaz başına bağlantı limiti aşıldı |
+| `WS_INVALID_MESSAGE` | Hatalı JSON veya mesaj şekli |
+| `WS_INVALID_SUBSCRIBE` | Geçersiz `subscribe` gövdesi |
+
+`websocket.enabled: false` iken upgrade rotası kayıtlı değildir (HTTP `404`). `GET /health` ile kontrol edin:
 
 HTTP `GET /health` yanıtına eklenebilir:
 

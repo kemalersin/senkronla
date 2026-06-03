@@ -414,17 +414,36 @@ onLogout(() => sync.destroy())
 
 ```typescript
 export class EsrError extends Error {
-  readonly code: string // API error code veya ESR_CLIENT_*
+  readonly code: string // relay error.code veya ESR_CLIENT_*
   readonly status?: number
   readonly details?: unknown
 }
-
-// İstemci kodları (örnek)
-// ESR_CLIENT_OFFLINE
-// ESR_CLIENT_NO_TOKEN
-// ESR_CLIENT_NAMESPACE_REQUIRED
-// ESR_CLIENT_CONFLICT_CANCELLED
 ```
+
+Relay hataları olduğu gibi geçer (`REVISION_CONFLICT`, `DEVICE_LIMIT_*` vb.). Yalnızca SDK kodları:
+
+| code | Ne zaman |
+|------|----------|
+| `ESR_CLIENT_NO_TOKEN` | Henüz cihaz token yok |
+| `ESR_CLIENT_OFFLINE` | Ağ yok |
+| `ESR_CLIENT_NO_FETCH` | Fetch API yok |
+| `ESR_CLIENT_HTTP_ERROR` | Parse edilemeyen HTTP hatası |
+| `ESR_CLIENT_SYNC_FAILED` | Beklenmeyen sync hatası |
+| `ESR_CLIENT_NAMESPACE_EXISTS` | Namespace zaten var |
+| `ESR_CLIENT_CONFLICT_CANCELLED` | Kullanıcı `onConflict` iptal etti |
+| `ESR_CLIENT_NO_DOCUMENT` | connect'te `document` / `documents` eksik |
+| `ESR_CLIENT_UNKNOWN_DOCUMENT_ID` | `sync(id)` yapılandırılmamış |
+| `ESR_CLIENT_INVALID_DOCUMENT_ID` | Geçersiz `documentId` formatı |
+| `ESR_CLIENT_INVALID_DOCUMENT_SLOT` | Geçersiz `documents[]` girişi |
+| `ESR_CLIENT_DUPLICATE_DOCUMENT_ID` | `documents[]` içinde yinelenen id |
+| `ESR_CLIENT_NAMESPACE_MISMATCH` | Çoklu belge yapılandırma uyuşmazlığı |
+| `ESR_CLIENT_ENCRYPTION_PASSWORD_REQUIRED` | ENV-ENC1 parolası eksik |
+| `ESR_CLIENT_UNSUPPORTED_CONTENT` | Desteklenmeyen içerik magic |
+| `ESR_CLIENT_INVALID_ENVELOPE` | Zarf oluşturma/parse hatası |
+
+Tam listeler: [12-ERROR-CODES.md](./12-ERROR-CODES.md) (SDK istemci kodları ve relay kodları).
+
+`isEsrError(err)` ve `isOfflineError(err)` kullanın.
 
 `onDeviceLimit` çağrılmazsa limit hataları `onError` + `status: 'error'` olur.
 

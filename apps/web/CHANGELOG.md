@@ -19,6 +19,8 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
+- API and SDK guide pages — complete error code tables (sync, app registry, developer portal, SDK client)
+- Agent docs (`public/agents/api-*.md`, `sdk-*.md`) — full error code reference
 - Operator rate limits tab shows **App** (name + id, same as Namespaces) instead of **Device** when `apps.enabled` is true
 
 ## [0.1.17]

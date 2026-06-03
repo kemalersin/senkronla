@@ -783,12 +783,16 @@ Never log: `clientSecret`, verification tokens in production info logs.
 | 403 | APP_NOT_FOUND | Unknown appId |
 | 403 | APP_NOT_VERIFIED | App not yet active |
 | 403 | APP_SUSPENDED | Operator suspended app |
+| 403 | APP_ARCHIVED | App archived — mutations blocked |
 | 403 | APP_ORIGIN_NOT_ALLOWED | Origin not registered |
 | 403 | APP_BUNDLE_NOT_ALLOWED | Bundle/package mismatch |
 | 403 | APP_NAMESPACE_MISMATCH | Namespace belongs to another app |
 | 403 | APP_PAIRING_NOT_ALLOWED | App not in allowedAppIds |
 | 409 | APP_ORIGIN_EXISTS | Duplicate origin registration |
 | 409 | APP_BUNDLE_EXISTS | Duplicate bundle |
+| 422 | APP_ORIGIN_VERIFICATION_FAILED | DNS or HTTPS verification failed |
+
+Developer portal codes (`DEVELOPER_*`, `INVALID_TOKEN`, `MAIL_NOT_CONFIGURED`): [12-ERROR-CODES.md § Developer portal](./12-ERROR-CODES.md#developer-portal-v1developer).
 
 Full list merged into [12-ERROR-CODES.md](./12-ERROR-CODES.md).
 

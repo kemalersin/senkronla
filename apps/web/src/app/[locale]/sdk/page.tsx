@@ -99,6 +99,10 @@ export default async function SdkPage({ params }: PageProps) {
     locale === 'tr'
       ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md'
       : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md'
+  const errorCodesSpecHref =
+    locale === 'tr'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/12-ERROR-CODES.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/12-ERROR-CODES.md'
   const wsSpecHref =
     locale === 'tr'
       ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/13-WEBSOCKET-NOTIFICATIONS.md'
@@ -246,11 +250,37 @@ export default async function SdkPage({ params }: PageProps) {
   const clientErrorRows = [
     ['ESR_CLIENT_NO_TOKEN', t.rich('sections.errors.client.noToken', withDocRich())],
     ['ESR_CLIENT_OFFLINE', t.rich('sections.errors.client.offline', withDocRich())],
+    ['ESR_CLIENT_NO_FETCH', t.rich('sections.errors.client.noFetch', withDocRich())],
+    ['ESR_CLIENT_HTTP_ERROR', t.rich('sections.errors.client.httpError', withDocRich())],
+    ['ESR_CLIENT_SYNC_FAILED', t.rich('sections.errors.client.syncFailed', withDocRich())],
     ['ESR_CLIENT_NAMESPACE_EXISTS', t.rich('sections.errors.client.namespaceExists', withDocRich())],
     ['ESR_CLIENT_CONFLICT_CANCELLED', t.rich('sections.errors.client.conflictCancelled', withDocRich())],
+    ['ESR_CLIENT_NO_DOCUMENT', t.rich('sections.errors.client.noDocument', withDocRich())],
+    ['ESR_CLIENT_UNKNOWN_DOCUMENT_ID', t.rich('sections.errors.client.unknownDocumentId', withDocRich())],
+    ['ESR_CLIENT_INVALID_DOCUMENT_ID', t.rich('sections.errors.client.invalidDocumentId', withDocRich())],
+    ['ESR_CLIENT_INVALID_DOCUMENT_SLOT', t.rich('sections.errors.client.invalidDocumentSlot', withDocRich())],
+    ['ESR_CLIENT_DUPLICATE_DOCUMENT_ID', t.rich('sections.errors.client.duplicateDocumentId', withDocRich())],
+    ['ESR_CLIENT_NAMESPACE_MISMATCH', t.rich('sections.errors.client.namespaceMismatch', withDocRich())],
+    ['ESR_CLIENT_ENCRYPTION_PASSWORD_REQUIRED', t.rich('sections.errors.client.encryptionPasswordRequired', withDocRich())],
+    ['ESR_CLIENT_UNSUPPORTED_CONTENT', t.rich('sections.errors.client.unsupportedContent', withDocRich())],
+    ['ESR_CLIENT_INVALID_ENVELOPE', t.rich('sections.errors.client.invalidEnvelope', withDocRich())],
+  ]
+
+  const relayErrorRows = [
     ['REVISION_CONFLICT', t.rich('sections.errors.client.revisionConflict', withDocRich())],
     ['DEVICE_LIMIT_*', t.rich('sections.errors.client.deviceLimit', withDocRich())],
+    ['DEVICE_TOKEN_INVALID', t.rich('sections.errors.client.deviceTokenInvalid', withDocRich())],
+    ['DOCUMENT_NOT_FOUND', t.rich('sections.errors.client.documentNotFound', withDocRich())],
   ]
+
+  const errorsRich = withDocRich({
+    apiLink: (chunks) => <Link href="/api#errors">{chunks}</Link>,
+    errorCodesSpecLink: (chunks) => (
+      <a href={errorCodesSpecHref} target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
+  })
 
   const integrationRows = integrationRowKeys.map((key) => [
     t(`sections.integration.rowLabels.${key}`),
@@ -539,7 +569,9 @@ onConflict: async (ctx) => {
       <DocSection id="errors" title={t('sections.errors.title')}>
         <p>{t.rich('sections.errors.p1', withDocRich())}</p>
         <DocsTable headers={[t('table.code'), t('table.action')]} rows={clientErrorRows} />
-        <p>{t.rich('sections.errors.p2', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.errors.relayTitle')}</p>
+        <DocsTable headers={[t('table.code'), t('table.action')]} rows={relayErrorRows} />
+        <p>{t.rich('sections.errors.p2', errorsRich)}</p>
       </DocSection>
     </DocsLayout>
   )

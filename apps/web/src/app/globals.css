@@ -928,6 +928,20 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
     display: inline-block;
     max-width: none;
   }
+
+  .docs-table-wrap--code-http-action .docs-table th:nth-child(2),
+  .docs-table-wrap--code-http-action .docs-table td:nth-child(2) {
+    white-space: nowrap;
+    width: 1%;
+    min-width: 5.5rem;
+    vertical-align: top;
+  }
+
+  .docs-table-wrap--code-http-action .docs-table th:nth-child(3),
+  .docs-table-wrap--code-http-action .docs-table td:nth-child(3) {
+    width: auto;
+    min-width: 12rem;
+  }
 }
 
 .card {
@@ -3882,6 +3896,13 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
     min-width: 26rem;
     max-width: 26rem;
     box-sizing: border-box;
+  }
+
+  .docs-table-wrap--code-http-action .docs-table th:nth-child(2),
+  .docs-table-wrap--code-http-action .docs-table td:nth-child(2) {
+    width: auto;
+    min-width: 4.5rem;
+    max-width: none;
   }
 
   .docs-table-wrap .docs-table .doc-tag {

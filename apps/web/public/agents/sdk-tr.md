@@ -465,15 +465,40 @@ Zarf yardımcıları: `buildEnvelope`, `buildEnvEnc1Payload`, `extractDocument`,
 
 ## SDK istemci hata kodları
 
+Tüm hatalar `EsrError` ve kararlı `code` taşır. Relay hataları olduğu gibi geçer.
+
+### Yalnızca SDK (yerel)
+
 | Kod | Eylem |
 |-----|-------|
 | `ESR_CLIENT_NO_TOKEN` | `ensureNamespace`, `joinPairing` veya `recover` |
 | `ESR_CLIENT_OFFLINE` | Çevrimiçi olunca `sync()` tekrar |
+| `ESR_CLIENT_NO_FETCH` | Fetch API yok — Node 18+ veya polyfill |
+| `ESR_CLIENT_HTTP_ERROR` | Genel HTTP hatası |
+| `ESR_CLIENT_SYNC_FAILED` | Beklenmeyen sync hatası |
 | `ESR_CLIENT_NAMESPACE_EXISTS` | Eşleştirme/kurtarma |
 | `ESR_CLIENT_CONFLICT_CANCELLED` | Kullanıcı iptal |
+| `ESR_CLIENT_NO_DOCUMENT` | `connect`'e `document` / `documents` verin |
+| `ESR_CLIENT_UNKNOWN_DOCUMENT_ID` | `sync(id)` yapılandırılmamış |
+| `ESR_CLIENT_INVALID_DOCUMENT_ID` | `documentId` formatını düzelt |
+| `ESR_CLIENT_INVALID_DOCUMENT_SLOT` | `documents[]` girişini düzelt |
+| `ESR_CLIENT_DUPLICATE_DOCUMENT_ID` | `documents[]` yinelenmesini kaldır |
+| `ESR_CLIENT_NAMESPACE_MISMATCH` | Çoklu belge yapılandırmasını düzelt |
+| `ESR_CLIENT_ENCRYPTION_PASSWORD_REQUIRED` | ENV-ENC1 parolası verin |
+| `ESR_CLIENT_UNSUPPORTED_CONTENT` | Desteklenmeyen içerik magic |
+| `ESR_CLIENT_INVALID_ENVELOPE` | Zarf oluşturma/parse hatası |
+
+### Yaygın relay kodları (SDK üzerinden)
+
+| Kod | Eylem |
+|-----|-------|
 | `REVISION_CONFLICT` | Çakışma akışı |
 | `DEVICE_LIMIT_PAYMENT_REQUIRED` | Yükseltme UI |
 | `DEVICE_LIMIT_BLOCKED` | Cihaz iptal |
+| `DEVICE_TOKEN_INVALID` | Yeniden eşleştir/kurtar |
+| `DOCUMENT_NOT_FOUND` | Belge için ilk pull'da normal |
+
+Tam relay listesi: [api-tr.md § Hata kodları](api-tr.md#hata-kodları) ve `docs/tr/12-ERROR-CODES.md`.
 
 `isEsrError(err)` ve `isOfflineError(err)` kullanın.
 

@@ -55,6 +55,10 @@ export default async function ApiPage({ params }: PageProps) {
     locale === 'tr'
       ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md'
       : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md'
+  const errorCodesSpecHref =
+    locale === 'tr'
+      ? 'https://github.com/kemalersin/senkronla/blob/main/docs/tr/12-ERROR-CODES.md'
+      : 'https://github.com/kemalersin/senkronla/blob/main/docs/en/12-ERROR-CODES.md'
 
   const nav = sectionKeys.map((key) => ({
     id: key,
@@ -68,23 +72,31 @@ export default async function ApiPage({ params }: PageProps) {
 
   const errorRows = [
     ['VALIDATION_ERROR', '400', t.rich('sections.errors.rows.validation', withDocRich())],
-    ['DEVICE_TOKEN_INVALID', '401', t.rich('sections.errors.rows.token', withDocRich())],
-    ['RECOVERY_INVALID', '401', t.rich('sections.errors.rows.recovery', withDocRich())],
-    ['DEVICE_LIMIT_PAYMENT_REQUIRED', '403', t.rich('sections.errors.rows.limitPay', withDocRich())],
-    ['DEVICE_LIMIT_BLOCKED', '403', t.rich('sections.errors.rows.limitBlock', withDocRich())],
-    ['NAMESPACE_NOT_FOUND', '404', t.rich('sections.errors.rows.notFound', withDocRich())],
-    ['DOCUMENT_NOT_FOUND', '404', t.rich('sections.errors.rows.noDocument', withDocRich())],
-    ['NAMESPACE_EXISTS', '409', t.rich('sections.errors.rows.exists', withDocRich())],
-    ['REVISION_CONFLICT', '409', t.rich('sections.errors.rows.conflict', withDocRich())],
-    ['ENVELOPE_TOO_LARGE', '413', t.rich('sections.errors.rows.tooLarge', withDocRich())],
-    ['ENVELOPE_INVALID', '422', t.rich('sections.errors.rows.envelope', withDocRich())],
     ['INVALID_DOCUMENT_ID', '400', t.rich('sections.errors.rows.invalidDocumentId', withDocRich())],
-    ['DOCUMENT_LIMIT_REACHED', '403', t.rich('sections.errors.rows.documentLimit', withDocRich())],
-    ['DOCUMENT_ID_NOT_ALLOWED', '403', t.rich('sections.errors.rows.documentNotAllowed', withDocRich())],
-    ['ENVELOPE_DOCUMENT_MISMATCH', '422', t.rich('sections.errors.rows.envelopeDocumentMismatch', withDocRich())],
-    ['RATE_LIMIT_EXCEEDED', '429', t.rich('sections.errors.rows.rateLimit', withDocRich())],
     ['PAIRING_CODE_INVALID', '400', t.rich('sections.errors.rows.pairing', withDocRich())],
     ['UNLOCK_CODE_INVALID', '400', t.rich('sections.errors.rows.unlock', withDocRich())],
+    ['UNAUTHORIZED', '401', t.rich('sections.errors.rows.unauthorized', withDocRich())],
+    ['DEVICE_TOKEN_INVALID', '401', t.rich('sections.errors.rows.token', withDocRich())],
+    ['RECOVERY_INVALID', '401', t.rich('sections.errors.rows.recovery', withDocRich())],
+    ['FORBIDDEN', '403', t.rich('sections.errors.rows.forbidden', withDocRich())],
+    ['DEVICE_LIMIT_PAYMENT_REQUIRED', '403', t.rich('sections.errors.rows.limitPay', withDocRich())],
+    ['DEVICE_LIMIT_BLOCKED', '403', t.rich('sections.errors.rows.limitBlock', withDocRich())],
+    ['LAST_DEVICE_PROTECTED', '403', t.rich('sections.errors.rows.lastDevice', withDocRich())],
+    ['CONTENT_TYPE_NOT_ALLOWED', '403', t.rich('sections.errors.rows.contentType', withDocRich())],
+    ['DOCUMENT_LIMIT_REACHED', '403', t.rich('sections.errors.rows.documentLimit', withDocRich())],
+    ['DOCUMENT_ID_NOT_ALLOWED', '403', t.rich('sections.errors.rows.documentNotAllowed', withDocRich())],
+    ['NOT_FOUND', '404', t.rich('sections.errors.rows.notFoundGeneric', withDocRich())],
+    ['NAMESPACE_NOT_FOUND', '404', t.rich('sections.errors.rows.notFound', withDocRich())],
+    ['DOCUMENT_NOT_FOUND', '404', t.rich('sections.errors.rows.noDocument', withDocRich())],
+    ['DEVICE_NOT_FOUND', '404', t.rich('sections.errors.rows.deviceNotFound', withDocRich())],
+    ['NAMESPACE_EXISTS', '409', t.rich('sections.errors.rows.exists', withDocRich())],
+    ['REVISION_CONFLICT', '409', t.rich('sections.errors.rows.conflict', withDocRich())],
+    ['UNLOCK_CODE_ALREADY_REDEEMED', '409', t.rich('sections.errors.rows.unlockRedeemed', withDocRich())],
+    ['ENVELOPE_TOO_LARGE', '413', t.rich('sections.errors.rows.tooLarge', withDocRich())],
+    ['ENVELOPE_INVALID', '422', t.rich('sections.errors.rows.envelope', withDocRich())],
+    ['ENVELOPE_DOCUMENT_MISMATCH', '422', t.rich('sections.errors.rows.envelopeDocumentMismatch', withDocRich())],
+    ['RATE_LIMIT_EXCEEDED', '429', t.rich('sections.errors.rows.rateLimit', withDocRich())],
+    ['INTERNAL_ERROR', '500', t.rich('sections.errors.rows.internalError', withDocRich())],
   ]
 
   const quotaRows = (['general', 'push', 'pair', 'pairingToken', 'recover'] as const).map((key) => [
@@ -102,6 +114,11 @@ export default async function ApiPage({ params }: PageProps) {
     sdkAppLink: (chunks) => <Link href="/sdk#app-registry">{chunks}</Link>,
     specLink: (chunks) => (
       <a href={specHref} target="_blank" rel="noopener noreferrer">
+        {chunks}
+      </a>
+    ),
+    errorCodesSpecLink: (chunks) => (
+      <a href={errorCodesSpecHref} target="_blank" rel="noopener noreferrer">
         {chunks}
       </a>
     ),
@@ -135,15 +152,31 @@ export default async function ApiPage({ params }: PageProps) {
   const appErrorRows = [
     ['APP_ID_REQUIRED', '400', t.rich('sections.appRegistry.errors.appIdRequired', withDocRich())],
     ['APP_ORIGIN_REQUIRED', '400', t.rich('sections.appRegistry.errors.originRequired', withDocRich())],
-    ['APP_ORIGIN_NOT_ALLOWED', '403', t.rich('sections.appRegistry.errors.originNotAllowed', withDocRich())],
-    ['APP_NAMESPACE_MISMATCH', '403', t.rich('sections.appRegistry.errors.namespaceMismatch', withDocRich())],
-    ['APP_NOT_FOUND', '403', t.rich('sections.appRegistry.errors.notFound', withDocRich())],
-    ['APP_SUSPENDED', '403', t.rich('sections.appRegistry.errors.suspended', withDocRich())],
-    ['APP_PAIRING_NOT_ALLOWED', '403', t.rich('sections.appRegistry.errors.pairingNotAllowed', withDocRich())],
-    ['APP_CLIENT_SECRET_INVALID', '401', t.rich('sections.appRegistry.errors.clientSecretInvalid', withDocRich())],
-    ['APP_NOT_VERIFIED', '403', t.rich('sections.appRegistry.errors.notVerified', withDocRich())],
     ['APP_NATIVE_ID_REQUIRED', '400', t.rich('sections.appRegistry.errors.nativeIdRequired', withDocRich())],
+    ['APP_CLIENT_SECRET_INVALID', '401', t.rich('sections.appRegistry.errors.clientSecretInvalid', withDocRich())],
+    ['APP_NOT_FOUND', '403', t.rich('sections.appRegistry.errors.notFound', withDocRich())],
+    ['APP_NOT_VERIFIED', '403', t.rich('sections.appRegistry.errors.notVerified', withDocRich())],
+    ['APP_SUSPENDED', '403', t.rich('sections.appRegistry.errors.suspended', withDocRich())],
+    ['APP_ARCHIVED', '403', t.rich('sections.appRegistry.errors.archived', withDocRich())],
+    ['APP_ORIGIN_NOT_ALLOWED', '403', t.rich('sections.appRegistry.errors.originNotAllowed', withDocRich())],
     ['APP_BUNDLE_NOT_ALLOWED', '403', t.rich('sections.appRegistry.errors.bundleNotAllowed', withDocRich())],
+    ['APP_NAMESPACE_MISMATCH', '403', t.rich('sections.appRegistry.errors.namespaceMismatch', withDocRich())],
+    ['APP_PAIRING_NOT_ALLOWED', '403', t.rich('sections.appRegistry.errors.pairingNotAllowed', withDocRich())],
+    ['APP_ORIGIN_EXISTS', '409', t.rich('sections.appRegistry.errors.originExists', withDocRich())],
+    ['APP_BUNDLE_EXISTS', '409', t.rich('sections.appRegistry.errors.bundleExists', withDocRich())],
+    ['APP_ORIGIN_VERIFICATION_FAILED', '422', t.rich('sections.appRegistry.errors.originVerificationFailed', withDocRich())],
+  ]
+
+  const developerErrorRows = [
+    ['INVALID_TOKEN', '400', t.rich('sections.appRegistry.developerErrors.invalidToken', withDocRich())],
+    ['DEVELOPER_INVALID_CREDENTIALS', '401', t.rich('sections.appRegistry.developerErrors.invalidCredentials', withDocRich())],
+    ['DEVELOPER_EMAIL_NOT_VERIFIED', '403', t.rich('sections.appRegistry.developerErrors.emailNotVerified', withDocRich())],
+    ['DEVELOPER_ACCOUNT_DISABLED', '403', t.rich('sections.appRegistry.developerErrors.accountDisabled', withDocRich())],
+    ['DEVELOPER_FORBIDDEN', '403', t.rich('sections.appRegistry.developerErrors.forbidden', withDocRich())],
+    ['DEVELOPER_APP_LIMIT_REACHED', '403', t.rich('sections.appRegistry.developerErrors.appLimitReached', withDocRich())],
+    ['DEVELOPER_EMAIL_EXISTS', '409', t.rich('sections.appRegistry.developerErrors.emailExists', withDocRich())],
+    ['DEVELOPER_PORTAL_DISABLED', '503', t.rich('sections.appRegistry.developerErrors.portalDisabled', withDocRich())],
+    ['MAIL_NOT_CONFIGURED', '503', t.rich('sections.appRegistry.developerErrors.mailNotConfigured', withDocRich())],
   ]
 
   const exampleProps = {
@@ -254,6 +287,14 @@ export default async function ApiPage({ params }: PageProps) {
         <DocsTable
           headers={[t('table.code'), t('table.http'), t('table.action')]}
           rows={appErrorRows}
+          variant="code-http-action"
+        />
+        <p className="doc-subheading">{t('sections.appRegistry.developerErrorsTitle')}</p>
+        <p>{t.rich('sections.appRegistry.developerErrorsP1', appRegistryRich)}</p>
+        <DocsTable
+          headers={[t('table.code'), t('table.http'), t('table.action')]}
+          rows={developerErrorRows}
+          variant="code-http-action"
         />
         <DocCallout variant="info" title={t('sections.appRegistry.migrationTitle')}>
           <p>{t.rich('sections.appRegistry.migrationP1', appRegistryRich)}</p>
@@ -460,7 +501,9 @@ export default async function ApiPage({ params }: PageProps) {
         <DocsTable
           headers={[t('table.code'), t('table.http'), t('table.action')]}
           rows={errorRows}
+          variant="code-http-action"
         />
+        <p>{t.rich('sections.errors.p2', appRegistryRich)}</p>
       </DocSection>
     </DocsLayout>
   )

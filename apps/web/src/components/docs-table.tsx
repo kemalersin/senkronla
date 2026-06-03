@@ -4,11 +4,17 @@ interface DocsTableProps {
   headers: string[]
   rows: (string | React.ReactNode)[][]
   tagFirstColumn?: boolean
+  /** Widen the HTTP status column in code | HTTP | action tables */
+  variant?: 'code-http-action'
 }
 
-export function DocsTable({ headers, rows, tagFirstColumn = true }: DocsTableProps) {
+export function DocsTable({ headers, rows, tagFirstColumn = true, variant }: DocsTableProps) {
+  const wrapClass = ['docs-table-wrap', variant === 'code-http-action' && 'docs-table-wrap--code-http-action']
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className="docs-table-wrap">
+    <div className={wrapClass}>
       <table className="docs-table">
         <thead>
           <tr>

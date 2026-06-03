@@ -563,18 +563,40 @@ await sync.redeemUnlockCode('UNLK-7X9K-2M4P')
 
 ## SDK client error codes
 
-All errors are `EsrError` with stable `code`:
+All errors are `EsrError` with stable `code`. Relay errors pass through unchanged.
+
+### SDK-only (thrown locally)
 
 | Code | Action |
 |------|--------|
 | `ESR_CLIENT_NO_TOKEN` | Call `ensureNamespace`, `joinPairing`, or `recover` |
 | `ESR_CLIENT_OFFLINE` | Retry `sync()` when online |
+| `ESR_CLIENT_NO_FETCH` | Fetch API unavailable — use Node 18+ or polyfill |
+| `ESR_CLIENT_HTTP_ERROR` | Generic HTTP failure — check status |
+| `ESR_CLIENT_SYNC_FAILED` | Unexpected sync failure — inspect message |
 | `ESR_CLIENT_NAMESPACE_EXISTS` | Use pairing or recovery, not create |
 | `ESR_CLIENT_CONFLICT_CANCELLED` | User cancelled — local edits still pending |
+| `ESR_CLIENT_NO_DOCUMENT` | Pass `document` or `documents` to `connect` |
+| `ESR_CLIENT_UNKNOWN_DOCUMENT_ID` | `sync(id)` not in configured documents |
+| `ESR_CLIENT_INVALID_DOCUMENT_ID` | Fix `documentId` format |
+| `ESR_CLIENT_INVALID_DOCUMENT_SLOT` | Fix `documents[]` entry |
+| `ESR_CLIENT_DUPLICATE_DOCUMENT_ID` | Remove duplicate in `documents[]` |
+| `ESR_CLIENT_NAMESPACE_MISMATCH` | Fix multi-document namespace config |
+| `ESR_CLIENT_ENCRYPTION_PASSWORD_REQUIRED` | Provide ENV-ENC1 password |
+| `ESR_CLIENT_UNSUPPORTED_CONTENT` | Unsupported inner content magic |
+| `ESR_CLIENT_INVALID_ENVELOPE` | Fix envelope build/parse |
+
+### Common relay codes (via SDK)
+
+| Code | Action |
+|------|--------|
 | `REVISION_CONFLICT` | Conflict flow required |
 | `DEVICE_LIMIT_PAYMENT_REQUIRED` | Show upgrade / unlock UI |
 | `DEVICE_LIMIT_BLOCKED` | User must revoke a device |
-| `ESR_CLIENT_HTTP_ERROR` | Generic HTTP failure — check status |
+| `DEVICE_TOKEN_INVALID` | Re-pair or recover |
+| `DOCUMENT_NOT_FOUND` | Expected on first pull for a document |
+
+Full relay list: [api-en.md § Error codes](api-en.md#error-codes) and `docs/en/12-ERROR-CODES.md`.
 
 Use `isEsrError(err)` and `isOfflineError(err)` helpers.
 

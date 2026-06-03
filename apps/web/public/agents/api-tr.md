@@ -365,32 +365,72 @@ Authorization: Bearer dvt_...
 
 ## Hata kodları
 
+Her zaman **`error.code`** ile dallanın. Tam SSOT: repo `docs/tr/12-ERROR-CODES.md`.
+
+### Sync API (`/v1`)
+
 | Kod | HTTP | Eylem |
 |-----|------|-------|
 | `VALIDATION_ERROR` | 400 | İstek gövdesini düzelt |
-| `PAIRING_CODE_INVALID` | 400 | Yeni kod |
+| `INVALID_DOCUMENT_ID` | 400 | Path `documentId` formatını düzelt |
+| `PAIRING_CODE_INVALID` | 400 | Yeni kod üret |
+| `UNLOCK_CODE_INVALID` | 400 | Geçersiz unlock kodu |
+| `UNAUTHORIZED` | 401 | Authorization header gönder |
 | `DEVICE_TOKEN_INVALID` | 401 | Yeniden eşleştir/kurtar |
 | `RECOVERY_INVALID` | 401 | Yanlış kanıt |
+| `FORBIDDEN` | 403 | Yetki reddi |
 | `DEVICE_LIMIT_PAYMENT_REQUIRED` | 403 | Yükseltme UI |
 | `DEVICE_LIMIT_BLOCKED` | 403 | Cihaz iptal |
+| `LAST_DEVICE_PROTECTED` | 403 | Son cihaz kaldırılamaz |
+| `CONTENT_TYPE_NOT_ALLOWED` | 403 | contentType whitelist dışı |
+| `DOCUMENT_LIMIT_REACHED` | 403 | Namespace belge limiti |
+| `DOCUMENT_ID_NOT_ALLOWED` | 403 | documentId allowlist dışı |
+| `NOT_FOUND` | 404 | Kayıt yok |
 | `NAMESPACE_NOT_FOUND` | 404 | namespaceId kontrol |
 | `DOCUMENT_NOT_FOUND` | 404 | Henüz push yok |
+| `DEVICE_NOT_FOUND` | 404 | Geçersiz cihaz id |
 | `NAMESPACE_EXISTS` | 409 | Eşleştir/kurtar |
 | `REVISION_CONFLICT` | 409 | Çakışma UX |
+| `UNLOCK_CODE_ALREADY_REDEEMED` | 409 | Kod zaten kullanılmış |
 | `ENVELOPE_TOO_LARGE` | 413 | ~50 MB limit |
 | `ENVELOPE_INVALID` | 422 | Zarf şeması |
+| `ENVELOPE_DOCUMENT_MISMATCH` | 422 | Zarf `documentId` path ile eşleşmeli |
 | `RATE_LIMIT_EXCEEDED` | 429 | `Retry-After`, `RateLimit-*` |
+| `INTERNAL_ERROR` | 500 | Backoff ile tekrar |
+
+### Uygulama kaydı (`apps.enabled: true`)
+
+| Kod | HTTP | Eylem |
+|-----|------|-------|
 | `APP_ID_REQUIRED` | 400 | `X-ESR-App-Id` gönderin |
 | `APP_ORIGIN_REQUIRED` | 400 | Web istemcide `Origin` eksik |
-| `APP_ORIGIN_NOT_ALLOWED` | 403 | Origin kayıtlı veya doğrulanmış değil |
-| `APP_NAMESPACE_MISMATCH` | 403 | Namespace başka app'e ait |
-| `APP_NOT_FOUND` | 403 | Bilinmeyen `appId` |
-| `APP_SUSPENDED` | 403 | Operatör app'i askıya aldı |
-| `APP_PAIRING_NOT_ALLOWED` | 403 | App, pairing token `allowedAppIds` listesinde değil |
-| `APP_CLIENT_SECRET_INVALID` | 401 | Yanlış native client secret |
-| `APP_NOT_VERIFIED` | 403 | App doğrulama/onay bekliyor |
 | `APP_NATIVE_ID_REQUIRED` | 400 | Platform/bundle başlıkları eksik |
+| `APP_CLIENT_SECRET_INVALID` | 401 | Yanlış native client secret |
+| `APP_NOT_FOUND` | 403 | Bilinmeyen `appId` |
+| `APP_NOT_VERIFIED` | 403 | App doğrulama/onay bekliyor |
+| `APP_SUSPENDED` | 403 | Operatör app'i askıya aldı |
+| `APP_ARCHIVED` | 403 | App arşivlendi |
+| `APP_ORIGIN_NOT_ALLOWED` | 403 | Origin kayıtlı veya doğrulanmış değil |
 | `APP_BUNDLE_NOT_ALLOWED` | 403 | Bundle kayıtlı veya onaylı değil |
+| `APP_NAMESPACE_MISMATCH` | 403 | Namespace başka app'e ait |
+| `APP_PAIRING_NOT_ALLOWED` | 403 | App, pairing token `allowedAppIds` listesinde değil |
+| `APP_ORIGIN_EXISTS` | 409 | Origin zaten kayıtlı |
+| `APP_BUNDLE_EXISTS` | 409 | Bundle zaten kayıtlı |
+| `APP_ORIGIN_VERIFICATION_FAILED` | 422 | DNS/HTTPS doğrulaması başarısız |
+
+### Geliştirici portalı (`/v1/developer/*`)
+
+| Kod | HTTP | Eylem |
+|-----|------|-------|
+| `INVALID_TOKEN` | 400 | Doğrulama/sıfırlama linki süresi dolmuş |
+| `DEVELOPER_INVALID_CREDENTIALS` | 401 | Yanlış e-posta veya parola |
+| `DEVELOPER_EMAIL_NOT_VERIFIED` | 403 | Önce e-postayı doğrulayın |
+| `DEVELOPER_ACCOUNT_DISABLED` | 403 | Operatörle iletişim |
+| `DEVELOPER_FORBIDDEN` | 403 | App bu geliştiriciye ait değil |
+| `DEVELOPER_APP_LIMIT_REACHED` | 403 | App kotası doldu |
+| `DEVELOPER_EMAIL_EXISTS` | 409 | Giriş yapın |
+| `DEVELOPER_PORTAL_DISABLED` | 503 | Self-service kapalı |
+| `MAIL_NOT_CONFIGURED` | 503 | Relay'de posta yapılandırılmamış |
 
 Bkz. [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/tr/16-APP-REGISTRY.md).
 

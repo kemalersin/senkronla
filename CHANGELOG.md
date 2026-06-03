@@ -24,6 +24,8 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Changed
 
+- **docs:** Sync API, app registry, developer portal, WebSocket, and SDK client error code lists in `12-ERROR-CODES.md` and cross-referenced specs
+- **web:** API and SDK guide pages — complete error code tables aligned with server and `@senkronla/client`
 - **server:** Rate limit usage buckets store client IPs as dotted IPv4 when the address is IPv4-mapped IPv6 (`::ffff:…`)
 - **server:** Operator rate limit usage API includes `appId` and `appName` per grouped row
 - **web:** Operator rate limits tab shows **App** (name + id, same as Namespaces) instead of **Device** when `apps.enabled` is true

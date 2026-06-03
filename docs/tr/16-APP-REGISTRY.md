@@ -671,12 +671,16 @@ App kotası aşımı → `429 RATE_LIMIT_EXCEEDED`, `details.appId`.
 | 403 | APP_NOT_FOUND | Bilinmeyen appId |
 | 403 | APP_NOT_VERIFIED | App henüz active değil |
 | 403 | APP_SUSPENDED | Operatör askıya aldı |
+| 403 | APP_ARCHIVED | App arşivlendi — mutasyon engelli |
 | 403 | APP_ORIGIN_NOT_ALLOWED | Origin kayıtlı değil |
 | 403 | APP_BUNDLE_NOT_ALLOWED | Bundle/package uyuşmuyor |
 | 403 | APP_NAMESPACE_MISMATCH | Namespace başka app'e ait |
 | 403 | APP_PAIRING_NOT_ALLOWED | allowedAppIds dışında |
 | 409 | APP_ORIGIN_EXISTS | Duplicate origin |
 | 409 | APP_BUNDLE_EXISTS | Duplicate bundle |
+| 422 | APP_ORIGIN_VERIFICATION_FAILED | DNS veya HTTPS doğrulaması başarısız |
+
+Geliştirici portalı kodları (`DEVELOPER_*`, `INVALID_TOKEN`, `MAIL_NOT_CONFIGURED`): [12-ERROR-CODES.md § Geliştirici portalı](./12-ERROR-CODES.md#geliştirici-portalı-v1developer).
 
 Tam liste: [12-ERROR-CODES.md](./12-ERROR-CODES.md).
 

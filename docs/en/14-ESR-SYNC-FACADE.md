@@ -415,17 +415,36 @@ onLogout(() => sync.destroy())
 
 ```typescript
 export class EsrError extends Error {
-  readonly code: string // API error code or ESR_CLIENT_*
+  readonly code: string // relay error.code or ESR_CLIENT_*
   readonly status?: number
   readonly details?: unknown
 }
-
-// Client codes (examples)
-// ESR_CLIENT_OFFLINE
-// ESR_CLIENT_NO_TOKEN
-// ESR_CLIENT_NAMESPACE_REQUIRED
-// ESR_CLIENT_CONFLICT_CANCELLED
 ```
+
+Relay errors pass through unchanged (`REVISION_CONFLICT`, `DEVICE_LIMIT_*`, etc.). SDK-only codes:
+
+| code | When |
+|------|------|
+| `ESR_CLIENT_NO_TOKEN` | No device token yet |
+| `ESR_CLIENT_OFFLINE` | Network unavailable |
+| `ESR_CLIENT_NO_FETCH` | Fetch API missing |
+| `ESR_CLIENT_HTTP_ERROR` | HTTP error without parseable body |
+| `ESR_CLIENT_SYNC_FAILED` | Unexpected sync failure |
+| `ESR_CLIENT_NAMESPACE_EXISTS` | Create when namespace already exists |
+| `ESR_CLIENT_CONFLICT_CANCELLED` | User cancelled `onConflict` |
+| `ESR_CLIENT_NO_DOCUMENT` | Missing `document` / `documents` in connect |
+| `ESR_CLIENT_UNKNOWN_DOCUMENT_ID` | `sync(id)` not configured |
+| `ESR_CLIENT_INVALID_DOCUMENT_ID` | Invalid `documentId` format |
+| `ESR_CLIENT_INVALID_DOCUMENT_SLOT` | Invalid `documents[]` entry |
+| `ESR_CLIENT_DUPLICATE_DOCUMENT_ID` | Duplicate id in `documents[]` |
+| `ESR_CLIENT_NAMESPACE_MISMATCH` | Multi-document config mismatch |
+| `ESR_CLIENT_ENCRYPTION_PASSWORD_REQUIRED` | ENV-ENC1 password missing |
+| `ESR_CLIENT_UNSUPPORTED_CONTENT` | Unsupported inner content magic |
+| `ESR_CLIENT_INVALID_ENVELOPE` | Envelope build/parse failed |
+
+Full lists: [12-ERROR-CODES.md](./12-ERROR-CODES.md) (SDK client-only and relay codes).
+
+Use `isEsrError(err)` and `isOfflineError(err)`.
 
 If `onDeviceLimit` is not provided, limit errors become `onError` + `status: 'error'`.
 

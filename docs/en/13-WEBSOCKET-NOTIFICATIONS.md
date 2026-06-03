@@ -321,10 +321,14 @@ Custom close codes (recommended):
 
 | code | Description |
 |------|-------------|
-| `WS_AUTH_REQUIRED` | First message auth not received |
-| `WS_AUTH_INVALID` | Token invalid |
+| `WS_AUTH_REQUIRED` | Auth message not received in time |
+| `WS_AUTH_INVALID` | Device token invalid or revoked |
 | `WS_NAMESPACE_MISMATCH` | Path vs token namespace |
-| `WS_DISABLED` | WS disabled on server |
+| `WS_TOO_MANY_CONNECTIONS` | Per-device connection limit exceeded |
+| `WS_INVALID_MESSAGE` | Malformed JSON or message shape |
+| `WS_INVALID_SUBSCRIBE` | Invalid `subscribe` payload |
+
+When `websocket.enabled: false`, the upgrade route is not registered (HTTP `404`). Check `GET /health`:
 
 May be added to HTTP `GET /health` response:
 

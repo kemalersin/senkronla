@@ -578,34 +578,74 @@ On `head_changed` → compare revision → `GET .../head` if changed.
 
 ## Error codes
 
+Always branch on **`error.code`**, not HTTP status alone. Full SSOT: repo `docs/en/12-ERROR-CODES.md`.
+
+### Sync API (`/v1`)
+
 | Code | HTTP | Action |
 |------|------|--------|
 | `VALIDATION_ERROR` | 400 | Fix request body |
+| `INVALID_DOCUMENT_ID` | 400 | Fix path `documentId` format |
 | `PAIRING_CODE_INVALID` | 400 | Code expired/wrong — generate new |
 | `UNLOCK_CODE_INVALID` | 400 | Invalid unlock code |
+| `UNAUTHORIZED` | 401 | Send Authorization header |
 | `DEVICE_TOKEN_INVALID` | 401 | Re-pair or recover |
 | `RECOVERY_INVALID` | 401 | Wrong recovery proof |
+| `FORBIDDEN` | 403 | Authorization denied |
 | `DEVICE_LIMIT_PAYMENT_REQUIRED` | 403 | Upgrade / unlock UI |
 | `DEVICE_LIMIT_BLOCKED` | 403 | Revoke a device |
+| `LAST_DEVICE_PROTECTED` | 403 | Cannot revoke last device |
+| `CONTENT_TYPE_NOT_ALLOWED` | 403 | contentType not in whitelist |
+| `DOCUMENT_LIMIT_REACHED` | 403 | Too many documents in namespace |
+| `DOCUMENT_ID_NOT_ALLOWED` | 403 | documentId not in allowlist |
+| `NOT_FOUND` | 404 | Record not found |
 | `NAMESPACE_NOT_FOUND` | 404 | Check namespaceId |
 | `DOCUMENT_NOT_FOUND` | 404 | No push yet — expected on first pull |
+| `DEVICE_NOT_FOUND` | 404 | Invalid device id |
 | `NAMESPACE_EXISTS` | 409 | Use pair or recover |
 | `REVISION_CONFLICT` | 409 | Read `details.remoteMeta`, run conflict UX |
+| `UNLOCK_CODE_ALREADY_REDEEMED` | 409 | Code already used |
 | `ENVELOPE_TOO_LARGE` | 413 | Shrink snapshot (default max ~50 MB) |
 | `ENVELOPE_INVALID` | 422 | Fix envelope schema/hash |
+| `ENVELOPE_DOCUMENT_MISMATCH` | 422 | Envelope `documentId` must match path |
 | `RATE_LIMIT_EXCEEDED` | 429 | `Retry-After`, `error.details.rateLimit`, matching `RateLimit-*` headers |
-| `APP_ID_REQUIRED` | 400 | Send `X-ESR-App-Id` (relay has app registry) |
-| `APP_ORIGIN_REQUIRED` | 400 | Web client missing `Origin` |
-| `APP_ORIGIN_NOT_ALLOWED` | 403 | Origin not registered for app |
-| `APP_NAMESPACE_MISMATCH` | 403 | Namespace belongs to another app |
-| `APP_NOT_FOUND` | 403 | Unknown `appId` |
-| `APP_SUSPENDED` | 403 | Operator suspended app |
-| `APP_PAIRING_NOT_ALLOWED` | 403 | App not in pairing token `allowedAppIds` |
-| `APP_CLIENT_SECRET_INVALID` | 401 | Wrong native client secret |
-| `APP_NOT_VERIFIED` | 403 | App pending verification |
-| `APP_NATIVE_ID_REQUIRED` | 400 | Missing platform/bundle headers |
+| `INTERNAL_ERROR` | 500 | Retry with backoff |
 
-See [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md) for full app error list.
+### Application registry (when `apps.enabled: true`)
+
+| Code | HTTP | Action |
+|------|------|--------|
+| `APP_ID_REQUIRED` | 400 | Send `X-ESR-App-Id` |
+| `APP_ORIGIN_REQUIRED` | 400 | Web client missing `Origin` |
+| `APP_NATIVE_ID_REQUIRED` | 400 | Missing platform/bundle headers |
+| `APP_CLIENT_SECRET_INVALID` | 401 | Wrong native client secret |
+| `APP_NOT_FOUND` | 403 | Unknown `appId` |
+| `APP_NOT_VERIFIED` | 403 | App pending verification |
+| `APP_SUSPENDED` | 403 | Operator suspended app |
+| `APP_ARCHIVED` | 403 | App archived |
+| `APP_ORIGIN_NOT_ALLOWED` | 403 | Origin not registered for app |
+| `APP_BUNDLE_NOT_ALLOWED` | 403 | Bundle not registered |
+| `APP_NAMESPACE_MISMATCH` | 403 | Namespace belongs to another app |
+| `APP_PAIRING_NOT_ALLOWED` | 403 | App not in pairing token `allowedAppIds` |
+| `APP_ORIGIN_EXISTS` | 409 | Origin already registered |
+| `APP_BUNDLE_EXISTS` | 409 | Bundle already registered |
+| `APP_ORIGIN_VERIFICATION_FAILED` | 422 | DNS/HTTPS verification failed |
+
+### Developer portal (`/v1/developer/*`)
+
+| Code | HTTP | Action |
+|------|------|--------|
+| `INVALID_TOKEN` | 400 | Verification/reset link expired |
+| `DEVELOPER_INVALID_CREDENTIALS` | 401 | Wrong email or password |
+| `DEVELOPER_EMAIL_NOT_VERIFIED` | 403 | Verify email first |
+| `DEVELOPER_ACCOUNT_DISABLED` | 403 | Contact operator |
+| `DEVELOPER_FORBIDDEN` | 403 | App not owned by developer |
+| `DEVELOPER_APP_LIMIT_REACHED` | 403 | App quota exceeded |
+| `DEVELOPER_EMAIL_EXISTS` | 409 | Sign in instead |
+| `DEVELOPER_PORTAL_DISABLED` | 503 | Self-service not enabled |
+| `MAIL_NOT_CONFIGURED` | 503 | Mail not configured on relay |
+
+See [16-APP-REGISTRY.md](https://github.com/kemalersin/senkronla/blob/main/docs/en/16-APP-REGISTRY.md) for app registry flows.
 
 ---
 

@@ -1140,15 +1140,30 @@
       },
       "errors": {
         "title": "İstemci hata kodları",
-        "p1": "Tüm SDK hataları kararlı <tag>code</tag> dizesine sahip <tag>EsrError</tag> örnekleridir:",
-        "p2": "Sunucu tarafı kodların tam listesi API sayfasındadır — relay kotaları (varsayılan 50 MB zarf, rate limitler) dahil. Yalnızca HTTP durumuna değil, <tag>error.code</tag>'a göre dallanın.",
+        "p1": "Tüm SDK hataları kararlı <tag>code</tag> dizesine sahip <tag>EsrError</tag> örnekleridir. Yalnızca SDK kodları:",
+        "p2": "Relay kodları olduğu gibi geçer — tam liste <apiLink>API sayfasında</apiLink> ve <errorCodesSpecLink>12-ERROR-CODES.md</errorCodesSpecLink>'de. Yalnızca HTTP durumuna değil, <tag>error.code</tag>'a göre dallanın.",
+        "relayTitle": "Yaygın relay kodları (SDK üzerinden)",
         "client": {
           "noToken": "Henüz cihaz token'ı yok — <tag>ensureNamespace</tag>, <tag>joinPairing</tag> veya <tag>recover</tag> çağırın",
           "offline": "Ağ kapalı — çevrimiçi olunca <tag>sync()</tag> veya <tag>sync(documentId)</tag> yeniden deneyin",
+          "noFetch": "Bu ortamda Fetch API yok",
+          "httpError": "Parse edilemeyen HTTP hatası",
+          "syncFailed": "Beklenmeyen sync hatası",
           "namespaceExists": "Çalışma alanı zaten var — create yerine eşleştirme veya kurtarma kullanın",
           "conflictCancelled": "Kullanıcı çakışma iletişim kutusunu iptal etti — yerel düzenlemeler hâlâ bekliyor",
+          "noDocument": "<tag>EsrSync.connect</tag> için <tag>document</tag> veya <tag>documents</tag> gerekli",
+          "unknownDocumentId": "<tag>sync(documentId)</tag> yapılandırılmamış",
+          "invalidDocumentId": "<tag>documentId</tag> formatı geçersiz",
+          "invalidDocumentSlot": "<tag>documents[]</tag> girişi geçersiz",
+          "duplicateDocumentId": "<tag>documents[]</tag> içinde yinelenen <tag>documentId</tag>",
+          "namespaceMismatch": "Çoklu belge namespace yapılandırma uyuşmazlığı",
+          "encryptionPasswordRequired": "ENV-ENC1 şifrelemesi için parola gerekli",
+          "unsupportedContent": "Desteklenmeyen içerik magic",
+          "invalidEnvelope": "Zarf oluşturma veya parse hatası",
           "revisionConflict": "Sunucu revision'ı ilerledi — çakışma akışı gerekli",
-          "deviceLimit": "Çalışma alanı dolu — yükseltme veya cihaz yönetimi arayüzünü gösterin"
+          "deviceLimit": "Çalışma alanı dolu — yükseltme veya cihaz yönetimi arayüzünü gösterin",
+          "deviceTokenInvalid": "Yeniden eşleştirin veya kurtarın — token geçersiz veya iptal",
+          "documentNotFound": "Belge için henüz push yok — ilk pull'da beklenir"
         }
       }
     }
@@ -1264,7 +1279,9 @@
           "developerUi": "<developerLink>/developer</developerLink> — self-service açıkken"
         },
         "errorsTitle": "Uygulama ile ilgili hata kodları",
-        "errorsP1": "<tag>error.code</tag> üzerinden dallanın. Tam liste: <specLink>16-APP-REGISTRY.md</specLink> ve <sdkAppLink>SDK — Uygulama kaydı</sdkAppLink>.",
+        "errorsP1": "<tag>error.code</tag> üzerinden dallanın. Tam liste: <errorCodesSpecLink>12-ERROR-CODES.md</errorCodesSpecLink> ve <sdkAppLink>SDK — Uygulama kaydı</sdkAppLink>.",
+        "developerErrorsTitle": "Geliştirici portalı hata kodları",
+        "developerErrorsP1": "Self-service kayıt açıkken <tag>/v1/developer/*</tag> tarafından döner.",
         "errors": {
           "appIdRequired": "<tag>X-ESR-App-Id</tag> gönderin — relay'de uygulama kaydı açık",
           "originRequired": "Web istemcide <tag>Origin</tag> başlığı eksik",
@@ -1272,11 +1289,26 @@
           "namespaceMismatch": "Namespace başka bir uygulamaya ait",
           "notFound": "Bilinmeyen <tag>appId</tag>",
           "suspended": "Operatör uygulamayı askıya aldı",
+          "archived": "Uygulama arşivlendi — mutasyon engelli",
           "pairingNotAllowed": "Uygulama pairing token <tag>allowedAppIds</tag> listesinde değil",
           "clientSecretInvalid": "Yanlış native client secret",
           "notVerified": "Uygulama doğrulama bekliyor",
           "nativeIdRequired": "<tag>X-ESR-Platform</tag> veya <tag>X-ESR-Bundle-Id</tag> eksik",
-          "bundleNotAllowed": "Bundle ID bu uygulama için kayıtlı veya onaylı değil"
+          "bundleNotAllowed": "Bundle ID bu uygulama için kayıtlı veya onaylı değil",
+          "originExists": "Origin bu uygulama için zaten kayıtlı",
+          "bundleExists": "Bundle bu uygulama için zaten kayıtlı",
+          "originVerificationFailed": "DNS veya HTTPS origin doğrulaması başarısız"
+        },
+        "developerErrors": {
+          "invalidToken": "E-posta doğrulama veya şifre sıfırlama token'ı geçersiz/süresi dolmuş",
+          "invalidCredentials": "Yanlış e-posta veya parola",
+          "emailNotVerified": "Girişten önce e-postayı doğrulayın",
+          "accountDisabled": "Operatör hesabı devre dışı bıraktı",
+          "forbidden": "Uygulama oturum açmış geliştiriciye ait değil",
+          "appLimitReached": "Geliştirici app kotası doldu",
+          "emailExists": "E-posta zaten kayıtlı — giriş yapın",
+          "portalDisabled": "Geliştirici portalı kapalı veya JWT secret eksik",
+          "mailNotConfigured": "Relay'de giden posta yapılandırılmamış"
         },
         "migrationTitle": "v1.2'den geçiş",
         "migrationP1": "Önce app başlıklı istemcileri yayınlayın, ardından <tag>apps.enabled</tag> açın, uygulamaları kaydedin ve mevcut namespace'ler için <tag>legacyDefaultAppId</tag> ayarlayın. Ayrıntı: <specLink>16-APP-REGISTRY §19</specLink>.",
@@ -1462,17 +1494,25 @@
       },
       "errors": {
         "title": "Hata kodları",
-        "p1": "Her zaman <tag>error.code</tag>'a göre dallanın. Yaygın kodlar:",
+        "p1": "Her zaman <tag>error.code</tag>'a göre dallanın. Sync API kodları:",
+        "p2": "Uygulama kaydı, geliştirici portalı, WebSocket ve yalnızca SDK kodları: yukarıdaki bölümler ve <errorCodesSpecLink>12-ERROR-CODES.md</errorCodesSpecLink>.",
         "rows": {
           "validation": "İstek gövdesi alanlarını düzeltin",
+          "unauthorized": "<tag>Authorization</tag> başlığı gönderin",
           "token": "Yeniden eşleştirin veya kurtarın — token geçersiz veya iptal",
           "recovery": "Yanlış kurtarma ifadesi kanıtı",
+          "forbidden": "Yetki reddi",
           "limitPay": "Yükseltme / kilidi açma arayüzünü gösterin",
           "limitBlock": "Kullanıcı bir cihaz kaldırmalı",
+          "lastDevice": "Son kalan cihaz kaldırılamaz",
+          "contentType": "<tag>contentType</tag> sunucu whitelist'inde değil",
+          "notFoundGeneric": "Kayıt bulunamadı",
           "notFound": "<tag>namespaceId</tag>'yi kontrol edin",
           "noDocument": "Henüz push yok — ilk pull'da beklenir",
+          "deviceNotFound": "Geçersiz cihaz id",
           "exists": "Namespace dolu — bunun yerine eşleştirin veya kurtarın",
           "conflict": "<tag>head/meta</tag>'yı yeniden okuyun, çakışma UX'ini çalıştırın",
+          "unlockRedeemed": "Kilidi açma kodu zaten kullanılmış",
           "tooLarge": "Zarf <tag>maxEnvelopeBytes</tag> limitini aşıyor (varsayılan 50 MB) — anlık görüntüyü küçültün veya operatörden limit artırmasını isteyin",
           "envelope": "Zarf şemasını veya hash'i düzeltin",
           "rateLimit": "Kota aşıldı — <tag>Retry-After</tag>, <tag>RateLimit-*</tag> başlıkları ve <tag>error.details.rateLimit</tag> (<tag>remaining</tag> 0)",
@@ -1481,7 +1521,8 @@
           "invalidDocumentId": "Path <tag>documentId</tag> formatı geçersiz",
           "documentLimit": "Namespace'te çok fazla belge — <tag>maxDocumentsPerNamespace</tag> artırın",
           "documentNotAllowed": "<tag>documentId</tag> sunucu allowlist'inde değil",
-          "envelopeDocumentMismatch": "Zarf <tag>documentId</tag> URL yolu ile eşleşmeli"
+          "envelopeDocumentMismatch": "Zarf <tag>documentId</tag> URL yolu ile eşleşmeli",
+          "internalError": "Beklenmeyen sunucu hatası — exponential backoff ile tekrar deneyin"
         }
       }
     },
