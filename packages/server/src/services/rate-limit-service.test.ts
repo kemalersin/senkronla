@@ -59,4 +59,30 @@ describe('rate-limit-service', () => {
       pool.query.mock.calls.some(([sql]) => String(sql).includes('INSERT INTO rate_limit_events')),
     ).toBe(false)
   })
+
+  it('stores IPv4-mapped IPv6 client IPs as dotted IPv4', async () => {
+    const pool = {
+      query: vi
+        .fn()
+        .mockResolvedValueOnce({ rows: [{ count: '0', oldest_at: null }] })
+        .mockResolvedValueOnce({ rowCount: 1 }),
+    }
+
+    const config = baseConfig()
+    const rule = getGlobalIpRateLimitRule(config)
+
+    await enforceRateLimit(pool as never, config, rule, { clientIp: '::ffff:203.0.113.10' })
+
+    expect(pool.query).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('rate_limit_usage_buckets'),
+      ['203.0.113.10', RATE_LIMIT_ACTION.globalIp, '60'],
+    )
+
+    expect(pool.query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('INSERT INTO rate_limit_usage_buckets'),
+      expect.arrayContaining([RATE_LIMIT_ACTION.globalIp, null, null, '203.0.113.10', null]),
+    )
+  })
 })

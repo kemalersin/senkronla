@@ -1,6 +1,7 @@
 import type { ServerConfig } from '../config/schema.js'
 import type { DbPool } from '../db/pool.js'
 import { AppError } from '../errors/app-error.js'
+import { normalizeClientIp } from '../lib/client-ip.js'
 
 export const RATE_LIMIT_ACTION = {
   recover: 'recover',
@@ -33,6 +34,17 @@ export interface RateLimitQuota {
 const USAGE_BUCKET_RETENTION_SECONDS = 90_000
 
 type ScopeQuery = { whereSql: string; params: (string | null)[] }
+
+function normalizeScope(scope: RateLimitScope): RateLimitScope {
+  if (!scope.clientIp) {
+    return scope
+  }
+
+  return {
+    ...scope,
+    clientIp: normalizeClientIp(scope.clientIp),
+  }
+}
 
 function buildScopeQuery(action: RateLimitAction, scope: RateLimitScope): ScopeQuery {
   if (scope.deviceUuid) {
@@ -152,10 +164,11 @@ export async function getRateLimitStatus(
     return null
   }
 
+  const normalizedScope = normalizeScope(scope)
   const { used, resetAfterSeconds } = await queryBucketUsage(
     pool,
     rule.action,
-    scope,
+    normalizedScope,
     rule.windowSeconds,
   )
 
@@ -285,7 +298,7 @@ export async function enforceRateLimit(
     })
   }
 
-  await incrementUsageBucket(pool, rule.action, scope)
+  await incrementUsageBucket(pool, rule.action, normalizeScope(scope))
   void maybePurgeStaleUsageBuckets(pool)
 
   return {

@@ -9,6 +9,18 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- Operator rate limits tab — **Details** / **Detay** modal with per-device and per-IP counts when `apps.enabled` is true
+
+### Fixed
+
+- Operator rate limits tab — duplicate React row keys when multiple devices share the same grouped hour bucket
+
+### Changed
+
+- Operator rate limits tab shows **App** (name + id, same as Namespaces) instead of **Device** when `apps.enabled` is true
+
 ## [0.1.17]
 
 ### Added

@@ -1590,6 +1590,19 @@
       "put_document": "Document PUT",
       "namespace_create": "Namespace create"
     },
+    "rateLimitUsage": {
+      "openDetailButton": "Details",
+      "closeModal": "Close",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load details.",
+      "noResults": "No device records for this period.",
+      "detailHint": "Total {count} requests · by device and IP",
+      "columns": {
+        "device": "Device",
+        "ip": "IP",
+        "count": "Requests"
+      }
+    },
     "namespaces": {
       "closeDetail": "Close"
     },

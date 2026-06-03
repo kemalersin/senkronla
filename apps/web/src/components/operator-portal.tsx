@@ -10,6 +10,10 @@ import {
   type OperatorLimitsTarget,
 } from '@/components/operator-limits-modal'
 import {
+  OperatorRateLimitDetailModal,
+  type OperatorRateLimitDetailTarget,
+} from '@/components/operator-rate-limit-detail-modal'
+import {
   OperatorRevisionPurgeModal,
   type OperatorRevisionPurgeTarget,
 } from '@/components/operator-revision-purge-modal'
@@ -88,6 +92,8 @@ interface RateLimitGroupRow {
   action: string
   namespaceId: string | null
   clientDeviceId: string | null
+  appId: string | null
+  appName: string | null
   clientIp: string | null
   periodStart: string
   periodEnd: string
@@ -112,6 +118,7 @@ interface ListFetchOptions {
   q?: string
   action?: string
   appId?: string
+  aggregateByApp?: boolean
 }
 
 interface OperatorAppFilter {
@@ -146,8 +153,30 @@ function formatPeriod(startIso: string, endIso: string, locale: string) {
   return `${formatDate(startIso, locale)} – ${formatDate(endIso, locale)}`
 }
 
-function rateLimitGroupKey(row: RateLimitGroupRow) {
-  return `${row.action}:${row.namespaceId ?? ''}:${row.clientDeviceId ?? ''}:${row.clientIp ?? ''}:${row.periodStart}`
+function renderOperatorAppCell(row: { appId: string | null; appName: string | null }) {
+  if (!row.appId) {
+    return '—'
+  }
+
+  return (
+    <>
+      <span>{row.appName ?? row.appId}</span>
+      {row.appName && (
+        <code className="operator-namespace-app-id">{row.appId}</code>
+      )}
+    </>
+  )
+}
+
+function rateLimitGroupKey(row: RateLimitGroupRow, appsEnabled: boolean) {
+  return [
+    row.action,
+    row.namespaceId ?? '',
+    appsEnabled ? '' : (row.clientDeviceId ?? ''),
+    row.appId ?? '',
+    appsEnabled ? '' : (row.clientIp ?? ''),
+    row.periodStart,
+  ].join(':')
 }
 
 function rateLimitActionLabel(
@@ -209,6 +238,7 @@ export function OperatorPortal() {
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
+  const [rateLimitDetailTarget, setRateLimitDetailTarget] = useState<OperatorRateLimitDetailTarget | null>(null)
   const [revisionPurgeTarget, setRevisionPurgeTarget] = useState<OperatorRevisionPurgeTarget | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [listRefreshKey, setListRefreshKey] = useState(0)
@@ -325,6 +355,10 @@ export function OperatorPortal() {
           params.set('appId', options.appId)
         }
 
+        if (options.aggregateByApp) {
+          params.set('aggregateByApp', 'true')
+        }
+
         const { response, body: rawBody } = await fetchJson(`${path}?${params.toString()}`)
         const body = rawBody as Paginated<unknown> & ApiErrorBody
 
@@ -374,6 +408,7 @@ export function OperatorPortal() {
         q: debouncedSearch || undefined,
         action: tab === 'rateLimits' && rateLimitAction ? rateLimitAction : undefined,
         appId: tab === 'namespaces' && appsEnabled ? namespaceAppFilter?.appId : undefined,
+        aggregateByApp: tab === 'rateLimits' && appsEnabled ? true : undefined,
       }
 
       if (tab === 'namespaces') {
@@ -819,16 +854,7 @@ export function OperatorPortal() {
                         <td>{row.namespaceLabel}</td>
                         {showAppColumn && (
                           <td className="operator-namespace-app-cell">
-                            {row.appId ? (
-                              <>
-                                <span>{row.appName ?? row.appId}</span>
-                                {row.appName && (
-                                  <code className="operator-namespace-app-id">{row.appId}</code>
-                                )}
-                              </>
-                            ) : (
-                              '—'
-                            )}
+                            {renderOperatorAppCell(row)}
                           </td>
                         )}
                         <td className="operator-table-col-numeric">{row.activeDevices}</td>
@@ -969,26 +995,61 @@ export function OperatorPortal() {
               <p className="operator-empty">{t('noResults')}</p>
             ) : (
               <div className="operator-table-wrap">
-                <table className="operator-table">
+                <table className="operator-table operator-table--rate-limits">
                   <thead>
                     <tr>
                       <th>{t('columns.action')}</th>
                       <th>{t('columns.namespace')}</th>
-                      <th>{t('columns.device')}</th>
-                      <th>{t('columns.ip')}</th>
+                      {appsEnabled ? (
+                        <th className="operator-namespace-app-cell">{t('columns.app')}</th>
+                      ) : (
+                        <th>{t('columns.device')}</th>
+                      )}
+                      {!appsEnabled && <th>{t('columns.ip')}</th>}
                       <th>{t('columns.period')}</th>
                       <th className="operator-table-col-numeric">{t('columns.count')}</th>
+                      {appsEnabled && (
+                        <th className="operator-table-col-actions">{t('columns.actions')}</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
                     {rateLimits.items.map((row) => (
-                      <tr key={rateLimitGroupKey(row)}>
+                      <tr key={rateLimitGroupKey(row, appsEnabled)}>
                         <td><code>{rateLimitActionLabel(row.action, t)}</code></td>
                         <td>{row.namespaceId ? <code>{row.namespaceId}</code> : '—'}</td>
-                        <td>{row.clientDeviceId ?? '—'}</td>
-                        <td>{row.clientIp ?? '—'}</td>
+                        <td className={appsEnabled ? 'operator-namespace-app-cell' : undefined}>
+                          {appsEnabled
+                            ? renderOperatorAppCell(row)
+                            : (row.clientDeviceId ?? '—')}
+                        </td>
+                        {!appsEnabled && <td>{row.clientIp ?? '—'}</td>}
                         <td>{formatPeriod(row.periodStart, row.periodEnd, locale)}</td>
                         <td className="operator-table-col-numeric">{row.count}</td>
+                        {appsEnabled && (
+                          <td className="operator-table-col-actions">
+                            <div className="operator-table-col-actions-inner">
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() =>
+                                  setRateLimitDetailTarget({
+                                    action: row.action,
+                                    actionLabel: rateLimitActionLabel(row.action, t),
+                                    namespaceId: row.namespaceId,
+                                    appId: row.appId,
+                                    appName: row.appName,
+                                    periodStart: row.periodStart,
+                                    periodEnd: row.periodEnd,
+                                    count: row.count,
+                                  })
+                                }
+                              >
+                                {t('rateLimitUsage.openDetailButton')}
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -1113,6 +1174,12 @@ export function OperatorPortal() {
       <OperatorLimitsModal
         target={limitsTarget}
         onClose={() => setLimitsTarget(null)}
+        onUnauthorized={handleUnauthorized}
+      />
+
+      <OperatorRateLimitDetailModal
+        target={rateLimitDetailTarget}
+        onClose={() => setRateLimitDetailTarget(null)}
         onUnauthorized={handleUnauthorized}
       />
 

@@ -7,6 +7,7 @@ import {
   getAdminOverview,
   listAdminNamespaces,
   listAdminRateLimitUsage,
+  listAdminRateLimitUsageDetails,
   listAdminUnlockCodes,
   listAdminUnlockEvents,
 } from '../services/admin-dashboard-service.js'
@@ -112,6 +113,23 @@ const purgeRevisionsBodySchema = z
     }
   })
 
+const rateLimitUsageDetailQuerySchema = z.object({
+  action: z.enum([
+    RATE_LIMIT_ACTION.recover,
+    RATE_LIMIT_ACTION.pairDevice,
+    RATE_LIMIT_ACTION.pairingToken,
+    RATE_LIMIT_ACTION.putDocument,
+    RATE_LIMIT_ACTION.namespaceCreate,
+  ]),
+  periodStart: z.string().datetime(),
+  namespaceId: z.string().uuid().nullable().optional(),
+  appId: z
+    .string()
+    .transform(normalizeAppId)
+    .refine((value) => APP_ID_PATTERN.test(value), { message: APP_ID_VALIDATION_MESSAGE })
+    .optional(),
+})
+
 const rateLimitUsageListQuerySchema = listQuerySchema.extend({
   action: z
     .enum([
@@ -122,6 +140,7 @@ const rateLimitUsageListQuerySchema = listQuerySchema.extend({
       RATE_LIMIT_ACTION.namespaceCreate,
     ])
     .optional(),
+  aggregateByApp: z.coerce.boolean().optional(),
 })
 
 export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext) {
@@ -145,6 +164,16 @@ export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext)
   app.get('/admin/unlock-events', { preHandler: requireAdminAuth }, async (request) => {
     const query = listQuerySchema.parse(request.query)
     return listAdminUnlockEvents(ctx.db, query)
+  })
+
+  app.get('/admin/rate-limit-usage/details', { preHandler: requireAdminAuth }, async (request) => {
+    const query = rateLimitUsageDetailQuerySchema.parse(request.query)
+    return listAdminRateLimitUsageDetails(ctx.db, {
+      action: query.action,
+      periodStart: query.periodStart,
+      namespaceId: query.namespaceId ?? null,
+      appId: query.appId ?? null,
+    })
   })
 
   app.get('/admin/rate-limit-usage', { preHandler: requireAdminAuth }, async (request) => {

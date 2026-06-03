@@ -11,6 +11,23 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Added
+
+- **server:** `GET /admin/rate-limit-usage/details` — device and IP breakdown for a grouped usage row
+- **web:** Operator rate limits tab — **Details** modal with per-device and per-IP counts when `apps.enabled` is true
+
+### Fixed
+
+- **server:** Operator rate limit usage — resolve `appId` from namespace; aggregate by app when apps registry is enabled
+- **server:** Rate limit usage search with apps registry — device and IP filters match underlying buckets again
+- **web:** Operator rate limits tab — fix duplicate React row keys when multiple devices share the same hour bucket
+
+### Changed
+
+- **server:** Rate limit usage buckets store client IPs as dotted IPv4 when the address is IPv4-mapped IPv6 (`::ffff:…`)
+- **server:** Operator rate limit usage API includes `appId` and `appName` per grouped row
+- **web:** Operator rate limits tab shows **App** (name + id, same as Namespaces) instead of **Device** when `apps.enabled` is true
+
 ## [0.1.18]
 
 ### Fixed

@@ -1591,6 +1591,19 @@
       "put_document": "Belge PUT",
       "namespace_create": "Namespace oluşturma"
     },
+    "rateLimitUsage": {
+      "openDetailButton": "Detay",
+      "closeModal": "Kapat",
+      "loading": "Yükleniyor…",
+      "loadFailed": "Detay yüklenemedi.",
+      "noResults": "Bu periyot için cihaz kaydı yok.",
+      "detailHint": "Toplam {count} istek · cihaz ve IP bazında",
+      "columns": {
+        "device": "Cihaz",
+        "ip": "IP",
+        "count": "İstek"
+      }
+    },
     "namespaces": {
       "closeDetail": "Kapat"
     },

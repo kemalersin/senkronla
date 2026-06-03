@@ -1495,6 +1495,10 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   width: min(44rem, 100%);
 }
 
+.operator-modal--rate-limit-detail {
+  width: min(40rem, 100%);
+}
+
 .operator-modal--revisions {
   position: relative;
   width: min(32rem, 100%);
@@ -2216,6 +2220,15 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
 }
 
 .operator-table--namespaces .operator-namespace-app-cell {
+  vertical-align: top;
+}
+
+.operator-table--rate-limits th,
+.operator-table--rate-limits td {
+  vertical-align: middle;
+}
+
+.operator-table--rate-limits .operator-namespace-app-cell {
   vertical-align: top;
 }
 

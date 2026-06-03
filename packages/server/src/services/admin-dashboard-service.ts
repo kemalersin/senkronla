@@ -67,16 +67,32 @@ export interface AdminRateLimitGroupRow {
   action: string
   namespaceId: string | null
   clientDeviceId: string | null
+  appId: string | null
+  appName: string | null
   clientIp: string | null
   periodStart: string
   periodEnd: string
   count: number
 }
 
+export interface AdminRateLimitUsageDetailRow {
+  clientDeviceId: string | null
+  clientIp: string | null
+  count: number
+}
+
+export interface RateLimitUsageDetailQueryInput {
+  action: string
+  periodStart: string
+  namespaceId?: string | null
+  appId?: string | null
+}
+
 export interface ListQueryInput extends PaginationInput {
   q?: string
   action?: string
   appId?: string
+  aggregateByApp?: boolean
 }
 
 function resolveSearchPattern(q?: string): string | null {
@@ -368,11 +384,47 @@ export async function listAdminRateLimitUsage(
   const { limit, offset } = resolvePagination(input)
   const searchPattern = resolveSearchPattern(input.q)
   const actionFilter = input.action?.trim() || null
+  const aggregateByApp = input.aggregateByApp === true
+
+  const deviceSelect = aggregateByApp ? 'NULL::text AS client_device_id' : 'd.client_device_id'
+  const deviceGroupBy = aggregateByApp ? '' : '        d.client_device_id,\n'
+  const ipSelect = aggregateByApp ? 'NULL::text AS client_ip' : 'rlub.client_ip'
+  const ipGroupBy = aggregateByApp ? '' : '        rlub.client_ip,\n'
+  const searchMatchSql = aggregateByApp
+    ? `namespace_id ILIKE $4 OR
+      COALESCE(app_id, '') ILIKE $4 OR
+      COALESCE(app_name, '') ILIKE $4 OR
+      EXISTS (
+        SELECT 1
+        FROM rate_limit_usage_buckets rlub_s
+        LEFT JOIN namespaces n_s ON n_s.id = rlub_s.namespace_uuid
+        LEFT JOIN devices d_s ON d_s.id = rlub_s.device_uuid
+        LEFT JOIN namespaces n2_s ON n2_s.id = d_s.namespace_uuid
+        LEFT JOIN apps a_s ON a_s.id = rlub_s.app_uuid
+        LEFT JOIN apps na_s ON na_s.id = n_s.app_uuid
+        LEFT JOIN apps n2a_s ON n2a_s.id = n2_s.app_uuid
+        WHERE rlub_s.action <> 'global_ip'
+          AND rlub_s.action = grouped.action
+          AND COALESCE(n_s.namespace_id, n2_s.namespace_id) IS NOT DISTINCT FROM grouped.namespace_id
+          AND COALESCE(a_s.app_id, na_s.app_id, n2a_s.app_id) IS NOT DISTINCT FROM grouped.app_id
+          AND date_trunc('hour', rlub_s.bucket_at) = grouped.period_start
+          AND (
+            COALESCE(d_s.client_device_id, '') ILIKE $4 OR
+            COALESCE(rlub_s.client_ip, '') ILIKE $4
+          )
+      )`
+    : `namespace_id ILIKE $4 OR
+      COALESCE(client_device_id, '') ILIKE $4 OR
+      COALESCE(app_id, '') ILIKE $4 OR
+      COALESCE(app_name, '') ILIKE $4 OR
+      COALESCE(client_ip, '') ILIKE $4`
 
   const result = await pool.query<{
     action: string
     namespace_id: string | null
     client_device_id: string | null
+    app_id: string | null
+    app_name: string | null
     client_ip: string | null
     period_start: Date
     period_end: Date
@@ -384,14 +436,19 @@ export async function listAdminRateLimitUsage(
       SELECT
         rlub.action,
         COALESCE(n.namespace_id, n2.namespace_id) AS namespace_id,
-        d.client_device_id,
-        rlub.client_ip,
+        ${deviceSelect},
+        COALESCE(a.app_id, na.app_id, n2a.app_id) AS app_id,
+        COALESCE(a.name, na.name, n2a.name) AS app_name,
+        ${ipSelect},
         date_trunc('hour', rlub.bucket_at) AS period_start,
         SUM(rlub.hit_count)::int AS event_count
       FROM rate_limit_usage_buckets rlub
       LEFT JOIN namespaces n ON n.id = rlub.namespace_uuid
       LEFT JOIN devices d ON d.id = rlub.device_uuid
       LEFT JOIN namespaces n2 ON n2.id = d.namespace_uuid
+      LEFT JOIN apps a ON a.id = rlub.app_uuid
+      LEFT JOIN apps na ON na.id = n.app_uuid
+      LEFT JOIN apps n2a ON n2a.id = n2.app_uuid
       WHERE rlub.action <> 'global_ip'
         AND (
           COALESCE(n.namespace_id, n2.namespace_id) IS NOT NULL
@@ -401,14 +458,16 @@ export async function listAdminRateLimitUsage(
       GROUP BY
         rlub.action,
         COALESCE(n.namespace_id, n2.namespace_id),
-        d.client_device_id,
-        rlub.client_ip,
-        date_trunc('hour', rlub.bucket_at)
+${deviceGroupBy}        COALESCE(a.app_id, na.app_id, n2a.app_id),
+        COALESCE(a.name, na.name, n2a.name),
+${ipGroupBy}        date_trunc('hour', rlub.bucket_at)
     )
     SELECT
       action,
       namespace_id,
       client_device_id,
+      app_id,
+      app_name,
       client_ip,
       period_start,
       period_start + interval '1 hour' AS period_end,
@@ -416,9 +475,7 @@ export async function listAdminRateLimitUsage(
       COUNT(*) OVER() AS total_count
     FROM grouped
     WHERE ($4::text IS NULL OR (
-      namespace_id ILIKE $4 OR
-      COALESCE(client_device_id, '') ILIKE $4 OR
-      COALESCE(client_ip, '') ILIKE $4
+      ${searchMatchSql}
     ))
     ORDER BY period_start DESC, event_count DESC
     LIMIT $1 OFFSET $2
@@ -433,6 +490,8 @@ export async function listAdminRateLimitUsage(
       action: row.action,
       namespaceId: row.namespace_id,
       clientDeviceId: row.client_device_id,
+      appId: row.app_id,
+      appName: row.app_name,
       clientIp: row.client_ip,
       periodStart: row.period_start.toISOString(),
       periodEnd: row.period_end.toISOString(),
@@ -442,4 +501,52 @@ export async function listAdminRateLimitUsage(
     limit,
     offset,
   }
+}
+
+export async function listAdminRateLimitUsageDetails(
+  pool: DbPool,
+  input: RateLimitUsageDetailQueryInput,
+): Promise<AdminRateLimitUsageDetailRow[]> {
+  const namespaceId = input.namespaceId?.trim() || null
+  const appId = input.appId?.trim() || null
+
+  const result = await pool.query<{
+    client_device_id: string | null
+    client_ip: string | null
+    event_count: number
+  }>(
+    `
+    SELECT
+      d.client_device_id,
+      rlub.client_ip,
+      SUM(rlub.hit_count)::int AS event_count
+    FROM rate_limit_usage_buckets rlub
+    LEFT JOIN namespaces n ON n.id = rlub.namespace_uuid
+    LEFT JOIN devices d ON d.id = rlub.device_uuid
+    LEFT JOIN namespaces n2 ON n2.id = d.namespace_uuid
+    LEFT JOIN apps a ON a.id = rlub.app_uuid
+    LEFT JOIN apps na ON na.id = n.app_uuid
+    LEFT JOIN apps n2a ON n2a.id = n2.app_uuid
+    WHERE rlub.action <> 'global_ip'
+      AND rlub.action = $1
+      AND date_trunc('hour', rlub.bucket_at) = $2::timestamptz
+      AND (
+        ($3::text IS NULL AND COALESCE(n.namespace_id, n2.namespace_id) IS NULL)
+        OR COALESCE(n.namespace_id, n2.namespace_id) = $3
+      )
+      AND (
+        ($4::text IS NULL AND COALESCE(a.app_id, na.app_id, n2a.app_id) IS NULL)
+        OR COALESCE(a.app_id, na.app_id, n2a.app_id) = $4
+      )
+    GROUP BY d.client_device_id, rlub.client_ip
+    ORDER BY event_count DESC, d.client_device_id NULLS LAST, rlub.client_ip NULLS LAST
+    `,
+    [input.action, input.periodStart, namespaceId, appId],
+  )
+
+  return result.rows.map((row) => ({
+    clientDeviceId: row.client_device_id,
+    clientIp: row.client_ip,
+    count: row.event_count,
+  }))
 }

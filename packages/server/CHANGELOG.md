@@ -9,6 +9,20 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- `GET /admin/rate-limit-usage/details` — device and IP breakdown for a grouped usage row (hour bucket)
+
+### Fixed
+
+- Operator rate limit usage — resolve `appId` from namespace when bucket has no app; aggregate by app and period (exclude IP/device) when `aggregateByApp=true`
+- Operator rate limit usage search with `aggregateByApp=true` — match device and IP via underlying buckets (grouped rows no longer expose those columns)
+
+### Changed
+
+- Rate limit usage buckets store client IPs as dotted IPv4 when the address is IPv4-mapped IPv6 (`::ffff:…`)
+- Operator rate limit usage API includes `appId` and `appName` per grouped row
+
 ## [0.1.16]
 
 ### Security

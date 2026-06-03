@@ -1501,6 +1501,37 @@ paths:
         '200':
           description: Paginated unlock events
 
+  /admin/rate-limit-usage/details:
+    get:
+      tags: [Admin]
+      summary: Device and IP breakdown for a grouped rate limit usage row
+      security:
+        - AdminToken: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: periodStart
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: namespaceId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: appId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usage rows grouped by device and IP for the hour bucket
+
   /admin/rate-limit-usage:
     get:
       tags: [Admin]
