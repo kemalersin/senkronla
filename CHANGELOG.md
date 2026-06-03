@@ -29,6 +29,8 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Changed
 
+- **server:** Rate limit usage — record host device for `namespace_create`, pairing device for `pair_device`, host for `pairing_token`
+- **web:** Operator rate limit usage detail modal — device label alongside client device id
 - **server:** Admin-created apps — origins and bundles skip verification and manual review
 - **web:** Operator app drawer — add origin/bundle without pending verification flow
 - **docs:** Sync API, app registry, developer portal, WebSocket, and SDK client error code lists in `12-ERROR-CODES.md` and cross-referenced specs

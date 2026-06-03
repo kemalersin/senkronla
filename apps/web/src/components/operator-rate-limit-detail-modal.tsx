@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { OperatorSpinner } from '@/components/operator-spinner'
@@ -20,8 +20,67 @@ export interface OperatorRateLimitDetailTarget {
 
 interface RateLimitDetailRow {
   clientDeviceId: string | null
+  deviceLabel: string | null
   clientIp: string | null
   count: number
+}
+
+function RateLimitDeviceCell({
+  deviceLabel,
+  clientDeviceId,
+}: {
+  deviceLabel: string | null
+  clientDeviceId: string | null
+}) {
+  const idRef = useRef<HTMLElement>(null)
+  const [labelMaxWidth, setLabelMaxWidth] = useState<number | undefined>()
+
+  useEffect(() => {
+    const idEl = idRef.current
+    if (!idEl || !deviceLabel || !clientDeviceId) {
+      setLabelMaxWidth(undefined)
+      return
+    }
+
+    const syncWidth = () => {
+      setLabelMaxWidth(idEl.offsetWidth)
+    }
+
+    syncWidth()
+
+    const observer = new ResizeObserver(syncWidth)
+    observer.observe(idEl)
+
+    return () => observer.disconnect()
+  }, [clientDeviceId, deviceLabel])
+
+  if (!clientDeviceId && !deviceLabel) {
+    return <>—</>
+  }
+
+  if (!deviceLabel || !clientDeviceId) {
+    const primary = deviceLabel ?? clientDeviceId
+    return (
+      <span className="operator-rate-limit-device-label" title={primary ?? undefined}>
+        {primary}
+      </span>
+    )
+  }
+
+  return (
+    <div className="operator-rate-limit-device-cell-inner">
+      <span
+        className="operator-rate-limit-device-label"
+        title={deviceLabel}
+        style={labelMaxWidth ? { maxWidth: labelMaxWidth } : undefined}
+      >
+        {deviceLabel}
+      </span>
+      <code ref={idRef} className="operator-rate-limit-device-id">
+        {clientDeviceId}
+      </code>
+    </div>
+  )
 }
 
 interface OperatorRateLimitDetailModalProps {
@@ -185,13 +244,21 @@ export function OperatorRateLimitDetailModal({
                 <tbody>
                   {rows.map((row) => (
                     <tr key={`${row.clientDeviceId ?? ''}:${row.clientIp ?? ''}`}>
-                      <td>{row.clientDeviceId ?? '—'}</td>
+                      <td className="operator-rate-limit-device-cell">
+                        <RateLimitDeviceCell
+                          deviceLabel={row.deviceLabel}
+                          clientDeviceId={row.clientDeviceId}
+                        />
+                      </td>
                       <td>{row.clientIp ?? '—'}</td>
                       <td className="operator-table-col-numeric">{row.count}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {rows.some((row) => !row.clientDeviceId && !row.deviceLabel) ? (
+                <p className="operator-muted operator-rate-limit-missing-device-hint">{t('missingDeviceHint')}</p>
+              ) : null}
             </div>
           ) : null}
         </div>

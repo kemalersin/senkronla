@@ -1661,6 +1661,7 @@
       "loadFailed": "Failed to load details.",
       "noResults": "No device records for this period.",
       "detailHint": "Total {count} requests · by device and IP",
+      "missingDeviceHint": "Recovery and failed requests may be counted per namespace or IP without a registered device. Successful namespace create, pairing, pairing token, and document PUT (push) requests record device information.",
       "columns": {
         "device": "Device",
         "ip": "IP",

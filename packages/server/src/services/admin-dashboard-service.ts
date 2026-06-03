@@ -77,6 +77,7 @@ export interface AdminRateLimitGroupRow {
 
 export interface AdminRateLimitUsageDetailRow {
   clientDeviceId: string | null
+  deviceLabel: string | null
   clientIp: string | null
   count: number
 }
@@ -512,12 +513,14 @@ export async function listAdminRateLimitUsageDetails(
 
   const result = await pool.query<{
     client_device_id: string | null
+    device_label: string | null
     client_ip: string | null
     event_count: number
   }>(
     `
     SELECT
-      d.client_device_id,
+      MAX(d.client_device_id) AS client_device_id,
+      MAX(d.label) AS device_label,
       rlub.client_ip,
       SUM(rlub.hit_count)::int AS event_count
     FROM rate_limit_usage_buckets rlub
@@ -538,14 +541,15 @@ export async function listAdminRateLimitUsageDetails(
         ($4::text IS NULL AND COALESCE(a.app_id, na.app_id, n2a.app_id) IS NULL)
         OR COALESCE(a.app_id, na.app_id, n2a.app_id) = $4
       )
-    GROUP BY d.client_device_id, rlub.client_ip
-    ORDER BY event_count DESC, d.client_device_id NULLS LAST, rlub.client_ip NULLS LAST
+    GROUP BY rlub.device_uuid, rlub.client_ip
+    ORDER BY event_count DESC, MAX(d.client_device_id) NULLS LAST, rlub.client_ip NULLS LAST
     `,
     [input.action, input.periodStart, namespaceId, appId],
   )
 
   return result.rows.map((row) => ({
     clientDeviceId: row.client_device_id,
+    deviceLabel: row.device_label,
     clientIp: row.client_ip,
     count: row.event_count,
   }))

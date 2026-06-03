@@ -9,6 +9,7 @@ import { createPool } from './db/pool.js'
 describe('Faz 2 — namespace and pairing (integration)', () => {
   let container: StartedPostgreSqlContainer | undefined
   let app: Awaited<ReturnType<typeof buildApp>> | undefined
+  let db: ReturnType<typeof createPool> | undefined
 
   beforeAll(async () => {
     try {
@@ -24,7 +25,7 @@ describe('Faz 2 — namespace and pairing (integration)', () => {
       ESR_DEFAULT_FREE_DEVICE_LIMIT: '2',
     })
 
-    const db = createPool(config)
+    db = createPool(config)
     await runMigrations(db)
     app = await buildApp({ config, db })
     await app.ready()
@@ -69,6 +70,18 @@ describe('Faz 2 — namespace and pairing (integration)', () => {
     expect(pairingResponse.statusCode).toBe(201)
     const pairing = pairingResponse.json()
     expect(pairing.code).toMatch(/^\d{6}$/)
+
+    const pairingUsage = await db!.query<{ client_device_id: string; device_label: string }>(
+      `SELECT d.client_device_id, d.label AS device_label
+       FROM rate_limit_usage_buckets rlub
+       INNER JOIN devices d ON d.id = rlub.device_uuid
+       WHERE rlub.action = 'pairing_token'
+       ORDER BY rlub.bucket_at DESC
+       LIMIT 1`,
+    )
+
+    expect(pairingUsage.rows[0]?.client_device_id).toBe(hostClientDeviceId)
+    expect(pairingUsage.rows[0]?.device_label).toBe('Host Laptop')
 
     const phoneClientDeviceId = randomUUID()
 

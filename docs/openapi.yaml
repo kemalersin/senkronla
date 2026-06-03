@@ -1558,6 +1558,24 @@ paths:
       responses:
         '200':
           description: Usage rows grouped by device and IP for the hour bucket
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    clientDeviceId:
+                      type: string
+                      nullable: true
+                    deviceLabel:
+                      type: string
+                      nullable: true
+                    clientIp:
+                      type: string
+                      nullable: true
+                    count:
+                      type: integer
 
   /admin/rate-limit-usage:
     get:

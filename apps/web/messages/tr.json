@@ -1662,6 +1662,7 @@
       "loadFailed": "Detay yüklenemedi.",
       "noResults": "Bu periyot için cihaz kaydı yok.",
       "detailHint": "Toplam {count} istek · cihaz ve IP bazında",
+      "missingDeviceHint": "Kurtarma ve başarısız isteklerde limit namespace veya IP düzeyinde sayılır; cihaz henüz kayıtlı olmayabilir. Namespace oluşturma, eşleştirme, pairing token ve belge PUT (push) başarılı isteklerde cihaz bilgisini kaydeder.",
       "columns": {
         "device": "Cihaz",
         "ip": "IP",

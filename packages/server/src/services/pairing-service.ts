@@ -4,7 +4,9 @@ import { generatePairingCode, hashPairingCode } from '../lib/crypto.js'
 import { loadLimitContext } from './limit-context-loader.js'
 import { resolveRateLimitRule } from './limit-resolution-service.js'
 import {
-  enforceRateLimit,
+  assertRateLimit,
+  getRateLimitStatus,
+  recordRateLimitUsage,
   RATE_LIMIT_ACTION,
   type RateLimitQuota,
 } from './rate-limit-service.js'
@@ -30,15 +32,14 @@ export async function createPairingToken(
   config: ServerConfig,
   namespace: NamespaceRow,
   hostLabel: string,
+  hostDeviceUuid: string,
   input: CreatePairingTokenInput = {},
   clientIp?: string | null,
 ): Promise<CreatePairingTokenResult> {
   const ctx = await loadLimitContext(pool, { namespace })
   const pairingRule = resolveRateLimitRule(RATE_LIMIT_ACTION.pairingToken, ctx, config)
-  const pairingTokenRateLimit = await enforceRateLimit(pool, config, pairingRule, {
-    namespaceUuid: namespace.id,
-    clientIp,
-  })
+  const usageScope = { namespaceUuid: namespace.id, clientIp }
+  await assertRateLimit(pool, config, { ...pairingRule, scope: usageScope })
 
   const limits = await getLimitsForNamespace(pool, config, ctx)
 
@@ -62,6 +63,14 @@ export async function createPairingToken(
      VALUES ($1, $2, $3, $4)`,
     [namespace.id, codeHash, expiresAt.toISOString(), allowedAppIds],
   )
+
+  await recordRateLimitUsage(pool, RATE_LIMIT_ACTION.pairingToken, {
+    ...usageScope,
+    deviceUuid: hostDeviceUuid,
+    appUuid: namespace.app_uuid,
+  })
+
+  const pairingTokenRateLimit = await getRateLimitStatus(pool, config, pairingRule, usageScope)
 
   const expUnix = Math.floor(expiresAt.getTime() / 1000)
   const qrPayload = allowedAppIds?.length

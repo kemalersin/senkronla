@@ -7,9 +7,12 @@ import { generateDeviceToken, hashDeviceToken } from '../lib/crypto.js'
 import { loadLimitContext } from './limit-context-loader.js'
 import { resolveRateLimitRule } from './limit-resolution-service.js'
 import {
-  enforceRateLimit,
+  assertRateLimit,
+  getRateLimitStatus,
+  recordRateLimitUsage,
   RATE_LIMIT_ACTION,
   type RateLimitQuota,
+  type RateLimitRule,
 } from './rate-limit-service.js'
 import { buildLimitsResponse, loadNamespaceLimits } from './slot-service.js'
 import type { NamespaceRow } from '../types/db.js'
@@ -71,14 +74,16 @@ export async function createNamespace(
     throw new AppError(409, 'NAMESPACE_EXISTS', 'Namespace already exists')
   }
 
-  let namespaceCreateRateLimit: RateLimitQuota | null = null
-  if (input.appUuid && input.clientIp) {
-    const ctx = await loadLimitContext(pool, { appUuid: input.appUuid, appId: input.appId ?? null })
-    const rule = resolveRateLimitRule(RATE_LIMIT_ACTION.namespaceCreate, ctx, config)
-    namespaceCreateRateLimit = await enforceRateLimit(pool, config, rule, {
-      appUuid: input.appUuid,
-      clientIp: input.clientIp,
-    })
+  let namespaceCreateRule: RateLimitRule | null = null
+  const usageScope =
+    input.appUuid && input.clientIp
+      ? { appUuid: input.appUuid, clientIp: input.clientIp }
+      : null
+
+  if (usageScope) {
+    const ctx = await loadLimitContext(pool, { appUuid: input.appUuid!, appId: input.appId ?? null })
+    namespaceCreateRule = resolveRateLimitRule(RATE_LIMIT_ACTION.namespaceCreate, ctx, config)
+    await assertRateLimit(pool, config, { ...namespaceCreateRule, scope: usageScope })
   }
 
   const deviceToken = generateDeviceToken()
@@ -86,6 +91,8 @@ export async function createNamespace(
   const devicePublicId = ulid()
 
   const client = await pool.connect()
+  let hostDeviceUuid: string | null = null
+  let namespace: NamespaceRow | null = null
 
   try {
     await client.query('BEGIN')
@@ -107,38 +114,59 @@ export async function createNamespace(
       ],
     )
 
-    const namespace = namespaceResult.rows[0]
-    if (!namespace) {
+    const createdNamespace = namespaceResult.rows[0]
+    if (!createdNamespace) {
       throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create namespace')
     }
 
-    await client.query(
+    namespace = createdNamespace
+
+    const deviceResult = await client.query<{ id: string }>(
       `INSERT INTO devices (
          namespace_uuid, device_id, client_device_id, label, token_hash, is_host
-       ) VALUES ($1, $2, $3, $4, $5, true)`,
-      [namespace.id, devicePublicId, input.clientDeviceId, input.deviceLabel, tokenHash],
+       ) VALUES ($1, $2, $3, $4, $5, true)
+       RETURNING id`,
+      [createdNamespace.id, devicePublicId, input.clientDeviceId, input.deviceLabel, tokenHash],
     )
 
-    await client.query('COMMIT')
-
-    const limits = await loadNamespaceLimits(pool, config, namespace, {
-      appUuid: input.appUuid ?? null,
-      appId: input.appId ?? null,
-    })
-
-    return {
-      namespaceId: namespace.namespace_id,
-      ...(input.appId ? { appId: input.appId } : {}),
-      deviceToken,
-      deviceId: devicePublicId,
-      limits: buildLimitsResponse(config, limits),
-      rateLimit: namespaceCreateRateLimit,
+    hostDeviceUuid = deviceResult.rows[0]?.id ?? null
+    if (!hostDeviceUuid) {
+      throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create host device')
     }
+
+    await client.query('COMMIT')
   } catch (error) {
     await client.query('ROLLBACK')
+    if (usageScope) {
+      await recordRateLimitUsage(pool, RATE_LIMIT_ACTION.namespaceCreate, usageScope)
+    }
     throw error
   } finally {
     client.release()
+  }
+
+  let namespaceCreateRateLimit: RateLimitQuota | null = null
+  if (usageScope && namespaceCreateRule && namespace) {
+    await recordRateLimitUsage(pool, RATE_LIMIT_ACTION.namespaceCreate, {
+      ...usageScope,
+      namespaceUuid: namespace.id,
+      deviceUuid: hostDeviceUuid,
+    })
+    namespaceCreateRateLimit = await getRateLimitStatus(pool, config, namespaceCreateRule, usageScope)
+  }
+
+  const limits = await loadNamespaceLimits(pool, config, namespace!, {
+    appUuid: input.appUuid ?? null,
+    appId: input.appId ?? null,
+  })
+
+  return {
+    namespaceId: namespace!.namespace_id,
+    ...(input.appId ? { appId: input.appId } : {}),
+    deviceToken,
+    deviceId: devicePublicId,
+    limits: buildLimitsResponse(config, limits),
+    rateLimit: namespaceCreateRateLimit,
   }
 }
 

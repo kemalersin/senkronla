@@ -6,7 +6,9 @@ import { generateDeviceToken, hashDeviceToken, hashPairingCode } from '../lib/cr
 import { loadLimitContext } from './limit-context-loader.js'
 import { resolveRateLimitRule } from './limit-resolution-service.js'
 import {
-  enforceRateLimit,
+  assertRateLimit,
+  getRateLimitStatus,
+  recordRateLimitUsage,
   RATE_LIMIT_ACTION,
   type RateLimitQuota,
 } from './rate-limit-service.js'
@@ -126,12 +128,13 @@ export async function pairDeviceWithCode(
     appId: appAuth?.appId ?? null,
   })
   const pairRule = resolveRateLimitRule(RATE_LIMIT_ACTION.pairDevice, ctx, config)
-  const pairRateLimit = await enforceRateLimit(pool, config, pairRule, {
-    namespaceUuid: namespace.id,
-    clientIp,
-  })
+  const usageScope = { namespaceUuid: namespace.id, clientIp, appUuid: appAuth?.appUuid ?? null }
+  await assertRateLimit(pool, config, { ...pairRule, scope: usageScope })
 
   const client = await pool.connect()
+  let pairedDeviceUuid: string | null = null
+  let deviceToken = ''
+  let devicePublicId = ''
 
   try {
     await client.query('BEGIN')
@@ -176,18 +179,24 @@ export async function pairDeviceWithCode(
       assertPairingAppAllowed(tokenResult.rows[0]?.allowed_app_ids ?? null, appAuth?.appId)
     }
 
-    const deviceToken = generateDeviceToken()
+    deviceToken = generateDeviceToken()
     const tokenHash = hashDeviceToken(deviceToken)
-    const devicePublicId = ulid()
+    devicePublicId = ulid()
 
     if (isNewDevice) {
-      await client.query(
+      const insertResult = await client.query<{ id: string }>(
         `INSERT INTO devices (
            namespace_uuid, device_id, client_device_id, label, token_hash, is_host
-         ) VALUES ($1, $2, $3, $4, $5, false)`,
+         ) VALUES ($1, $2, $3, $4, $5, false)
+         RETURNING id`,
         [namespace.id, devicePublicId, input.clientDeviceId, input.deviceLabel, tokenHash],
       )
+      pairedDeviceUuid = insertResult.rows[0]?.id ?? null
+      if (!pairedDeviceUuid) {
+        throw new AppError(500, 'INTERNAL_ERROR', 'Failed to create device')
+      }
     } else {
+      pairedDeviceUuid = existing!.id
       await client.query(
         `UPDATE devices
          SET device_id = $3,
@@ -203,19 +212,27 @@ export async function pairDeviceWithCode(
     }
 
     await client.query('COMMIT')
-
-    const updatedLimits = await getLimitsForNamespace(pool, config, ctx)
-
-    return {
-      deviceToken,
-      deviceId: devicePublicId,
-      limits: buildLimitsResponse(config, updatedLimits),
-      rateLimit: pairRateLimit,
-    }
   } catch (error) {
     await client.query('ROLLBACK')
+    await recordRateLimitUsage(pool, RATE_LIMIT_ACTION.pairDevice, usageScope)
     throw error
   } finally {
     client.release()
+  }
+
+  await recordRateLimitUsage(pool, RATE_LIMIT_ACTION.pairDevice, {
+    ...usageScope,
+    deviceUuid: pairedDeviceUuid,
+  })
+
+  const pairRateLimit = await getRateLimitStatus(pool, config, pairRule, usageScope)
+
+  const updatedLimits = await getLimitsForNamespace(pool, config, ctx)
+
+  return {
+    deviceToken,
+    deviceId: devicePublicId,
+    limits: buildLimitsResponse(config, updatedLimits),
+    rateLimit: pairRateLimit,
   }
 }

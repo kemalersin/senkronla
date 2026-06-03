@@ -132,6 +132,43 @@ async function incrementUsageBucket(
   )
 }
 
+/** Persist a rate-limit hit for operator usage stats (does not enforce limits). */
+export async function recordRateLimitUsage(
+  pool: DbPool,
+  action: RateLimitAction,
+  scope: RateLimitScope,
+): Promise<void> {
+  const normalized = normalizeScope(scope)
+
+  if (normalized.deviceUuid) {
+    const claimed = await pool.query(
+      `UPDATE rate_limit_usage_buckets
+       SET device_uuid = $5,
+           hit_count = hit_count + 1
+       WHERE action = $1
+         AND namespace_uuid IS NOT DISTINCT FROM $2
+         AND device_uuid IS NULL
+         AND client_ip IS NOT DISTINCT FROM $3
+         AND app_uuid IS NOT DISTINCT FROM $4
+         AND bucket_at = date_trunc('minute', now())
+       RETURNING 1`,
+      [
+        action,
+        normalized.namespaceUuid ?? null,
+        normalized.clientIp ?? null,
+        normalized.appUuid ?? null,
+        normalized.deviceUuid,
+      ],
+    )
+
+    if ((claimed.rowCount ?? 0) > 0) {
+      return
+    }
+  }
+
+  await incrementUsageBucket(pool, action, normalized)
+}
+
 let lastUsageBucketPurgeAt = 0
 
 export async function purgeStaleRateLimitUsageBuckets(pool: DbPool): Promise<number> {

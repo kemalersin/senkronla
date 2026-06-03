@@ -1540,6 +1540,44 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   width: min(40rem, 100%);
 }
 
+.operator-modal--rate-limit-detail .operator-table--rate-limits tbody td {
+  vertical-align: middle;
+}
+
+.operator-rate-limit-device-cell {
+  width: 1%;
+}
+
+.operator-rate-limit-device-cell-inner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.operator-rate-limit-device-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operator-rate-limit-device-id {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.operator-rate-limit-missing-device-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
 .operator-modal--revisions {
   position: relative;
   width: min(32rem, 100%);

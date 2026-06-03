@@ -23,6 +23,8 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
+- Rate limit usage for `namespace_create`, `pair_device`, and `pairing_token` records the host or pairing device in usage buckets; legacy namespace-only rows in the same minute are upgraded with `device_uuid`
+- Rate limit usage details API includes `deviceLabel` per device and IP row
 - Admin app registry — origins and native bundles added via `/admin/apps` are verified or approved immediately (no DNS challenge or manual review step)
 - Rate limit usage buckets store client IPs as dotted IPv4 when the address is IPv4-mapped IPv6 (`::ffff:…`)
 - Operator rate limit usage API includes `appId` and `appName` per grouped row
