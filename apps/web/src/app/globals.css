@@ -288,6 +288,7 @@ pre {
 .header-login-link[data-active='true'] {
   color: var(--text);
   border-color: var(--accent-dim);
+  text-decoration: none;
 }
 
 .header-tutorial-link {
