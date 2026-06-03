@@ -9,9 +9,12 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.19]
+
 ### Added
 
-- Operator rate limits tab — **Details** / **Detay** modal with per-device and per-IP counts when `apps.enabled` is true
+- Operator namespace drawer — click a row to open overview; **Dangerous operations** tab deletes namespace, devices, documents, unlock data, and blob directory
+- Operator app and developer drawers — **Dangerous operations** tab for scoped permanent delete (cascades namespaces, blobs, and related records)
 
 ### Fixed
 
@@ -19,6 +22,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
+- Operator app drawer — new origins and bundles are added as verified/approved (no manual verify step)
 - API and SDK guide pages — complete error code tables (sync, app registry, developer portal, SDK client)
 - SDK reference — **Device management** section (`listDevices`, `revokeDevice`, limits, `LAST_DEVICE_PROTECTED`)
 - Agent docs (`public/agents/api-*.md`, `sdk-*.md`) — full error code reference; SDK agent guides — **Device management** / **Cihaz yönetimi** (`listDevices`, `revokeDevice`, slot limits)

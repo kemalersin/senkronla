@@ -370,7 +370,9 @@ export async function createAdminApp(
     }
 
     await client.query('COMMIT')
-    return buildAdminAppDetail(pool, app, config)
+    await maybeActivateAppAfterVerification(pool, app.id)
+    const refreshed = await findAppByPublicId(pool, input.appId)
+    return buildAdminAppDetail(pool, refreshed ?? app, config)
   } catch (error) {
     await client.query('ROLLBACK')
     throw error
@@ -418,14 +420,12 @@ export async function addAdminAppOrigin(
   const app = await requireAppRow(pool, appId)
   assertAppNotArchived(app)
   const origin = normalizeOriginInput(input.origin)
-  const verified =
-    input.verified !== false || isLocalhostOriginVerificationExempt(config, origin)
 
   try {
     await pool.query(
       `INSERT INTO app_origins (app_uuid, origin, verification_token, verified_at)
-       VALUES ($1, $2, $3, $4)`,
-      [app.id, origin, generateVerificationToken(), verified ? new Date() : null],
+       VALUES ($1, $2, $3, now())`,
+      [app.id, origin, generateVerificationToken()],
     )
   } catch (error) {
     const pgError = error as { code?: string }
@@ -439,9 +439,7 @@ export async function addAdminAppOrigin(
   }
 
   await pool.query(`UPDATE apps SET updated_at = now() WHERE id = $1`, [app.id])
-  if (verified) {
-    await maybeActivateAppAfterVerification(pool, app.id)
-  }
+  await maybeActivateAppAfterVerification(pool, app.id)
 
   const refreshed = await findAppByPublicId(pool, appId)
   return buildAdminAppDetail(pool, refreshed ?? app, config)
@@ -454,13 +452,12 @@ export async function addAdminAppBundle(
   input: AddAdminAppBundleInput,
 ): Promise<AdminAppDetail> {
   const app = await requireAppRow(pool, appId)
-  const verifiedAt = input.verified === false ? null : new Date()
 
   try {
     await pool.query(
       `INSERT INTO app_bundles (app_uuid, platform, bundle_id, verified_at)
-       VALUES ($1, $2, $3, $4)`,
-      [app.id, input.platform, input.bundleId, verifiedAt],
+       VALUES ($1, $2, $3, now())`,
+      [app.id, input.platform, input.bundleId],
     )
   } catch (error) {
     const pgError = error as { code?: string }
@@ -475,7 +472,10 @@ export async function addAdminAppBundle(
   }
 
   await pool.query(`UPDATE apps SET updated_at = now() WHERE id = $1`, [app.id])
-  return buildAdminAppDetail(pool, app, config)
+  await maybeActivateAppAfterVerification(pool, app.id)
+
+  const refreshed = await findAppByPublicId(pool, appId)
+  return buildAdminAppDetail(pool, refreshed ?? app, config)
 }
 
 export async function approveAdminAppBundle(

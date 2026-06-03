@@ -11,10 +11,15 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+## [0.1.19]
+
 ### Added
 
+- **demo:** Completion screen — **Show to your agent** / **Ajanına göster** link to SDK agent doc by locale
 - **server:** `GET /admin/rate-limit-usage/details` — device and IP breakdown for a grouped usage row
+- **server:** Scoped dangerous delete — `POST /admin/danger/purge-namespace|purge-app|purge-developer`
 - **web:** Operator rate limits tab — **Details** modal with per-device and per-IP counts when `apps.enabled` is true
+- **web:** Namespace, app, and developer drawers — **Dangerous operations** tab (settings drawer pattern)
 
 ### Fixed
 
@@ -24,6 +29,8 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Changed
 
+- **server:** Admin-created apps — origins and bundles skip verification and manual review
+- **web:** Operator app drawer — add origin/bundle without pending verification flow
 - **docs:** Sync API, app registry, developer portal, WebSocket, and SDK client error code lists in `12-ERROR-CODES.md` and cross-referenced specs
 - **web:** API and SDK guide pages — complete error code tables aligned with server and `@senkronla/client`; agent SDK guides (`public/agents/sdk-*.md`) — device management section
 - **server:** Rate limit usage buckets store client IPs as dotted IPv4 when the address is IPv4-mapped IPv6 (`::ffff:…`)

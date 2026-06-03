@@ -1668,7 +1668,8 @@
       }
     },
     "namespaces": {
-      "closeDetail": "Kapat"
+      "closeDetail": "Kapat",
+      "openDetail": "Namespace detayı"
     },
     "limits": {
       "title": "Limit geçersiz kılma",
@@ -1796,6 +1797,69 @@
       "purging": "Siliniyor…",
       "purgeFailed": "Kayıtlar silinemedi.",
       "purgeSuccess": "Silindi — {namespaces} namespace kaldırıldı."
+    },
+    "drawerTabs": {
+      "detail": "Detay",
+      "overview": "Özet"
+    },
+    "scopedDanger": {
+      "namespace": {
+        "hint": "Bu namespace ve bağlı tüm veriler kalıcı olarak silinir.",
+        "deleteTitle": "Namespace'i sil",
+        "deleteWarning": "Cihazlar, dokümanlar, blob dosyaları ve açılış kayıtları geri getirilemez.",
+        "deleteItems": {
+          "devices": "Cihaz kayıtları ve pairing token'ları",
+          "documents": "Doküman başlıkları, revizyon geçmişi ve blob dosyaları",
+          "unlock": "Bu namespace'e ait açılış kodları ve geçmişi",
+          "rateLimits": "Rate limit kullanım kayıtları",
+          "blobs": "Blob depolama dizini"
+        },
+        "confirmLabel": "Onay ifadesi",
+        "confirmHint": "Devam etmek için {phrase} yazın.",
+        "confirmDialog": "Bu namespace kalıcı olarak silinecek. Emin misiniz?",
+        "deleteButton": "Namespace'i sil",
+        "deleting": "Siliniyor…",
+        "deleteFailed": "Namespace silinemedi.",
+        "deleteSuccess": "Silindi — {namespaces} namespace, {blobs} blob dizini kaldırıldı."
+      },
+      "app": {
+        "hint": "Bu uygulama ve bağlı namespace'ler kalıcı olarak silinir.",
+        "deleteTitle": "Uygulamayı sil",
+        "deleteWarning": "Kayıtlı origin/bundle'lar, namespace'ler ve blob dosyaları geri getirilemez.",
+        "deleteItems": {
+          "namespaces": "Bu uygulamaya bağlı tüm namespace'ler",
+          "origins": "Doğrulanmış origin kayıtları",
+          "bundles": "Native bundle kayıtları",
+          "rateLimits": "Uygulama kapsamlı rate limit kayıtları",
+          "blobs": "İlgili blob depolama dizinleri"
+        },
+        "confirmLabel": "Onay ifadesi",
+        "confirmHint": "Devam etmek için {phrase} yazın.",
+        "confirmDialog": "Bu uygulama ve bağlı namespace'ler kalıcı olarak silinecek. Emin misiniz?",
+        "deleteButton": "Uygulamayı sil",
+        "deleting": "Siliniyor…",
+        "deleteFailed": "Uygulama silinemedi.",
+        "deleteSuccess": "Silindi — {apps} uygulama, {namespaces} namespace, {blobs} blob dizini kaldırıldı."
+      },
+      "developer": {
+        "hint": "Bu geliştirici hesabı ve kayıtlı uygulamaları kalıcı olarak silinir.",
+        "deleteTitle": "Geliştiriciyi sil",
+        "deleteWarning": "Geliştiricinin uygulamaları, namespace'leri ve blob dosyaları geri getirilemez.",
+        "deleteItems": {
+          "apps": "Bu geliştiricinin kayıtlı uygulamaları",
+          "namespaces": "Uygulamalara bağlı tüm namespace'ler",
+          "authTokens": "Doğrulama ve oturum token'ları",
+          "rateLimits": "İlgili rate limit kayıtları",
+          "blobs": "İlgili blob depolama dizinleri"
+        },
+        "confirmLabel": "Onay ifadesi",
+        "confirmHint": "Devam etmek için {phrase} yazın.",
+        "confirmDialog": "Bu geliştirici ve tüm uygulamaları kalıcı olarak silinecek. Emin misiniz?",
+        "deleteButton": "Geliştiriciyi sil",
+        "deleting": "Siliniyor…",
+        "deleteFailed": "Geliştirici silinemedi.",
+        "deleteSuccess": "Silindi — {developers} geliştirici, {apps} uygulama, {namespaces} namespace, {blobs} blob dizini kaldırıldı."
+      }
     },
     "apps": {
       "listTitle": "Kayıtlı uygulamalar",

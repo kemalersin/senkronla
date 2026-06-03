@@ -1667,7 +1667,8 @@
       }
     },
     "namespaces": {
-      "closeDetail": "Close"
+      "closeDetail": "Close",
+      "openDetail": "Namespace details"
     },
     "limits": {
       "title": "Limit overrides",
@@ -1795,6 +1796,69 @@
       "purging": "Deleting…",
       "purgeFailed": "Could not delete records.",
       "purgeSuccess": "Deleted — removed {namespaces} namespaces."
+    },
+    "drawerTabs": {
+      "detail": "Details",
+      "overview": "Overview"
+    },
+    "scopedDanger": {
+      "namespace": {
+        "hint": "Permanently deletes this namespace and all related data.",
+        "deleteTitle": "Delete namespace",
+        "deleteWarning": "Devices, documents, blob files, and unlock records cannot be recovered.",
+        "deleteItems": {
+          "devices": "Device records and pairing tokens",
+          "documents": "Document heads, revision history, and blob files",
+          "unlock": "Unlock codes and history for this namespace",
+          "rateLimits": "Rate limit usage records",
+          "blobs": "Blob storage directory"
+        },
+        "confirmLabel": "Confirmation phrase",
+        "confirmHint": "Type {phrase} to continue.",
+        "confirmDialog": "This namespace will be permanently deleted. Are you sure?",
+        "deleteButton": "Delete namespace",
+        "deleting": "Deleting…",
+        "deleteFailed": "Could not delete namespace.",
+        "deleteSuccess": "Deleted — removed {namespaces} namespace(s) and {blobs} blob director(ies)."
+      },
+      "app": {
+        "hint": "Permanently deletes this application and its namespaces.",
+        "deleteTitle": "Delete application",
+        "deleteWarning": "Registered origins/bundles, namespaces, and blob files cannot be recovered.",
+        "deleteItems": {
+          "namespaces": "All namespaces bound to this app",
+          "origins": "Verified origin records",
+          "bundles": "Native bundle records",
+          "rateLimits": "App-scoped rate limit records",
+          "blobs": "Related blob storage directories"
+        },
+        "confirmLabel": "Confirmation phrase",
+        "confirmHint": "Type {phrase} to continue.",
+        "confirmDialog": "This application and its namespaces will be permanently deleted. Are you sure?",
+        "deleteButton": "Delete application",
+        "deleting": "Deleting…",
+        "deleteFailed": "Could not delete application.",
+        "deleteSuccess": "Deleted — removed {apps} app(s), {namespaces} namespace(s), and {blobs} blob director(ies)."
+      },
+      "developer": {
+        "hint": "Permanently deletes this developer account and registered applications.",
+        "deleteTitle": "Delete developer",
+        "deleteWarning": "The developer's apps, namespaces, and blob files cannot be recovered.",
+        "deleteItems": {
+          "apps": "Applications registered by this developer",
+          "namespaces": "All namespaces bound to those apps",
+          "authTokens": "Verification and session tokens",
+          "rateLimits": "Related rate limit records",
+          "blobs": "Related blob storage directories"
+        },
+        "confirmLabel": "Confirmation phrase",
+        "confirmHint": "Type {phrase} to continue.",
+        "confirmDialog": "This developer and all applications will be permanently deleted. Are you sure?",
+        "deleteButton": "Delete developer",
+        "deleting": "Deleting…",
+        "deleteFailed": "Could not delete developer.",
+        "deleteSuccess": "Deleted — removed {developers} developer(s), {apps} app(s), {namespaces} namespace(s), and {blobs} blob director(ies)."
+      }
     },
     "apps": {
       "listTitle": "Registered applications",

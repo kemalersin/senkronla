@@ -19,6 +19,12 @@ import {
   patchNamespaceLimits,
 } from '../services/operator-limit-service.js'
 import { purgeAllRecords } from '../services/admin-purge-service.js'
+import {
+  deleteAdminApp,
+  deleteAdminDeveloper,
+  deleteAdminNamespace,
+  SCOPED_DELETE_CONFIRM,
+} from '../services/admin-scoped-delete-service.js'
 import { purgeRevisions } from '../services/revision-retention-service.js'
 import { getMailSettings, patchMailSettings } from '../services/mail-settings-service.js'
 import {
@@ -54,8 +60,28 @@ const namespaceListQuerySchema = listQuerySchema.extend({
     .optional(),
 })
 
+const appIdSchema = z
+  .string()
+  .transform(normalizeAppId)
+  .refine((value) => APP_ID_PATTERN.test(value), { message: APP_ID_VALIDATION_MESSAGE })
+
 const purgeAllRecordsBodySchema = z.object({
   confirm: z.literal('purge-all-records'),
+})
+
+const purgeNamespaceBodySchema = z.object({
+  confirm: z.literal(SCOPED_DELETE_CONFIRM.namespace),
+  namespaceId: z.string().uuid(),
+})
+
+const purgeAppBodySchema = z.object({
+  confirm: z.literal(SCOPED_DELETE_CONFIRM.app),
+  appId: appIdSchema,
+})
+
+const purgeDeveloperBodySchema = z.object({
+  confirm: z.literal(SCOPED_DELETE_CONFIRM.developer),
+  developerId: z.string().uuid(),
 })
 
 const purgeRevisionsBodySchema = z
@@ -226,6 +252,21 @@ export async function registerAdminRoutes(app: FastifyInstance, ctx: AppContext)
   app.post('/admin/danger/purge-all-records', { preHandler: requireAdminAuth }, async (request) => {
     purgeAllRecordsBodySchema.parse(request.body ?? {})
     return purgeAllRecords(ctx.db, ctx.config.blob.filesystem.path)
+  })
+
+  app.post('/admin/danger/purge-namespace', { preHandler: requireAdminAuth }, async (request) => {
+    const body = purgeNamespaceBodySchema.parse(request.body ?? {})
+    return deleteAdminNamespace(ctx.db, ctx.config.blob.filesystem.path, body.namespaceId)
+  })
+
+  app.post('/admin/danger/purge-app', { preHandler: requireAdminAuth }, async (request) => {
+    const body = purgeAppBodySchema.parse(request.body ?? {})
+    return deleteAdminApp(ctx.db, ctx.config.blob.filesystem.path, body.appId)
+  })
+
+  app.post('/admin/danger/purge-developer', { preHandler: requireAdminAuth }, async (request) => {
+    const body = purgeDeveloperBodySchema.parse(request.body ?? {})
+    return deleteAdminDeveloper(ctx.db, ctx.config.blob.filesystem.path, body.developerId)
   })
 
   app.get('/admin/settings/sync', { preHandler: requireAdminAuth }, async () => {

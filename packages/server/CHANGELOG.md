@@ -9,9 +9,12 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.19]
+
 ### Added
 
 - `GET /admin/rate-limit-usage/details` — device and IP breakdown for a grouped usage row (hour bucket)
+- `POST /admin/danger/purge-namespace`, `purge-app`, `purge-developer` — scoped permanent delete with related records and blob directories
 
 ### Fixed
 
@@ -20,6 +23,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Changed
 
+- Admin app registry — origins and native bundles added via `/admin/apps` are verified or approved immediately (no DNS challenge or manual review step)
 - Rate limit usage buckets store client IPs as dotted IPv4 when the address is IPv4-mapped IPv6 (`::ffff:…`)
 - Operator rate limit usage API includes `appId` and `appName` per grouped row
 

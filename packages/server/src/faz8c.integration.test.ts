@@ -8,6 +8,7 @@ import { createPool } from './db/pool.js'
 import { buildApp } from './app.js'
 
 const ADMIN_TOKEN = 'test-admin-token-01234567890123456789012'
+const DEV_JWT_SECRET = 'test-developer-jwt-secret-012345678901234567890'
 
 function withAppRegistryConfig(base: ServerConfig): ServerConfig {
   return {
@@ -19,8 +20,18 @@ function withAppRegistryConfig(base: ServerConfig): ServerConfig {
     apps: {
       ...base.apps,
       enabled: true,
+      registrationMode: 'self_service',
       allowLocalhostOrigins: true,
       seed: [],
+      developerPortal: {
+        ...base.apps.developerPortal,
+        enabled: true,
+        jwtSecret: DEV_JWT_SECRET,
+        sessionTtlHours: 24,
+        requireEmailVerification: false,
+        emailVerifyTtlSeconds: 86_400,
+        passwordResetTtlSeconds: 3600,
+      },
     },
   }
 }
@@ -42,6 +53,7 @@ describe('Faz 8c — origin verification (integration)', () => {
     const baseConfig = loadConfig({
       ESR_DATABASE_URL: container.getConnectionUri(),
       ESR_ADMIN_TOKEN: ADMIN_TOKEN,
+      ESR_DEVELOPER_JWT_SECRET: DEV_JWT_SECRET,
     })
 
     const config = withAppRegistryConfig(baseConfig)
@@ -95,34 +107,47 @@ describe('Faz 8c — origin verification (integration)', () => {
   )
 
   it.skipIf(!container || !app)('verification failure returns APP_ORIGIN_VERIFICATION_FAILED', async () => {
-    const appId = 'esr_app_verifyfail'
     const origin = 'https://example.com'
 
-    await app!.inject({
+    const registerResponse = await app!.inject({
       method: 'POST',
-      url: '/v1/admin/apps',
-      headers: adminAuth,
+      url: '/v1/developer/register',
       payload: {
-        appId,
-        name: 'Verify Fail App',
-        type: 'web',
-        status: 'pending_verification',
+        email: `dev-${randomUUID()}@example.com`,
+        password: 'secure-password-12',
       },
     })
 
-    const addOriginResponse = await app!.inject({
+    expect(registerResponse.statusCode).toBe(201)
+    const devToken = registerResponse.json().token as string
+
+    const createAppResponse = await app!.inject({
       method: 'POST',
-      url: `/v1/admin/apps/${appId}/origins`,
-      headers: adminAuth,
-      payload: { origin, verified: false },
+      url: '/v1/developer/apps',
+      headers: { authorization: `Bearer ${devToken}` },
+      payload: {
+        name: 'Verify Fail App',
+        type: 'web',
+      },
     })
 
+    expect(createAppResponse.statusCode).toBe(201)
+    const appId = createAppResponse.json().appId as string
+
+    const addOriginResponse = await app!.inject({
+      method: 'POST',
+      url: `/v1/developer/apps/${appId}/origins`,
+      headers: { authorization: `Bearer ${devToken}` },
+      payload: { origin },
+    })
+
+    expect(addOriginResponse.statusCode).toBe(201)
     const originRow = addOriginResponse.json().origins[0]
 
     const verifyResponse = await app!.inject({
       method: 'POST',
-      url: `/v1/admin/apps/${appId}/origins/${originRow.id}/verify`,
-      headers: adminAuth,
+      url: `/v1/developer/apps/${appId}/origins/${originRow.id}/verify`,
+      headers: { authorization: `Bearer ${devToken}` },
     })
 
     expect(verifyResponse.statusCode).toBe(422)

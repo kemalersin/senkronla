@@ -881,7 +881,6 @@ function buildAdminAppItems(): PostmanItem[] {
       body: {
         platform: 'ios',
         bundleId: '{{bundleId}}',
-        verified: false,
       },
       tests: [
         "pm.test('Bundle added', function () {",
@@ -899,7 +898,7 @@ function buildAdminAppItems(): PostmanItem[] {
       method: 'POST',
       url: '{{relayBaseUrl}}/admin/apps/{{esrAppId}}/bundles/{{nativeBundleRecordId}}/approve',
       auth: adminBearerAuth(),
-      description: 'Required when `apps.native.requireManualReview` is enabled.',
+      description: 'Optional for developer-submitted bundles pending manual review.',
     }),
     httpRequest({
       name: 'Suspend app',

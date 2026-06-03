@@ -1,5 +1,5 @@
 import { readdir, rm } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { resolve, sep } from 'node:path'
 
 const NAMESPACE_DIR_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -26,4 +26,24 @@ export async function purgeBlobStorage(blobRoot: string): Promise<number> {
   }
 
   return removed
+}
+
+export async function purgeBlobNamespaceDir(blobRoot: string, namespacePublicId: string): Promise<boolean> {
+  if (!NAMESPACE_DIR_PATTERN.test(namespacePublicId)) {
+    return false
+  }
+
+  const absoluteRoot = resolve(blobRoot)
+  const target = resolve(absoluteRoot, namespacePublicId)
+
+  if (!target.startsWith(`${absoluteRoot}${sep}`)) {
+    return false
+  }
+
+  try {
+    await rm(target, { recursive: true, force: true })
+    return true
+  } catch {
+    return false
+  }
 }

@@ -2414,6 +2414,20 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   min-width: 0;
 }
 
+.operator-apps-meta > .operator-apps-meta-row-full {
+  grid-column: 1 / -1;
+}
+
+.operator-apps-meta-row-full dd {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.operator-apps-meta-row-full dd code {
+  word-break: break-all;
+}
+
 .operator-apps-meta dt {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -2772,6 +2786,7 @@ html[data-theme='dark'] .theme-toggle-icon-sun {
   display: flex;
   align-items: flex-start;
   gap: 0.35rem;
+  width: 100%;
   margin: 0 0 0.35rem;
 }
 

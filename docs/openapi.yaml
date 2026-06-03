@@ -1353,6 +1353,77 @@ paths:
         '400':
           description: Invalid confirmation phrase
 
+  /admin/danger/purge-namespace:
+    post:
+      tags: [Admin]
+      summary: Delete a namespace and related data (dangerous)
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm, namespaceId]
+              properties:
+                confirm:
+                  type: string
+                  enum: [delete-namespace]
+                namespaceId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Deleted record counts
+
+  /admin/danger/purge-app:
+    post:
+      tags: [Admin]
+      summary: Delete an application and related data (dangerous)
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm, appId]
+              properties:
+                confirm:
+                  type: string
+                  enum: [delete-app]
+                appId:
+                  type: string
+      responses:
+        '200':
+          description: Deleted record counts
+
+  /admin/danger/purge-developer:
+    post:
+      tags: [Admin]
+      summary: Delete a developer and related data (dangerous)
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm, developerId]
+              properties:
+                confirm:
+                  type: string
+                  enum: [delete-developer]
+                developerId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Deleted record counts
+
   /admin/settings/sync:
     get:
       tags: [Admin]
@@ -1731,7 +1802,8 @@ paths:
                   format: uri
                 verified:
                   type: boolean
-                  default: true
+                  deprecated: true
+                  description: Ignored — admin-added origins are always verified immediately.
       responses:
         '201':
           description: Origin added
@@ -1833,6 +1905,8 @@ paths:
                   type: string
                 verified:
                   type: boolean
+                  deprecated: true
+                  description: Ignored — admin-added bundles are always approved immediately.
       responses:
         '201':
           description: Bundle added

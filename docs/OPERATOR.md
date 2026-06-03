@@ -110,6 +110,8 @@ When either value is greater than zero, retention runs automatically after each 
 
 **Operator portal:** **Revisions** on namespace or app rows; deployment-wide purge under **Settings → Revisions**. The panel shows current server retention values from `GET /v1/admin/settings/sync`.
 
+**Dangerous operations:** **Settings → Dangerous operations** wipes all relay data. Per-record delete is also available under **Dangerous operations** in the namespace drawer (row click), app drawer, and developer drawer — each requires typing a confirmation phrase (`delete-namespace`, `delete-app`, or `delete-developer`) and removes related database rows plus blob storage directories.
+
 **Admin API:**
 
 | Method | Path | Description |
@@ -140,11 +142,11 @@ Requires `ESR_ADMIN_TOKEN`. Base path: `/v1/admin/apps`.
 | `GET` | `/admin/apps/:appId` | Detail with origins and bundles |
 | `PATCH` | `/admin/apps/:appId` | Update `name` and/or `status` (suspend/restore) |
 | `DELETE` | `/admin/apps/:appId` | Archive (`status: archived`) |
-| `POST` | `/admin/apps/:appId/origins` | Add origin (`verified: false` for challenge flow) |
-| `POST` | `/admin/apps/:appId/origins/:originId/verify` | Run DNS TXT or HTTPS well-known verification |
+| `POST` | `/admin/apps/:appId/origins` | Add origin (auto-verified; no DNS challenge) |
+| `POST` | `/admin/apps/:appId/origins/:originId/verify` | Re-run DNS TXT or HTTPS well-known verification (developer self-service flow) |
 | `DELETE` | `/admin/apps/:appId/origins/:originId` | Remove origin |
-| `POST` | `/admin/apps/:appId/bundles` | Add native bundle |
-| `POST` | `/admin/apps/:appId/bundles/:bundleId/approve` | Approve pending bundle |
+| `POST` | `/admin/apps/:appId/bundles` | Add native bundle (auto-approved) |
+| `POST` | `/admin/apps/:appId/bundles/:bundleId/approve` | Approve pending native bundle (developer-submitted apps) |
 
 Pairing scope (when `apps.enabled`):
 

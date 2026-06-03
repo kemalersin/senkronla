@@ -198,7 +198,7 @@ describe('Faz 8b — admin app registry API (integration)', () => {
     expect(response.statusCode).toBe(401)
   })
 
-  it.skipIf(!container || !app)('creates native app with bundle approve flow', async () => {
+  it.skipIf(!container || !app)('creates native app with auto-approved admin bundle', async () => {
     const appId = 'esr_app_nativeadm'
 
     const createResponse = await app!.inject({
@@ -227,16 +227,9 @@ describe('Faz 8b — admin app registry API (integration)', () => {
     })
 
     expect(addBundleResponse.statusCode).toBe(201)
-    const bundleId = addBundleResponse.json().bundles[0].id
-
-    const approveResponse = await app!.inject({
-      method: 'POST',
-      url: `/v1/admin/apps/${appId}/bundles/${bundleId}/approve`,
-      headers: adminAuth,
-    })
-
-    expect(approveResponse.statusCode).toBe(200)
-    expect(approveResponse.json().bundles[0].verifiedAt).toBeTruthy()
+    const added = addBundleResponse.json()
+    expect(added.bundles[0].verifiedAt).toBeTruthy()
+    expect(added.status).toBe('active')
 
     const searchResponse = await app!.inject({
       method: 'GET',

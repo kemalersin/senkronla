@@ -17,6 +17,7 @@ import {
   OperatorRevisionPurgeModal,
   type OperatorRevisionPurgeTarget,
 } from '@/components/operator-revision-purge-modal'
+import { OperatorNamespaceDrawer } from '@/components/operator-namespace-drawer'
 import { OperatorSettingsDrawer } from '@/components/operator-settings-drawer'
 import { OperatorSpinner } from '@/components/operator-spinner'
 import { dedupedGet, fetchJson, invalidateDedupedGet } from '@/lib/deduped-fetch'
@@ -240,6 +241,7 @@ export function OperatorPortal() {
   const [limitsTarget, setLimitsTarget] = useState<OperatorLimitsTarget | null>(null)
   const [rateLimitDetailTarget, setRateLimitDetailTarget] = useState<OperatorRateLimitDetailTarget | null>(null)
   const [revisionPurgeTarget, setRevisionPurgeTarget] = useState<OperatorRevisionPurgeTarget | null>(null)
+  const [selectedNamespace, setSelectedNamespace] = useState<NamespaceRow | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [listRefreshKey, setListRefreshKey] = useState(0)
   const tRef = useRef(t)
@@ -481,8 +483,18 @@ export function OperatorPortal() {
     setUnlockCodes(null)
     setUnlockEvents(null)
     setRateLimits(null)
+    setSelectedNamespace(null)
     setPage(0)
     setListRefreshKey((key) => key + 1)
+    void loadOverview()
+  }, [loadOverview])
+
+  const handleNamespaceDeleted = useCallback(() => {
+    setSelectedNamespace(null)
+    setNamespaces(null)
+    setPage(0)
+    setListRefreshKey((key) => key + 1)
+    invalidateDedupedGet('/api/operator/overview')
     void loadOverview()
   }, [loadOverview])
 
@@ -828,7 +840,7 @@ export function OperatorPortal() {
       const showAppColumn = appsEnabled
 
       return (
-        <section className="operator-content operator-section card">
+        <section className={`operator-content operator-section card${selectedNamespace ? ' has-drawer' : ''}`}>
           {renderListBody(
             namespaces.items.length === 0 ? (
               <p className="operator-empty">{t('noResults')}</p>
@@ -849,7 +861,12 @@ export function OperatorPortal() {
                   </thead>
                   <tbody>
                     {namespaces.items.map((row) => (
-                      <tr key={row.namespaceId}>
+                      <tr
+                        key={row.namespaceId}
+                        className="operator-table-row-clickable"
+                        data-selected={selectedNamespace?.namespaceId === row.namespaceId ? 'true' : 'false'}
+                        onClick={() => setSelectedNamespace(row)}
+                      >
                         <td className="operator-table-col-sticky"><code>{row.namespaceId}</code></td>
                         <td>{row.namespaceLabel}</td>
                         {showAppColumn && (
@@ -863,7 +880,10 @@ export function OperatorPortal() {
                         </td>
                         <td className="operator-table-col-numeric">{row.documentCount}</td>
                         <td className="operator-table-col-date">{formatDate(row.createdAt, locale)}</td>
-                        <td className="operator-table-col-actions">
+                        <td
+                          className="operator-table-col-actions"
+                          onClick={(event) => event.stopPropagation()}
+                        >
                           <div className="operator-table-col-actions-inner">
                             <button
                               type="button"
@@ -903,6 +923,14 @@ export function OperatorPortal() {
             ),
             namespaces.total,
           )}
+          <OperatorNamespaceDrawer
+            row={selectedNamespace}
+            appsEnabled={appsEnabled}
+            locale={locale}
+            onClose={() => setSelectedNamespace(null)}
+            onDeleted={handleNamespaceDeleted}
+            onUnauthorized={handleUnauthorized}
+          />
         </section>
       )
     }
