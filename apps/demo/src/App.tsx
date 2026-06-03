@@ -174,7 +174,7 @@ export function App() {
       </header>
 
       {completed ? (
-        <FinishScreen ui={ui} onRestart={restartTour} />
+        <FinishScreen ui={ui} locale={locale} onRestart={restartTour} />
       ) : (
         <div className="split">
         <div className="pane pane-learn">

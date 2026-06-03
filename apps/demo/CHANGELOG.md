@@ -9,6 +9,10 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- Completion screen — **Show to your agent** / **Ajanına göster** opens locale SDK agent doc (`sdk-en.md` / `sdk-tr.md`); next-step links pinned in a bottom footer; intro and footer site links are icon-only from MD (≤1279px)
+
 ## [0.1.18]
 
 ### Fixed

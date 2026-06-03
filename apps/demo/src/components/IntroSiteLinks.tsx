@@ -23,36 +23,40 @@ export function IntroSiteLinks({ ui, className }: IntroSiteLinksProps) {
         className="btn btn-secondary btn-sm intro-link"
         target="_blank"
         rel="noreferrer"
+        aria-label={ui.intro.links.website}
       >
         <GlobeIcon className="intro-link-icon" />
-        {ui.intro.links.website}
+        <span className="intro-link-label">{ui.intro.links.website}</span>
       </a>
       <a
         href={SENKRONLA_DOCS_URL}
         className="btn btn-secondary btn-sm intro-link"
         target="_blank"
         rel="noreferrer"
+        aria-label={ui.intro.links.docs}
       >
         <BookIcon className="intro-link-icon" />
-        {ui.intro.links.docs}
+        <span className="intro-link-label">{ui.intro.links.docs}</span>
       </a>
       <a
         href={SENKRONLA_GITHUB_URL}
         className="btn btn-secondary btn-sm intro-link"
         target="_blank"
         rel="noreferrer"
+        aria-label={ui.intro.links.github}
       >
         <GitHubIcon className="intro-link-icon intro-link-icon--github" />
-        {ui.intro.links.github}
+        <span className="intro-link-label">{ui.intro.links.github}</span>
       </a>
       <a
         href={SENKRONLA_DONATE_URL}
         className="btn btn-secondary btn-sm intro-link"
         target="_blank"
         rel="noreferrer"
+        aria-label={ui.intro.links.donate}
       >
         <HeartIcon className="intro-link-icon" />
-        {ui.intro.links.donate}
+        <span className="intro-link-label">{ui.intro.links.donate}</span>
       </a>
     </nav>
   )

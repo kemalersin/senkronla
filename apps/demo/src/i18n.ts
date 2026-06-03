@@ -408,6 +408,7 @@ interface UiCopy {
     subtitle: string
     bullets: string[]
     restart: string
+    showAgent: string
     linksNav: string
     links: {
       website: string
@@ -1062,6 +1063,7 @@ const EN: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
         'WebSocket notifications keep tabs and devices in step',
       ],
       restart: 'Start over',
+      showAgent: 'Show to your agent',
       linksNav: 'Next steps',
       links: {
         website: 'senkron.la',
@@ -1278,6 +1280,7 @@ const TR: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
         'WebSocket bildirimleri sekmeleri ve cihazları uyumlu tutar',
       ],
       restart: 'Baştan başla',
+      showAgent: 'Ajanına göster',
       linksNav: 'Sonraki adımlar',
       links: {
         website: 'senkron.la',
