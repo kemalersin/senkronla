@@ -17,6 +17,7 @@ import {
   OperatorOriginVerifyError,
   type OriginVerifyErrorState,
 } from '@/components/operator-origin-verify-error'
+import { OperatorScopedDangerPanel } from '@/components/operator-scoped-danger-panel'
 import { OperatorSegmentedField } from '@/components/operator-segmented-field'
 import { OperatorSpinner } from '@/components/operator-spinner'
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
@@ -231,6 +232,7 @@ export function OperatorAppsPanel({
   const [error, setError] = useState<string | null>(null)
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
   const [selectedApp, setSelectedApp] = useState<AppDetail | null>(null)
+  const [drawerTab, setDrawerTab] = useState<'detail' | 'danger'>('detail')
   const [detailError, setDetailError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
@@ -524,7 +526,7 @@ export function OperatorAppsPanel({
         {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ origin: addOrigin.trim(), verified: false }),
+          body: JSON.stringify({ origin: addOrigin.trim() }),
         },
       )
 
@@ -632,7 +634,6 @@ export function OperatorAppsPanel({
           body: JSON.stringify({
             platform: addBundlePlatform,
             bundleId: addBundleId.trim(),
-            verified: false,
           }),
         },
       )
@@ -796,11 +797,19 @@ export function OperatorAppsPanel({
   function closeDetailPanel() {
     setSelectedAppId(null)
     setSelectedApp(null)
+    setDrawerTab('detail')
     setActionError(null)
     setDetailError(null)
     setVerifyingOriginId(null)
     setOriginVerifyErrors({})
     setRevealedClientSecret(null)
+  }
+
+  function handleAppDeleted() {
+    closeDetailPanel()
+    setApps(null)
+    void loadApps()
+    onPageChange(0)
   }
 
   const drawerOpen = showCreate || Boolean(selectedApp)
@@ -986,9 +995,35 @@ export function OperatorAppsPanel({
             </button>
           </header>
 
-          {(mode === 'operator' && selectedApp.status === 'active') ||
+          {mode === 'operator' && (
+            <nav className="operator-settings-tabs" aria-label={t('settingsTabs.danger')}>
+              <button
+                type="button"
+                role="tab"
+                className="operator-tab"
+                data-active={drawerTab === 'detail' ? 'true' : 'false'}
+                aria-selected={drawerTab === 'detail'}
+                onClick={() => setDrawerTab('detail')}
+              >
+                {t('drawerTabs.detail')}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                className="operator-tab"
+                data-active={drawerTab === 'danger' ? 'true' : 'false'}
+                aria-selected={drawerTab === 'danger'}
+                onClick={() => setDrawerTab('danger')}
+              >
+                {t('settingsTabs.danger')}
+              </button>
+            </nav>
+          )}
+
+          {drawerTab === 'detail' &&
+          ((mode === 'operator' && selectedApp.status === 'active') ||
           (mode === 'operator' && selectedApp.status === 'suspended') ||
-          selectedApp.status !== 'archived' ? (
+          selectedApp.status !== 'archived') ? (
             <div className="operator-apps-drawer-toolbar">
               {mode === 'operator' && selectedApp.status === 'active' && (
                 <button
@@ -1024,6 +1059,14 @@ export function OperatorAppsPanel({
           ) : null}
 
           <div className="operator-apps-drawer-body">
+            {drawerTab === 'danger' && mode === 'operator' ? (
+              <OperatorScopedDangerPanel
+                scope="app"
+                scopeId={selectedApp.appId}
+                onDeleted={handleAppDeleted}
+                onUnauthorized={onUnauthorized}
+              />
+            ) : (
             <>
               {selectedApp.type === 'web' && (
                   <div className="operator-apps-subsection">
@@ -1232,9 +1275,9 @@ export function OperatorAppsPanel({
                     )}
                   </>
                 )}
+                  {actionError && <div className="status-badge error">{actionError}</div>}
             </>
-
-            {actionError && <div className="status-badge error">{actionError}</div>}
+            )}
           </div>
         </aside>
       </>

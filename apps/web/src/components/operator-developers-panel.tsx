@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 
 import { DocCallout } from '@/components/doc-callout'
+import { OperatorScopedDangerPanel } from '@/components/operator-scoped-danger-panel'
 import { OperatorSpinner } from '@/components/operator-spinner'
 import {
   OperatorLimitsModal,
@@ -104,6 +105,7 @@ export function OperatorDevelopersPanel({
   const [error, setError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedDeveloper, setSelectedDeveloper] = useState<DeveloperRow | null>(null)
+  const [drawerTab, setDrawerTab] = useState<'detail' | 'danger'>('detail')
   const [detailError, setDetailError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
@@ -296,8 +298,16 @@ export function OperatorDevelopersPanel({
   function closeDetailPanel() {
     setSelectedId(null)
     setSelectedDeveloper(null)
+    setDrawerTab('detail')
     setActionError(null)
     setDetailError(null)
+  }
+
+  function handleDeveloperDeleted() {
+    closeDetailPanel()
+    setDevelopers(null)
+    void loadDevelopers()
+    onPageChange(0)
   }
 
   usePageScrollLock(Boolean(selectedDeveloper), 'operator-developers-drawer')
@@ -448,8 +458,32 @@ export function OperatorDevelopersPanel({
             </button>
           </header>
 
-          <div className="operator-apps-drawer-toolbar">
-            {!selectedDeveloper.emailVerified && !selectedDeveloper.disabled && (
+          <nav className="operator-settings-tabs" aria-label={t('settingsTabs.danger')}>
+            <button
+              type="button"
+              role="tab"
+              className="operator-tab"
+              data-active={drawerTab === 'detail' ? 'true' : 'false'}
+              aria-selected={drawerTab === 'detail'}
+              onClick={() => setDrawerTab('detail')}
+            >
+              {t('drawerTabs.detail')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              className="operator-tab"
+              data-active={drawerTab === 'danger' ? 'true' : 'false'}
+              aria-selected={drawerTab === 'danger'}
+              onClick={() => setDrawerTab('danger')}
+            >
+              {t('settingsTabs.danger')}
+            </button>
+          </nav>
+
+          {drawerTab === 'detail' && (
+            <div className="operator-apps-drawer-toolbar">
+              {!selectedDeveloper.emailVerified && !selectedDeveloper.disabled && (
                 <button
                   type="button"
                   className="btn btn-primary"
@@ -488,9 +522,19 @@ export function OperatorDevelopersPanel({
                   {t('developers.enable')}
                 </button>
               )}
-          </div>
+            </div>
+          )}
 
           <div className="operator-apps-drawer-body">
+            {drawerTab === 'danger' ? (
+              <OperatorScopedDangerPanel
+                scope="developer"
+                scopeId={selectedDeveloper.id}
+                onDeleted={handleDeveloperDeleted}
+                onUnauthorized={onUnauthorized}
+              />
+            ) : (
+            <>
             <dl className="operator-apps-meta">
                 <div>
                   <dt>{t('developers.email')}</dt>
@@ -521,6 +565,8 @@ export function OperatorDevelopersPanel({
             </dl>
 
             {actionError && <div className="status-badge error">{actionError}</div>}
+            </>
+            )}
           </div>
         </aside>
       </>
