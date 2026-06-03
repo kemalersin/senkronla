@@ -315,12 +315,45 @@ await sync.recover(phraseFromUser)
     listDevices: `const { devices, limits } = await sync.listDevices()
 
 for (const device of devices) {
+  // device.deviceId — server ULID (use in revokeDevice)
+  // device.clientDeviceId — your install id (display only)
+  // device.isCurrent — true on this SDK session
   console.log(device.label, device.isCurrent ? '(this device)' : '')
 }
+
 // limits.maxDevices, limits.activeDevices, limits.canAddDevice`,
 
-    revokeDevice: `await sync.revokeDevice('${SAMPLE.guestDeviceId}')
-// app: refresh device list in app settings UI`,
+    revokeDevice: `try {
+  await sync.revokeDevice('${SAMPLE.guestDeviceId}')
+  // app: refresh settings device list
+} catch (error) {
+  if (isEsrError(error) && error.code === 'LAST_DEVICE_PROTECTED') {
+    // namespace must keep at least one active device
+  }
+}`,
+
+    deviceManagementFlow: `const { devices, limits } = await sync.listDevices()
+
+// app: render devices.filter(d => !d.isCurrent) with a "Remove" action
+async function removeDevice(deviceId: string) {
+  await sync.revokeDevice(deviceId)
+  return sync.listDevices() // refresh UI
+}
+
+// Revoking isCurrent is allowed when another device remains —
+// then clear local token and route to pairing/recovery`,
+
+    deviceLimitBlockedFlow: `try {
+  await sync.joinPairing(codeFromUser)
+} catch (error) {
+  if (!isEsrError(error) || error.code !== 'DEVICE_LIMIT_BLOCKED') throw error
+
+  const { devices, limits } = await sync.listDevices()
+  // app: ask user to pick a device to revoke, or show upgrade UI
+  const victim = devices.find((d) => !d.isCurrent)
+  if (victim) await sync.revokeDevice(victim.deviceId)
+  await sync.joinPairing(codeFromUser)
+}`,
 
     redeemUnlockCode: `// Operator-generated unlock code for extra device slots
 await sync.redeemUnlockCode('${SAMPLE.unlockCode}')

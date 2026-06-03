@@ -18,10 +18,11 @@ JS/TS yığınları için varsayılan yol: **`EsrSync`** facade. SDK çalıştı
 7. [Zarf şifrelemesi (ENV-ENC1)](#zarf-şifrelemesi-env-enc1)
 8. [Yerel depolama (EsrStorage)](#yerel-depolama-esrstorage)
 9. [EsrSync metotları](#esrsync-metotları)
-10. [Sync yaşam döngüsü](#sync-yaşam-döngüsü)
-11. [Durum değerleri](#durum-değerleri-esrsyncstatus)
-12. [SDK hata kodları](#sdk-istemci-hata-kodları)
-13. [Düşük seviye RelayClient](#düşük-seviye-relayclient)
+10. [Cihaz yönetimi](#cihaz-yönetimi)
+11. [Sync yaşam döngüsü](#sync-yaşam-döngüsü)
+12. [Durum değerleri](#durum-değerleri-esrsyncstatus)
+13. [SDK hata kodları](#sdk-istemci-hata-kodları)
+14. [Düşük seviye RelayClient](#düşük-seviye-relayclient)
 
 ---
 
@@ -414,8 +415,8 @@ Mobilde Keychain / Keystore — düz localStorage kullanmayın.
 | `startPairing(opts?)` | Ana cihaz: `{ code, qrPayload, expiresAt }`; `apps.enabled` iken isteğe bağlı `{ allowedAppIds }` |
 | `joinPairing(code)` | Misafir: kodu kullanır, `sync()` çalıştırır |
 | `recover(phrase)` | Kurtarma; diğer cihazları iptal eder |
-| `listDevices()` | Cihazlar + limitler |
-| `revokeDevice(deviceId)` | Başka cihazı kaldır |
+| `listDevices()` | Eşleşmiş cihazları ve slot limitlerini listeler (ayarlar ekranı) |
+| `revokeDevice(deviceId)` | Sunucu ULID ile bir cihazı iptal eder — son cihaz olamaz |
 | `redeemUnlockCode(code)` | Operatör açılış kodu |
 | `resolveConflict(choice, documentId?)` | Manuel çakışma çözümü |
 | `getStatus()` | `EsrSyncStatus` |
@@ -445,6 +446,116 @@ await sync.resolveConflict('remote', 'settings')
 ```
 
 Zarf yardımcıları: `buildEnvelope`, `buildEnvEnc1Payload`, `extractDocument`, `buildRecoveryKeyProof` — bkz. [Zarf şifrelemesi](#zarf-şifrelemesi-env-enc1) ve [API referansı](api-tr.md#zarf-şifrelemesi-env-enc1).
+
+---
+
+## Cihaz yönetimi
+
+Geçerli `deviceToken`'a sahip herhangi bir eşleşmiş cihaz, aynı namespace'teki diğer cihazları listeleyip iptal edebilir. **Cihazları yönet** ayarlar ekranı veya eşleştirmede slot limiti için kullanın.
+
+**REST (SDK üzerinden):**
+
+| Metod | Yol | SDK |
+|-------|-----|-----|
+| `GET` | `/v1/namespaces/{namespaceId}/devices` | `sync.listDevices()` veya `sync.relay.listDevices(namespaceId)` |
+| `DELETE` | `/v1/namespaces/{namespaceId}/devices/{deviceId}` | `sync.revokeDevice(deviceId)` → `204 No Content` |
+
+İkisi de `Authorization: Bearer dvt_...` gerektirir. Tam şekiller: [api-tr.md § Cihazlar](api-tr.md#cihaz-listesi--iptal).
+
+### `listDevices()`
+
+Mevcut namespace oturumu için aktif cihazları ve slot sayaçlarını döndürür.
+
+```typescript
+const { devices, limits } = await sync.listDevices()
+
+for (const device of devices) {
+  console.log(device.label, device.isCurrent ? '(bu cihaz)' : '')
+}
+
+// limits.maxDevices, limits.activeDevices, limits.canAddDevice
+// limits.onLimitReached?.mode — 'payment' | 'block'
+```
+
+| Alan | Anlam |
+|------|--------|
+| `device.deviceId` | Sunucu id (ULID) — **`revokeDevice()` içinde kullanın** |
+| `device.clientDeviceId` | Kurulum başına id — yalnızca gösterim |
+| `device.label` | Eşleştirmeden gelen ad |
+| `device.pairedAt` | ISO zaman damgası |
+| `device.lastSeenAt` | Son aktivite veya `null` |
+| `device.isCurrent` | Bu SDK oturumu için `true` |
+| `limits.maxDevices` | Ücretsiz + satın alınan slotlar |
+| `limits.activeDevices` | İptal edilmemiş cihazlar |
+| `limits.canAddDevice` | Şimdi yeni eşleştirme mümkün mü |
+
+### `revokeDevice(deviceId)`
+
+Tek cihazı iptal eder. `listDevices()` dönen sunucu **`deviceId`** geçin — `clientDeviceId` değil.
+
+```typescript
+import { isEsrError } from '@senkronla/client'
+
+try {
+  await sync.revokeDevice('01HZPXDEVICEGUEST01')
+  const refreshed = await sync.listDevices() // ayarlar UI güncelle
+} catch (error) {
+  if (isEsrError(error) && error.code === 'LAST_DEVICE_PROTECTED') {
+    // namespace'te en az bir aktif cihaz kalmalı
+  }
+}
+```
+
+| Kural | Açıklama |
+|-------|----------|
+| Son cihaz | `403 LAST_DEVICE_PROTECTED` |
+| Bilinmeyen / zaten iptal | `404 DEVICE_NOT_FOUND` |
+| Kendini iptal | Başka aktif cihaz varken mümkün; bu token geçersiz olur — `EsrStorage` temizleyip eşleştirme/kurtarmaya yönlendirin |
+| `recover()` farkı | Kurtarma **diğer tüm** cihazları iptal eder ve bu kuruluma yeni token verir |
+
+Ayarlar UI örneği:
+
+```typescript
+const { devices } = await sync.listDevices()
+
+async function removeDevice(deviceId: string) {
+  await sync.revokeDevice(deviceId)
+  return sync.listDevices()
+}
+```
+
+### Cihaz slot limitleri
+
+Çalışma alanı doluyken eşleştirme `joinPairing` şu kodlarla başarısız olabilir:
+
+| Kod | Operatör modu | UX |
+|-----|---------------|-----|
+| `DEVICE_LIMIT_PAYMENT_REQUIRED` | `payment` | Yükseltme / unlock — isteğe bağlı `onDeviceLimit` ve `slotPackages`; `redeemUnlockCode()` |
+| `DEVICE_LIMIT_BLOCKED` | `block` | Sert üst sınır — `listDevices()` + `revokeDevice()` ile eski cihaz iptal |
+
+`EsrSync.connect()` içinde `onDeviceLimit` verilirse `DEVICE_LIMIT_*` orada yakalanır; yoksa `onError` / `getLastError()`.
+
+**Block modu — iptal edip eşleştirmeyi tekrarla:**
+
+```typescript
+try {
+  await sync.joinPairing(code)
+} catch (error) {
+  if (!isEsrError(error) || error.code !== 'DEVICE_LIMIT_BLOCKED') throw error
+
+  const { devices } = await sync.listDevices()
+  const other = devices.find((d) => !d.isCurrent)
+  if (other) await sync.revokeDevice(other.deviceId)
+  await sync.joinPairing(code)
+}
+```
+
+**Payment modu — slot aç:**
+
+```typescript
+await sync.redeemUnlockCode('UNLK-7X9K-2M4P')
+await sync.joinPairing(code) // veya listDevices() ile limit kontrol
+```
 
 ---
 

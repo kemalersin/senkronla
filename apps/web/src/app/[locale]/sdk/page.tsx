@@ -458,7 +458,7 @@ export default async function SdkPage({ params }: PageProps) {
             <h3 id={methodExampleId(key)} className="doc-subheading doc-method-name">
               <DocTag>{METHOD_LABELS[key]}</DocTag>
             </h3>
-            <p className="doc-muted">{t(`sections.methods.examples.${key}.desc`)}</p>
+            <p className="doc-muted">{t.rich(`sections.methods.examples.${key}.desc`, withDocRich())}</p>
             <CodeBlock code={snippets[key]} language="typescript" />
           </div>
         ))}
@@ -493,6 +493,30 @@ await sync.flushPush() // all pending; or flushPush('primary')`}
         <CodeBlock code={snippets.pairingHost} language="typescript" />
         <p className="doc-subheading">{t('sections.pairing.guestExample')}</p>
         <CodeBlock code={snippets.pairingGuest} language="typescript" />
+        <p id="device-management" className="doc-subheading doc-method-name">
+          {t('sections.deviceManagement.title')}
+        </p>
+        <p>{t.rich('sections.deviceManagement.p1', withDocRich())}</p>
+        <p>{t.rich('sections.deviceManagement.p2', withDocRich())}</p>
+        <p className="doc-subheading">{t('sections.deviceManagement.fieldsTitle')}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.deviceManagement.fields.deviceId', withDocRich())}</li>
+          <li>{t.rich('sections.deviceManagement.fields.clientDeviceId', withDocRich())}</li>
+          <li>{t.rich('sections.deviceManagement.fields.label', withDocRich())}</li>
+          <li>{t.rich('sections.deviceManagement.fields.isCurrent', withDocRich())}</li>
+          <li>{t.rich('sections.deviceManagement.fields.limits', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t('sections.deviceManagement.constraintsTitle')}</p>
+        <ul className="doc-list">
+          <li>{t.rich('sections.deviceManagement.constraints.lastDevice', withDocRich())}</li>
+          <li>{t.rich('sections.deviceManagement.constraints.notFound', withDocRich())}</li>
+          <li>{t.rich('sections.deviceManagement.constraints.selfRevoke', withDocRich())}</li>
+          <li>{t.rich('sections.deviceManagement.constraints.recover', withDocRich())}</li>
+        </ul>
+        <p className="doc-subheading">{t('sections.deviceManagement.flowExample')}</p>
+        <CodeBlock code={snippets.deviceManagementFlow} language="typescript" />
+        <p className="doc-subheading">{t.rich('sections.deviceManagement.limitExample', withDocRich())}</p>
+        <CodeBlock code={snippets.deviceLimitBlockedFlow} language="typescript" />
       </DocSection>
 
       <DocSection id="conflicts" title={t('sections.conflicts.title')}>

@@ -332,6 +332,24 @@ await sync.sync('settings') // isteğe bağlı: yalnızca bir belge için tam d�
 - Örnek: `examples/multi-document-sync.ts` (`pnpm example:multi-document`).
 - Spec: [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) · REST: [04-API-REFERENCE.md](./04-API-REFERENCE.md).
 
+### 5.3 Cihaz yönetimi
+
+`listDevices()` ve `revokeDevice(deviceId)` ile kimliği doğrulanmış herhangi bir cihaz namespace cihaz listesini yönetebilir (ayarlar ekranı, slot temizliği).
+
+```typescript
+const { devices, limits } = await sync.listDevices()
+await sync.revokeDevice(devices.find((d) => !d.isCurrent)!.deviceId)
+```
+
+| Konu | Açıklama |
+|------|----------|
+| İptal id'si | `listDevices()` dönen sunucu `deviceId` (ULID) — `clientDeviceId` değil |
+| Son cihaz | `403 LAST_DEVICE_PROTECTED` |
+| Kendini iptal | Başka aktif cihaz varken mümkün; ardından yerel token temizleyin |
+| Kurtarma farkı | `recover()` **diğer tüm** cihazları iptal eder |
+
+`DEVICE_LIMIT_BLOCKED` durumunda: listele → kullanıcı cihaz seçer → `revokeDevice` → eşleştirmeyi tekrar dene.
+
 ---
 
 ## 6. Scheduler (dahili)

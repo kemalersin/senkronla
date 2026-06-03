@@ -337,12 +337,21 @@ Sunucu merge yapmaz; **local wins** = push ile uzak ezilir.
 ```typescript
 const { devices, limits } = await client.listDevices(namespaceId)
 
-// Kaldır
+// İptal — listDevices() dönen sunucu deviceId (ULID) kullanın, clientDeviceId değil
 await client.revokeDevice(namespaceId, deviceId)
 
 // Limit gösterimi
-ui.render(`${devices.length} / ${limits.maxDevices} cihaz`)
+ui.render(`${limits.activeDevices} / ${limits.maxDevices} cihaz`)
 ```
+
+| Kural | Açıklama |
+|-------|----------|
+| Son cihaz | `403 LAST_DEVICE_PROTECTED` — tek aktif cihaz varken iptal edilemez |
+| Bilinmeyen id | `404 DEVICE_NOT_FOUND` |
+| Kendini iptal | Başka cihaz kalıyorsa mümkün; iptal edilen token anında geçersiz olur |
+| Kurtarma farkı | `recover()` **diğer tüm** cihazları iptal eder ve bu cihaza yeni token verir |
+
+Eşleştirmede `DEVICE_LIMIT_BLOCKED` gelirse cihaz listesini gösterin; kullanıcı eski cihazı iptal ettikten sonra tekrar deneyin.
 
 ## 10. Unlock kodu
 

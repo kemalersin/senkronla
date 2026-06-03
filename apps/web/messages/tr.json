@@ -996,8 +996,8 @@
           "startPairing": "Ana cihaz: <tag>code</tag>, <tag>qrPayload</tag>, <tag>expiresAt</tag> döndürür.",
           "joinPairing": "Misafir: kodu kullanır, token saklar, <tag>sync()</tag> çalıştırır (tüm belgeler).",
           "recover": "Kurtarma ifadesi akışı. Diğer tüm cihazları iptal eder.",
-          "listDevices": "Ayarlar arayüzü için devices dizisi ve limitleri döndürür.",
-          "revokeDevice": "Sunucu deviceId (ULID) ile başka bir cihazı kaldırır.",
+          "listDevices": "Eşleşmiş cihazları ve slot limitlerini ayarlar ekranı için listeler. Her kayıt sunucu <tag>deviceId</tag> (ULID), <tag>isCurrent</tag> ve etiket içerir.",
+          "revokeDevice": "Sunucu <tag>deviceId</tag> ile eşleşmiş cihazı kaldırır (<tag>clientDeviceId</tag> değil). En az bir başka aktif cihaz gerekir — bkz. Eşleştirme (cihaz yönetimi).",
           "redeemUnlockCode": "Daha fazla cihaz slotu için operatör kilidi açma kodunu uygular.",
           "resolveConflict": "Manuel çözüm; <tag>documents[]</tag> ile isteğe bağlı <tag>documentId</tag>.",
           "getStatus": "Arayüz göstergeleri için geçerli <tag>EsrSyncStatus</tag>."
@@ -1033,11 +1033,11 @@
           },
           "listDevices": {
             "title": "listDevices()",
-            "desc": "Eşleşmiş cihazları ve slot limitlerini listeler — ayarlar arayüzünüzde gösterin."
+            "desc": "Bu namespace'teki aktif cihazları ve limit sayaçlarını döndürür. <tag>revokeDevice</tag> için satırdaki <tag>device.deviceId</tag> (sunucu ULID) kullanın; <tag>device.isCurrent</tag> bu kurulumu işaretler."
           },
           "revokeDevice": {
             "title": "revokeDevice(id)",
-            "desc": "Çalışma alanından başka bir cihazı kaldırır; cihaz listesi arayüzünü yenileyin."
+            "desc": "Relay'de bir cihazı iptal eder (<tag>DELETE .../devices/'{deviceId}'</tag>). Son kalan cihaz kaldırılamaz (<tag>LAST_DEVICE_PROTECTED</tag>). Başka aktif cihaz varken mevcut cihazı iptal edebilirsiniz — token anında geçersiz olur."
           },
           "redeemUnlockCode": {
             "title": "redeemUnlockCode(code)",
@@ -1067,6 +1067,28 @@
         "p2": "<tag>qrPayload</tag>, QR tarayıcı entegrasyonları için <tag>esr://pair/v1/[namespaceId]?code=XXXXXX&exp=...&host=...</tag> biçimindedir.",
         "hostExample": "Ana cihaz",
         "guestExample": "Misafir cihaz"
+      },
+      "deviceManagement": {
+        "title": "Cihaz yönetimi",
+        "p1": "Geçerli token'a sahip herhangi bir eşleşmiş cihaz, aynı namespace'teki diğer cihazları listeleyebilir ve iptal edebilir. “Cihazları yönet” ekranı veya <tag>DEVICE_LIMIT_BLOCKED</tag> döndüğünde slot açmak için bunu kullanın.",
+        "p2": "Listeyi <tag>listDevices()</tag> ile alın, ardından her satırdaki sunucu id'si ile <tag>revokeDevice(deviceId)</tag> çağırın. <tag>clientDeviceId</tag> geçmeyin — bu kurulum id'sidir, iptal path parametresi değildir.",
+        "fieldsTitle": "DeviceInfo alanları",
+        "fields": {
+          "deviceId": "Sunucu id (ULID) — <tag>revokeDevice</tag> içinde kullanın",
+          "clientDeviceId": "Kurulum başına id — yalnızca gösterim",
+          "label": "Eşleştirmeden gelen okunabilir ad",
+          "isCurrent": "Bu SDK oturumu için <tag>true</tag>",
+          "limits": "<tag>limits.maxDevices</tag>, <tag>activeDevices</tag>, <tag>canAddDevice</tag>"
+        },
+        "constraintsTitle": "Kurallar ve hatalar",
+        "constraints": {
+          "lastDevice": "<tag>LAST_DEVICE_PROTECTED</tag> (403) — namespace'te en az bir aktif cihaz kalmalı",
+          "notFound": "<tag>DEVICE_NOT_FOUND</tag> (404) — bilinmeyen veya zaten iptal edilmiş <tag>deviceId</tag>",
+          "selfRevoke": "<tag>isCurrent</tag> cihazı iptal etmek, başka cihaz varken mümkündür; yerel token'ı temizleyip eşleştirme/kurtarmaya yönlendirin",
+          "recover": "<tag>recover()</tag> farklıdır — diğer tüm cihazları iptal eder ve bu cihaza yeni token verir"
+        },
+        "flowExample": "Ayarlar arayüzü akışı",
+        "limitExample": "Slotlar dolu (<tag>DEVICE_LIMIT_BLOCKED</tag>)"
       },
       "conflicts": {
         "title": "Çakışmaları yönetme",

@@ -18,10 +18,11 @@ Default path for JS/TS stacks: **`EsrSync`** facade. Use [REST](api-en.md) only 
 7. [Envelope encryption (ENV-ENC1)](#envelope-encryption-env-enc1)
 8. [Local storage (EsrStorage)](#local-storage-esrstorage)
 9. [EsrSync methods](#esrsync-methods)
-10. [Sync lifecycle](#sync-lifecycle)
-11. [Status values](#status-values-esrsyncstatus)
-12. [SDK error codes](#sdk-client-error-codes)
-13. [Low-level RelayClient](#low-level-relayclient)
+10. [Device management](#device-management)
+11. [Sync lifecycle](#sync-lifecycle)
+12. [Status values](#status-values-esrsyncstatus)
+13. [SDK error codes](#sdk-client-error-codes)
+14. [Low-level RelayClient](#low-level-relayclient)
 
 ---
 
@@ -447,8 +448,8 @@ On mobile, implement `EsrStorage` backed by Keychain / Keystore — do not use p
 | `startPairing(opts?)` | Host: returns `{ code, qrPayload, expiresAt }`; optional `{ allowedAppIds }` when `apps.enabled` |
 | `joinPairing(code)` | Guest: redeems code, stores token, runs `sync()` (all documents) |
 | `recover(phrase)` | Recovery flow; revokes all other devices |
-| `listDevices()` | Settings UI: devices + limits |
-| `revokeDevice(deviceId)` | Remove another device (not last one) |
+| `listDevices()` | List paired devices and slot limits for settings UI |
+| `revokeDevice(deviceId)` | Revoke one device by server ULID — not the last remaining device |
 | `redeemUnlockCode(code)` | Apply operator unlock code for extra slots |
 | `resolveConflict(choice, documentId?)` | Manual conflict resolution for one slot |
 | `getStatus()` | Current `EsrSyncStatus` |
@@ -526,12 +527,114 @@ onConflict: async (ctx) => {
 await sync.resolveConflict('remote', 'settings')
 ```
 
-#### Device management
+---
+
+## Device management
+
+Any paired device with a valid `deviceToken` can list and revoke other devices in the same namespace. Use this for a **Manage devices** settings screen, or to free a slot when pairing hits a device limit.
+
+**REST (via SDK):**
+
+| Method | Path | SDK |
+|--------|------|-----|
+| `GET` | `/v1/namespaces/{namespaceId}/devices` | `sync.listDevices()` or `sync.relay.listDevices(namespaceId)` |
+| `DELETE` | `/v1/namespaces/{namespaceId}/devices/{deviceId}` | `sync.revokeDevice(deviceId)` → `204 No Content` |
+
+Both require `Authorization: Bearer dvt_...`. Full shapes: [api-en.md § Devices](api-en.md#device-list--revoke).
+
+### `listDevices()`
+
+Returns active devices plus slot counters for the current namespace session.
 
 ```typescript
 const { devices, limits } = await sync.listDevices()
-await sync.revokeDevice('01HZPXDEVICEGUEST01')
+
+for (const device of devices) {
+  console.log(device.label, device.isCurrent ? '(this device)' : '')
+}
+
+// limits.maxDevices, limits.activeDevices, limits.canAddDevice
+// limits.onLimitReached?.mode — 'payment' | 'block'
+```
+
+| Field | Meaning |
+|-------|---------|
+| `device.deviceId` | Server id (ULID) — **use in `revokeDevice()`** |
+| `device.clientDeviceId` | Per-install id from your app — display only |
+| `device.label` | Name from pairing |
+| `device.pairedAt` | ISO timestamp |
+| `device.lastSeenAt` | Last activity or `null` |
+| `device.isCurrent` | `true` for this SDK session |
+| `limits.maxDevices` | Free + purchased slots |
+| `limits.activeDevices` | Non-revoked devices |
+| `limits.canAddDevice` | Whether another pair is allowed now |
+
+### `revokeDevice(deviceId)`
+
+Revokes one device. Pass the server **`deviceId`** from `listDevices()` — not `clientDeviceId`.
+
+```typescript
+import { isEsrError } from '@senkronla/client'
+
+try {
+  await sync.revokeDevice('01HZPXDEVICEGUEST01')
+  const refreshed = await sync.listDevices() // update settings UI
+} catch (error) {
+  if (isEsrError(error) && error.code === 'LAST_DEVICE_PROTECTED') {
+    // namespace must keep at least one active device
+  }
+}
+```
+
+| Rule | Detail |
+|------|--------|
+| Last device | `403 LAST_DEVICE_PROTECTED` |
+| Unknown / already revoked | `404 DEVICE_NOT_FOUND` |
+| Revoke self | Allowed when another active device remains; this token stops working — clear `EsrStorage` and route to pairing or recovery |
+| vs `recover()` | Recovery revokes **all other** devices and issues a new token on this install |
+
+Settings UI pattern:
+
+```typescript
+const { devices } = await sync.listDevices()
+
+async function removeDevice(deviceId: string) {
+  await sync.revokeDevice(deviceId)
+  return sync.listDevices()
+}
+```
+
+### Device slot limits
+
+When the workspace is full, pairing or `joinPairing` may fail with:
+
+| Code | Operator mode | UX |
+|------|---------------|-----|
+| `DEVICE_LIMIT_PAYMENT_REQUIRED` | `payment` | Show upgrade / unlock — optional `onDeviceLimit` callback with `slotPackages`; redeem operator code via `redeemUnlockCode()` |
+| `DEVICE_LIMIT_BLOCKED` | `block` | Hard cap — user must revoke an old device with `listDevices()` + `revokeDevice()` |
+
+`onDeviceLimit` on `EsrSync.connect()` fires for `DEVICE_LIMIT_*` if provided; otherwise the error surfaces via `onError` / `getLastError()`.
+
+**Block mode — revoke then retry pairing:**
+
+```typescript
+try {
+  await sync.joinPairing(code)
+} catch (error) {
+  if (!isEsrError(error) || error.code !== 'DEVICE_LIMIT_BLOCKED') throw error
+
+  const { devices } = await sync.listDevices()
+  const other = devices.find((d) => !d.isCurrent)
+  if (other) await sync.revokeDevice(other.deviceId)
+  await sync.joinPairing(code)
+}
+```
+
+**Payment mode — unlock slots:**
+
+```typescript
 await sync.redeemUnlockCode('UNLK-7X9K-2M4P')
+await sync.joinPairing(code) // or check limits via listDevices()
 ```
 
 ---

@@ -996,8 +996,8 @@
           "startPairing": "Host: returns <tag>code</tag>, <tag>qrPayload</tag>, <tag>expiresAt</tag>.",
           "joinPairing": "Guest: redeems code, stores token, runs <tag>sync()</tag> (all documents).",
           "recover": "Recovery phrase flow. Revokes all other devices.",
-          "listDevices": "Returns devices array and limits for settings UI.",
-          "revokeDevice": "Remove another device by server deviceId (ULID).",
+          "listDevices": "List paired devices and slot limits for a settings screen. Each entry includes server <tag>deviceId</tag> (ULID), <tag>isCurrent</tag>, and labels.",
+          "revokeDevice": "Remove a paired device by server <tag>deviceId</tag> (not <tag>clientDeviceId</tag>). Requires at least one other active device — see Pairing (device management).",
           "redeemUnlockCode": "Apply operator unlock code for more device slots.",
           "resolveConflict": "Manual resolution; optional <tag>documentId</tag> when using <tag>documents[]</tag>.",
           "getStatus": "Current <tag>EsrSyncStatus</tag> for UI indicators."
@@ -1033,11 +1033,11 @@
           },
           "listDevices": {
             "title": "listDevices()",
-            "desc": "List paired devices and slot limits — render in your settings UI."
+            "desc": "Returns active devices in this namespace plus limit counters. Use <tag>device.deviceId</tag> (server ULID) when calling <tag>revokeDevice</tag>; <tag>device.isCurrent</tag> marks this install."
           },
           "revokeDevice": {
             "title": "revokeDevice(id)",
-            "desc": "Remove another device from the workspace; refresh your device list UI."
+            "desc": "Revokes one device on the relay (<tag>DELETE .../devices/'{deviceId}'</tag>). The last remaining device cannot be removed (<tag>LAST_DEVICE_PROTECTED</tag>). You may revoke the current device if another active device stays — its token stops working immediately."
           },
           "redeemUnlockCode": {
             "title": "redeemUnlockCode(code)",
@@ -1067,6 +1067,28 @@
         "p2": "<tag>qrPayload</tag> follows <tag>esr://pair/v1/[namespaceId]?code=XXXXXX&exp=...&host=...</tag> for QR scanner integrations.",
         "hostExample": "Host device",
         "guestExample": "Guest device"
+      },
+      "deviceManagement": {
+        "title": "Device management",
+        "p1": "Any paired device with a valid token can list and revoke other devices in the same namespace. This is how you build a “Manage devices” screen or free a slot when <tag>DEVICE_LIMIT_BLOCKED</tag> is returned.",
+        "p2": "Use <tag>listDevices()</tag> to render the list, then <tag>revokeDevice(deviceId)</tag> with the server id from each row. Do not pass <tag>clientDeviceId</tag> — that is your install-scoped id, not the revoke path parameter.",
+        "fieldsTitle": "DeviceInfo fields",
+        "fields": {
+          "deviceId": "Server id (ULID) — use in <tag>revokeDevice</tag>",
+          "clientDeviceId": "Your per-install id — display only",
+          "label": "Human-readable name from pairing",
+          "isCurrent": "<tag>true</tag> for this SDK session",
+          "limits": "<tag>limits.maxDevices</tag>, <tag>activeDevices</tag>, <tag>canAddDevice</tag>"
+        },
+        "constraintsTitle": "Rules and errors",
+        "constraints": {
+          "lastDevice": "<tag>LAST_DEVICE_PROTECTED</tag> (403) — namespace must keep at least one active device",
+          "notFound": "<tag>DEVICE_NOT_FOUND</tag> (404) — unknown or already revoked <tag>deviceId</tag>",
+          "selfRevoke": "Revoking <tag>isCurrent</tag> is allowed when another device remains; clear local token and route to pairing/recovery",
+          "recover": "<tag>recover()</tag> is different — it revokes all other devices and issues a new token for this one"
+        },
+        "flowExample": "Settings UI flow",
+        "limitExample": "When slots are full (<tag>DEVICE_LIMIT_BLOCKED</tag>)"
       },
       "conflicts": {
         "title": "Handling conflicts",

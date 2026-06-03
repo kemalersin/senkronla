@@ -333,6 +333,24 @@ await sync.sync('settings') // optional: full cycle for one document only
 - Example: `examples/multi-document-sync.ts` (`pnpm example:multi-document`).
 - Spec: [15-MULTI-DOCUMENT.md](./15-MULTI-DOCUMENT.md) · REST: [04-API-REFERENCE.md](./04-API-REFERENCE.md) § Documents.
 
+### 5.3 Device management
+
+`listDevices()` and `revokeDevice(deviceId)` let any authenticated device manage the namespace device list (settings UI, slot cleanup).
+
+```typescript
+const { devices, limits } = await sync.listDevices()
+await sync.revokeDevice(devices.find((d) => !d.isCurrent)!.deviceId)
+```
+
+| Topic | Detail |
+|-------|--------|
+| Id for revoke | Server `deviceId` (ULID) from `listDevices()` — not `clientDeviceId` |
+| Last device | `403 LAST_DEVICE_PROTECTED` |
+| Self-revoke | Allowed when another active device remains; clear local token afterward |
+| vs recovery | `recover()` revokes all **other** devices |
+
+Typical when `DEVICE_LIMIT_BLOCKED`: list → user picks device → `revokeDevice` → retry pairing.
+
 ---
 
 ## 6. Scheduler (internal)

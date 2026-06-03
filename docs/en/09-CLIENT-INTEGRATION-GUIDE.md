@@ -337,12 +337,21 @@ Server does not merge; **local wins** = remote overwritten by push.
 ```typescript
 const { devices, limits } = await client.listDevices(namespaceId)
 
-// Revoke
+// Revoke — use server deviceId (ULID) from listDevices(), not clientDeviceId
 await client.revokeDevice(namespaceId, deviceId)
 
 // Limit display
-ui.render(`${devices.length} / ${limits.maxDevices} devices`)
+ui.render(`${limits.activeDevices} / ${limits.maxDevices} devices`)
 ```
+
+| Rule | Detail |
+|------|--------|
+| Last device | `403 LAST_DEVICE_PROTECTED` — cannot revoke when only one active device remains |
+| Unknown id | `404 DEVICE_NOT_FOUND` |
+| Self-revoke | Allowed if another device stays; revoked token stops working immediately |
+| vs recovery | `recover()` revokes **all other** devices and returns a new token for this one |
+
+When pairing hits `DEVICE_LIMIT_BLOCKED`, show the device list and let the user revoke an old device before retrying.
 
 ## 10. Unlock code
 
