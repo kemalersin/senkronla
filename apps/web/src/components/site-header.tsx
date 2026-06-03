@@ -10,7 +10,7 @@ import { DocSearchDialog, DocSearchTrigger } from '@/components/doc-search-dialo
 import { usePageScrollLock } from '@/hooks/use-page-scroll-lock'
 import { useDeveloperSession } from '@/hooks/use-developer-session'
 import { OVERLAY_OPEN_EVENT } from '@/lib/page-scroll-lock'
-import { GITHUB_REPO_URL } from '@/lib/site-links'
+import { DEMO_URL, GITHUB_REPO_URL } from '@/lib/site-links'
 
 interface SiteHeaderProps {
   locale: Locale
@@ -64,13 +64,18 @@ export function SiteHeader({
     return () => window.removeEventListener(OVERLAY_OPEN_EVENT, closeMenu)
   }, [])
 
-  const links = [
-    { href: '/', label: t('home') },
-    { href: '/guides', label: t('guides') },
-    { href: '/guides/esr', label: t('esr') },
-    { href: '/guides/agents', label: t('agents') },
-    { href: '/sdk', label: t('sdk') },
-    { href: '/api', label: t('api') },
+  type NavItem =
+    | { id: string; kind: 'internal'; href: string; label: string }
+    | { id: string; kind: 'external'; href: string; label: string }
+
+  const links: NavItem[] = [
+    { id: 'home', kind: 'internal', href: '/', label: t('home') },
+    { id: 'tutorial', kind: 'external', href: DEMO_URL, label: t('tutorial') },
+    { id: 'guides', kind: 'internal', href: '/guides', label: t('guides') },
+    { id: 'esr', kind: 'internal', href: '/guides/esr', label: t('esr') },
+    { id: 'agents', kind: 'internal', href: '/guides/agents', label: t('agents') },
+    { id: 'sdk', kind: 'internal', href: '/sdk', label: t('sdk') },
+    { id: 'api', kind: 'internal', href: '/api', label: t('api') },
   ]
 
   useEffect(() => {
@@ -96,19 +101,37 @@ export function SiteHeader({
     return pathname === href || (href !== '/' && pathname.startsWith(href))
   }
 
+  function renderNavItem(link: NavItem, onNavigate?: () => void) {
+    if (link.kind === 'external') {
+      return (
+        <a
+          key={link.id}
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onNavigate}
+        >
+          {link.label}
+        </a>
+      )
+    }
+
+    return (
+      <Link
+        key={link.id}
+        href={link.href}
+        data-active={isLinkActive(link.href) ? 'true' : 'false'}
+        onClick={onNavigate}
+      >
+        {link.label}
+      </Link>
+    )
+  }
+
   function renderNavLinks(className: string, onNavigate?: () => void) {
     return (
       <nav className={className} aria-label="Main">
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            data-active={isLinkActive(link.href) ? 'true' : 'false'}
-            onClick={onNavigate}
-          >
-            {link.label}
-          </Link>
-        ))}
+        {links.map((link) => renderNavItem(link, onNavigate))}
       </nav>
     )
   }
@@ -133,15 +156,7 @@ export function SiteHeader({
   function renderDesktopNav(className: string) {
     return (
       <nav className={className} aria-label="Main">
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            data-active={isLinkActive(link.href) ? 'true' : 'false'}
-          >
-            {link.label}
-          </Link>
-        ))}
+        {links.map((link) => renderNavItem(link))}
         {renderLoginLink()}
       </nav>
     )
