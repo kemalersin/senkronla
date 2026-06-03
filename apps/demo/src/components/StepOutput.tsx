@@ -1,6 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react'
 import { useEffect, useState } from 'react'
-import { demoStore, type DemoState } from '../demo-store.ts'
+import { demoStore, RELAY_HEALTH_FAILED, type DemoState } from '../demo-store.ts'
 import {
   demoJsonForDisplay,
   formatConflictResponse,
@@ -55,8 +55,21 @@ export function StepOutput({ step, state, ui, onNext, dark }: StepOutputProps) {
     if (step !== 'namespace' || !state.connected || state.connecting) {
       return
     }
+    if (
+      state.namespaceResponse !== null &&
+      state.namespaceCommittedAtEpoch === state.connectionEpoch
+    ) {
+      return
+    }
     void demoStore.refreshNamespace()
-  }, [step, state.connected, state.connecting, state.connectionEpoch])
+  }, [
+    step,
+    state.connected,
+    state.connecting,
+    state.connectionEpoch,
+    state.namespaceCommittedAtEpoch,
+    state.namespaceResponse,
+  ])
 
   switch (step) {
     case 'intro':
@@ -192,6 +205,14 @@ function DocumentOutput({ state, ui, dark }: { state: DemoState; ui: UiMessages;
   )
 }
 
+function connectErrorMessage(error: string | null, ui: UiMessages): string | null {
+  if (!error) return null
+  if (error === RELAY_HEALTH_FAILED) {
+    return ui.connect.healthFailed
+  }
+  return error
+}
+
 function ConnectStatusBadge({ state, ui }: { state: DemoState; ui: UiMessages }) {
   if (state.connecting) {
     return (
@@ -201,7 +222,7 @@ function ConnectStatusBadge({ state, ui }: { state: DemoState; ui: UiMessages })
       </span>
     )
   }
-  if (state.connected) {
+  if (state.connected && state.healthResponse !== null) {
     return (
       <span className="status-badge" data-tone="ok">
         <span className="status-dot" />
@@ -272,13 +293,15 @@ function ConnectOutput({ state, ui, dark }: { state: DemoState; ui: UiMessages; 
           type="button"
           className="btn btn-primary"
           disabled={!demoStore.canConnectOrReconnect()}
-          onClick={() => void demoStore.connect()}
+          onClick={() =>
+            void demoStore.connect(state.connected ? { preserveHealth: true } : undefined)
+          }
         >
           {state.connected ? ui.connect.reconnect : ui.connect.connect}
         </button>
         <ConnectStatusBadge state={state} ui={ui} />
       </div>
-      <ErrorText error={state.error} />
+      <ErrorText error={connectErrorMessage(state.error, ui)} />
       {state.healthResponse !== null ? (
         <CodeBlock
           code={demoJsonForDisplay(state.healthResponse)}

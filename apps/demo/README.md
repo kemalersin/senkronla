@@ -46,6 +46,16 @@ pnpm --filter @senkronla/demo build    # → apps/demo/dist/index.html
 pnpm --filter @senkronla/demo preview
 ```
 
+## GitHub Pages
+
+Pushes to `main` (when demo or its SDK dependencies change) run [`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml). The workflow builds the single-file demo and force-pushes `apps/demo/dist/index.html` to the **`demo`** branch.
+
+1. In the repository: **Settings → Pages → Build and deployment → Deploy from a branch**.
+2. Branch: **`demo`**, folder: **`/ (root)`**.
+3. The site is served at `https://<owner>.github.io/<repo>/` (for example `https://kemalersin.github.io/senkronla/`).
+
+You can also trigger a deploy manually from the **Actions** tab (`Deploy demo` → **Run workflow**).
+
 ## Configuration
 
 - **Relay URL** and **App ID** are editable from the connection step (step 4). Defaults: `https://sync.senkron.la/v1` and `esr_app_demo`.

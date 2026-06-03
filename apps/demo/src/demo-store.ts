@@ -86,6 +86,7 @@ const RECOVERY_ACK_KEY = 'senkronla-demo.recoveryAck'
 const PREFS_KEY = 'senkronla-demo.prefs'
 export const STEP_KEY = 'senkronla-demo.step'
 export const JOIN_PASSWORD_REQUIRED = 'JOIN_PASSWORD_REQUIRED'
+export const RELAY_HEALTH_FAILED = 'RELAY_HEALTH_FAILED'
 const DEFAULT_RELAY = 'https://sync.senkron.la/v1'
 const DEFAULT_APP_ID = 'esr_app_demo'
 const CONTENT_TYPE = 'application/vnd.senkronla-demo+json'
@@ -296,33 +297,6 @@ export class DemoStore {
         }
       }
     })
-
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        void this.pullIfConnected()
-      }
-    })
-
-    window.addEventListener('focus', () => {
-      void this.pullIfConnected()
-    })
-  }
-
-  private async pullIfConnected(): Promise<void> {
-    if (!this.sync || !this.snapshot.connected || this.snapshot.namespaceResponse === null) {
-      return
-    }
-    if (this.snapshot.busy || this.snapshot.pendingConflict) {
-      return
-    }
-
-    try {
-      await this.sync.sync()
-      await this.refreshHead()
-      void this.buildEnvelopePreview()
-    } catch {
-      /* background catch-up — ignore */
-    }
   }
 
   subscribe = (listener: Listener): (() => void) => {
@@ -415,7 +389,6 @@ export class DemoStore {
     if (!this.snapshot.connected) {
       return
     }
-    await this.refreshNamespaceFromRelay()
     await this.buildEnvelopePreview()
   }
 
@@ -563,7 +536,7 @@ export class DemoStore {
     })
   }
 
-  async checkHealth(): Promise<void> {
+  async checkHealth(options?: { preserveOnFailure?: boolean }): Promise<void> {
     try {
       const response = await fetch(buildRelayHealthUrl(this.snapshot.relayUrl), { method: 'GET' })
       if (response.ok) {
@@ -573,9 +546,12 @@ export class DemoStore {
         return
       }
     } catch {
-      /* ignore */
+      /* network / CORS */
     }
-    this.set({ appsEnabled: null, healthResponse: null })
+    if (!options?.preserveOnFailure) {
+      this.set({ appsEnabled: null, healthResponse: null })
+    }
+    throw new Error(RELAY_HEALTH_FAILED)
   }
 
   private notificationModeFromHealth(): 'ws_with_poll_fallback' | 'poll_only' {
@@ -609,7 +585,7 @@ export class DemoStore {
     try {
       this.sync?.destroy()
       this.sync = null
-      await this.checkHealth()
+      await this.checkHealth({ preserveOnFailure: preserveHealth })
 
       const instance = await EsrSync.connect({
         relayUrl: this.snapshot.relayUrl,

@@ -307,6 +307,7 @@ interface UiCopy {
     appIdRequired: string
     registerInfo: string
     empty: string
+    healthFailed: string
     persistEnable: string
     persistEnabled: string
     persistNote: string
@@ -950,6 +951,8 @@ const EN: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
       appIdRequired: 'This relay requires an appId.',
       registerInfo: 'Register apps via operator config or the developer portal.',
       empty: 'Click Connect to fetch the live /health response.',
+      healthFailed:
+        'Could not reach the relay — check the URL and that GET /health allows this origin (CORS).',
       persistEnable: 'Persist recovery phrase',
       persistEnabled: 'persistRecoveryPhrase: true',
       persistNote: 'When the namespace is created, also write the recovery phrase to your StorageAdapter (e.g. localStorage).',
@@ -1163,6 +1166,8 @@ const TR: { ui: UiCopy; steps: Record<StepId, StepCopy> } = {
       appIdRequired: 'Bu relay bir appId gerektiriyor.',
       registerInfo: 'Uygulamalar operatör yapılandırmasıyla veya geliştirici portalından kaydedilir.',
       empty: 'Canlı /health yanıtı için Bağlan’a tıkla.',
+      healthFailed:
+        'Relay’e ulaşılamadı — URL’yi kontrol edin; GET /health bu kökenden CORS ile açık olmalı.',
       persistEnable: 'Kurtarma ifadesini sakla',
       persistEnabled: 'persistRecoveryPhrase: true',
       persistNote: 'Namespace oluşturulunca kurtarma ifadesi StorageAdapter’ına da yazılır (ör. localStorage).',

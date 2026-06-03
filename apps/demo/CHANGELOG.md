@@ -9,11 +9,18 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Connect step Reconnect no longer fires three consecutive `head/meta` requests — removed duplicate focus/visibility pull handlers that overlapped with `EsrSyncScheduler`; reconnect preserves cached health response
+- Page reload no longer double-fetches `GET /namespaces/{id}` and `/devices` — session bootstrap reuses the namespace refresh already performed in `connect()`
+- Connect no longer shows “Connected” when `GET /health` fails (network or CORS) — SDK session is not opened until the relay responds
+
 ## [0.1.16]
 
 ### Added
 
 - Interactive two-column SDK tutorial (Vite + React) that builds to a single static `index.html`; covers document adapters, connection (`appId` when `apps.enabled`, default `esr_app_demo`), namespace, recovery, sync, pairing with QR, conflicts, envelope encryption, and live notifications, with light/dark themes and EN/TR localization
+- GitHub Actions workflow (`.github/workflows/deploy-demo.yml`) — builds and force-pushes `dist/index.html` to the `demo` branch for GitHub Pages; see README § GitHub Pages
 
 ### Changed
 
@@ -27,6 +34,6 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 - Notifications step shows WebSocket as off when `notificationsEnabled` is false instead of “connecting / poll”
 - Intro left pane — senkron.la, docs, GitHub, and donate links replace the cloud-sync comparison cards; right pane keeps feature cards and start button only
 - Finish button opens a completion screen with summary, restart, and next-step links (EN/TR)
-- Cross-tab document updates — mirror `localStorage` edits via the `storage` event and pull from relay on tab focus/visibility
+- Cross-tab document updates — mirror `localStorage` edits via the `storage` event; relay catch-up on focus is handled by the SDK scheduler only
 - Register Prism `bash`/`http` grammars and split HTTP examples into header + JSON body blocks so terminal commands and request/response payloads are syntax-highlighted; use `http`/`typescript`/`bash` per snippet instead of mixed `bash` blocks
 

@@ -11,6 +11,12 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Fixed
+
+- **demo:** Connect step Reconnect no longer fires three consecutive `head/meta` requests — removed duplicate focus/visibility pull handlers that overlapped with `EsrSyncScheduler`; reconnect preserves cached health response
+- **demo:** Page reload no longer double-fetches `GET /namespaces/{id}` and `/devices` — session bootstrap reuses the namespace refresh already performed in `connect()`
+- **demo:** Connect no longer shows “Connected” when `GET /health` fails (network or CORS) — SDK session is not opened until the relay responds
+
 ## [0.1.16]
 
 ### Security
@@ -19,6 +25,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ### Added
 
+- **ci:** GitHub Actions workflow publishes `@senkronla/demo` to the `demo` branch for GitHub Pages (`deploy-demo.yml`)
 - **demo:** New `@senkronla/demo` app — an interactive two-column SDK tutorial (Vite + React) that builds to a single static `index.html`; covers document adapters, connection (`appId` when `apps.enabled`, default `esr_app_demo`), namespace, recovery, sync, pairing with QR, conflicts, envelope encryption, and live notifications, with light/dark themes and EN/TR localization
 
 ### Changed
@@ -35,7 +42,7 @@ The published version number lives only in the [`package.json`](package.json) `v
 - **demo:** Notifications step shows WebSocket as off when `notificationsEnabled` is false instead of “connecting / poll”
 - **demo:** Intro left pane — senkron.la, docs, GitHub, and donate links replace the cloud-sync comparison cards; right pane keeps feature cards and start button only
 - **demo:** Finish button opens a completion screen with summary, restart, and next-step links (EN/TR)
-- **demo:** Cross-tab document updates — mirror `localStorage` edits via the `storage` event and pull from relay on tab focus/visibility
+- **demo:** Cross-tab document updates — mirror `localStorage` edits via the `storage` event; relay catch-up on focus is handled by the SDK scheduler only
 - **client:** `EsrSyncScheduler` still syncs on tab focus/visibility when WebSocket notifications are enabled (periodic poll remains notification-only)
 - **demo:** Register Prism `bash`/`http` grammars and split HTTP examples into header + JSON body blocks so terminal commands and request/response payloads are syntax-highlighted; use `http`/`typescript`/`bash` per snippet instead of mixed `bash` blocks
 
