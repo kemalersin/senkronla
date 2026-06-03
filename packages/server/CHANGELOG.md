@@ -9,6 +9,11 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.16]
+
+### Security
+
+- `GET /health` omits `blob.path` and `blob.message` unless the request carries a valid operator `Authorization: Bearer` admin token
 
 ## [0.1.14]
 

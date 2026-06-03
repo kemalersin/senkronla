@@ -486,7 +486,7 @@ Authorization: Bearer dvt_...
   "status": "ok",
   "version": "0.1.8",
   "database": { "status": "ok", "mode": "external" },
-  "blob": { "status": "ok", "path": "/var/lib/senkronla/blobs" },
+  "blob": { "status": "ok" },
   "websocket": true,
   "developerPortal": { "enabled": false },
   "apps": {

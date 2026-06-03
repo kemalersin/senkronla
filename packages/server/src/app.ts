@@ -6,7 +6,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getDatabaseMode, type ServerConfig } from './config.js'
 import type { DbPool } from './db/pool.js'
-import { createLoggerOptions, runHealthChecks } from './health/checks.js'
+import { createLoggerOptions, runHealthChecks, toHealthResponse } from './health/checks.js'
+import { matchesAdminBearer } from './middleware/auth-admin.js'
 import {
   applyRateLimitHeaders,
   RATE_LIMIT_EXPOSED_HEADERS,
@@ -162,14 +163,16 @@ export async function buildApp({ config, db, env = process.env }: AppDependencie
     },
   })
 
-  app.get('/health', async (_request, reply) => {
+  app.get('/health', async (request, reply) => {
     const result = await runHealthChecks(db, config, getDatabaseMode(config.database.url))
+    const includeOperatorDetails = matchesAdminBearer(request, config.auth.adminApiToken)
+    const body = toHealthResponse(result, includeOperatorDetails)
 
     if (result.status !== 'ok') {
-      return reply.code(503).send(result)
+      return reply.code(503).send(body)
     }
 
-    return result
+    return body
   })
 
   if (config.metrics.enabled) {

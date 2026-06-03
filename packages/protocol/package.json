@@ -1,6 +1,6 @@
 {
   "name": "@senkronla/protocol",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "ESR-DOC1 envelope protocol, crypto helpers, and identity utilities",
   "license": "MIT",
   "author": "Kemal Ersin",

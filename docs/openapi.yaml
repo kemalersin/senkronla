@@ -513,14 +513,19 @@ components:
               type: string
         blob:
           type: object
+          description: |
+            Public callers receive `status` only. Valid operator `Authorization: Bearer` adds
+            `path` and optional `message` on error.
           properties:
             status:
               type: string
               enum: [ok, error]
             path:
               type: string
+              description: Operator-only (valid admin bearer)
             message:
               type: string
+              description: Operator-only blob check error detail
         websocket:
           type: boolean
         developerPortal:
@@ -632,6 +637,15 @@ paths:
         No authentication. Returns `503` when database or blob storage checks fail (`status: degraded`).
         Use `developerPortal.enabled`, `apps.enabled`, and
         `apps.nativeRequireClientSecret` to configure portal UI and client app headers.
+        `blob.path` (and `blob.message` on error) are returned only when
+        `Authorization: Bearer {adminApiToken}` matches the configured operator token.
+      parameters:
+        - name: Authorization
+          in: header
+          required: false
+          description: Optional `Bearer {adminApiToken}` — includes `blob.path` in the response
+          schema:
+            type: string
       responses:
         '200':
           description: OK

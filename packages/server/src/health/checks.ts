@@ -5,6 +5,16 @@ import { checkDatabase, type DbPool } from '../db/pool.js'
 import { isDeveloperPortalEnabled } from '../lib/developer-portal.js'
 import { SERVER_VERSION } from '../version.js'
 
+export interface HealthBlobOperatorDetails {
+  status: 'ok' | 'error'
+  path: string
+  message?: string
+}
+
+export interface HealthBlobPublicSummary {
+  status: 'ok' | 'error'
+}
+
 export interface HealthCheckResult {
   status: 'ok' | 'degraded'
   version: string
@@ -13,11 +23,7 @@ export interface HealthCheckResult {
     mode: 'bundled' | 'external'
     message?: string
   }
-  blob: {
-    status: 'ok' | 'error'
-    path: string
-    message?: string
-  }
+  blob: HealthBlobOperatorDetails
   websocket: boolean
   developerPortal: {
     enabled: boolean
@@ -25,6 +31,24 @@ export interface HealthCheckResult {
   apps: {
     enabled: boolean
     nativeRequireClientSecret: boolean
+  }
+}
+
+export type PublicHealthResponse = Omit<HealthCheckResult, 'blob'> & {
+  blob: HealthBlobPublicSummary
+}
+
+export function toHealthResponse(
+  result: HealthCheckResult,
+  includeOperatorDetails: boolean,
+): HealthCheckResult | PublicHealthResponse {
+  if (includeOperatorDetails) {
+    return result
+  }
+
+  return {
+    ...result,
+    blob: { status: result.blob.status },
   }
 }
 

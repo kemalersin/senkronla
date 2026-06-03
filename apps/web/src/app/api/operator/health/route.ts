@@ -10,7 +10,9 @@ export async function GET() {
   }
 
   return handleOperatorRelay(async () => {
-    const { status, body } = await fetchRelayJson('/health')
+    const { status, body } = await fetchRelayJson('/health', {
+      headers: { authorization: `Bearer ${token}` },
+    })
     return { status, body }
   })
 }

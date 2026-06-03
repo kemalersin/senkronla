@@ -17,6 +17,27 @@ function extractBearerToken(request: FastifyRequest): string {
   return token
 }
 
+export function matchesAdminBearer(
+  request: FastifyRequest,
+  configuredToken: string | undefined,
+): boolean {
+  if (!configuredToken) {
+    return false
+  }
+
+  const header = request.headers.authorization
+  if (!header?.startsWith('Bearer ')) {
+    return false
+  }
+
+  const token = header.slice('Bearer '.length).trim()
+  if (!token) {
+    return false
+  }
+
+  return secureCompareTokens(token, configuredToken)
+}
+
 export function createRequireAdminAuth(ctx: AppContext) {
   return async function requireAdminAuth(request: FastifyRequest) {
     const configuredToken = ctx.config.auth.adminApiToken

@@ -112,7 +112,7 @@ describe('@senkronla/server health', () => {
       status: 'ok',
       version: SERVER_VERSION,
       database: { status: 'ok', mode: 'external' },
-      blob: { status: 'ok', path: config.blob.filesystem.path },
+      blob: { status: 'ok' },
       websocket: true,
       developerPortal: { enabled: true },
       apps: {
@@ -120,6 +120,51 @@ describe('@senkronla/server health', () => {
         nativeRequireClientSecret: true,
       },
     })
+
+    await app.close()
+  })
+
+  it('includes blob path for valid admin bearer token', async () => {
+    const adminToken = 'test-admin-token-01234567890123456789012'
+    const config = loadConfig({
+      ESR_DATABASE_URL: 'postgresql://user:pass@localhost:5432/esr',
+      ESR_BLOB_PATH: await mkdtemp(join(tmpdir(), 'senkronla-blob-')),
+      ESR_ADMIN_TOKEN: adminToken,
+    })
+
+    const app = await buildApp({ config, db: createMockPool() })
+    const response = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { authorization: `Bearer ${adminToken}` },
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json().blob).toEqual({
+      status: 'ok',
+      path: config.blob.filesystem.path,
+    })
+
+    await app.close()
+  })
+
+  it('omits blob path for invalid admin bearer token', async () => {
+    const config = loadConfig({
+      ESR_DATABASE_URL: 'postgresql://user:pass@localhost:5432/esr',
+      ESR_BLOB_PATH: await mkdtemp(join(tmpdir(), 'senkronla-blob-')),
+      ESR_ADMIN_TOKEN: 'test-admin-token-01234567890123456789012',
+    })
+
+    const app = await buildApp({ config, db: createMockPool() })
+    const response = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { authorization: 'Bearer wrong-admin-token-012345678901234567890' },
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json().blob).toEqual({ status: 'ok' })
+    expect(response.json().blob).not.toHaveProperty('path')
 
     await app.close()
   })
