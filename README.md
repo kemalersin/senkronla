@@ -173,6 +173,8 @@ TLS termination via Caddy or nginx in front of the API and web portal. Operator 
 | --- | --- |
 | ![Pairing code and QR payload](./docs/screenshots/kurtar_co_02.png) | ![Slot usage and device list](./docs/screenshots/kurtar_co_03.png) |
 
+**[Interactive SDK demo](./apps/demo)** — an in-repo, single-file (`index.html`) tutorial that walks through the [`@senkronla/client`](https://www.npmjs.com/package/@senkronla/client) (`EsrSync`) flow step by step: documents, connection, namespace, recovery, sync, pairing, conflicts, encryption and live notifications. Built with Vite + React; light/dark themes and EN/TR localization. Run with `pnpm --filter @senkronla/demo dev`.
+
 ## Monorepo
 
 | Package | Description |

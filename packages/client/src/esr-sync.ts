@@ -174,10 +174,14 @@ export class EsrSync {
               return
             }
 
+            instanceRef.setStatus('syncing')
+
             const result = await slot.engine.handleRemoteHeadMeta(meta)
             if (result.status === 'conflict' && result.ctx) {
               await instanceRef.handleConflict(result.ctx)
             }
+
+            instanceRef.refreshAggregateStatus()
           },
         })
       : null
@@ -240,7 +244,7 @@ export class EsrSync {
     return this.notifications?.isConnected() ?? false
   }
 
-  /** Bildirim istemcisi (WS / poll) aktif mi — varsa EsrSyncScheduler devre dışı kalır. */
+  /** Bildirim istemcisi (WS / poll) aktif mi — periyodik pull EsrSyncScheduler’da devre dışı kalır. */
   hasNotifications(): boolean {
     return this.notifications !== null
   }
@@ -252,7 +256,7 @@ export class EsrSync {
 
     this.scheduler?.stop()
     this.scheduler?.start()
-    this.setStatus(this.notifications?.isConnected() ? 'ws_connected' : 'idle')
+    this.refreshAggregateStatus()
   }
 
   async ensureNamespace(opts?: {
@@ -265,8 +269,8 @@ export class EsrSync {
     const token = await this.sharedState.getDeviceToken()
     if (token) {
       try {
-        await this.relay.getNamespace(namespaceId)
-        return { namespaceId, created: false }
+        const namespace = await this.relay.getNamespace(namespaceId)
+        return { namespaceId, created: false, namespace }
       } catch (error) {
         if (
           isEsrError(error) &&
@@ -396,8 +400,7 @@ export class EsrSync {
       }
 
       this.lastError = null
-      const base = this.notifications?.isConnected() ? 'ws_connected' : 'idle'
-      this.setStatus(aggregateStatus(this.slots, base))
+      this.refreshAggregateStatus()
       return { status: 'ok' }
     } catch (error) {
       if (isOfflineError(error)) {
@@ -507,8 +510,7 @@ export class EsrSync {
       }
     }
 
-    const base = this.notifications?.isConnected() ? 'ws_connected' : 'idle'
-    this.setStatus(aggregateStatus(this.slots, base))
+    this.refreshAggregateStatus()
   }
 
   getStatus(): EsrSyncStatus {
@@ -579,6 +581,11 @@ export class EsrSync {
     this.lastError = error
     this.setStatus('error')
     this.options.onError?.(error)
+  }
+
+  private refreshAggregateStatus(): void {
+    const base = this.notifications?.isConnected() ? 'ws_connected' : 'idle'
+    this.setStatus(aggregateStatus(this.slots, base))
   }
 
   private setStatus(status: EsrSyncStatus): void {

@@ -9,6 +9,18 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+## [0.1.16]
+
+### Fixed
+
+- **`EsrSyncScheduler`:** register focus/visibility sync even when the notification client is active; only the periodic poll interval is skipped in that mode
+- **`head_changed` notifications:** after pulling a remote update, aggregate status is refreshed so listeners no longer stay on `pending_push` when there are no local edits waiting to push
+- **`handleNotificationStateChange`:** preserves `pending_push` when local mutations are still pending instead of always resetting to `ws_connected` / `idle`
+
+### Changed
+
+- `ensureNamespace()` returns the relay `namespace` payload when the namespace already exists (`created: false`), avoiding a second `GET /namespaces/{id}` in callers
+
 ## [0.1.11]
 
 ### Added

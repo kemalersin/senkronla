@@ -20,11 +20,6 @@ export class EsrSyncScheduler {
   start(): void {
     this.stop()
 
-    // Bildirim istemcisi (WS + kopukken poll) uzak güncellemeyi yönetir.
-    if (this.sync.hasNotifications()) {
-      return
-    }
-
     if (typeof document !== 'undefined' && this.options.pauseWhenHidden) {
       this.visibilityHandler = () => {
         if (!document.hidden) {
@@ -39,6 +34,12 @@ export class EsrSyncScheduler {
         void this.sync.sync()
       }
       window.addEventListener('focus', this.focusHandler)
+    }
+
+    // Bildirim istemcisi (WS + kopukken poll) uzak güncellemeyi yönetir;
+    // periyodik pull yalnızca bildirimler kapalıyken gerekir.
+    if (this.sync.hasNotifications()) {
+      return
     }
 
     const interval = this.sync.isNotificationConnected()

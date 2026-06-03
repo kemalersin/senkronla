@@ -201,6 +201,16 @@ export interface EnsureNamespaceResult {
   namespaceId: string
   created: boolean
   recoveryPhrase?: string
+  /** Populated when `created` is false and the relay namespace was fetched to verify the token. */
+  namespace?: NamespaceInfo
+}
+
+export interface NamespaceInfo {
+  namespaceId: string
+  namespaceLabel: string
+  limits: NamespaceLimits
+  head: HeadMeta | null
+  lastSyncAt: string | null
 }
 
 export interface PairingTokenOptions {

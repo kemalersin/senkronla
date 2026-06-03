@@ -37,6 +37,7 @@ export type {
   HeadChangedNotification,
   HeadMeta,
   LimitsChangedPayload,
+  NamespaceInfo,
   NamespaceLimits,
   NotificationConnectionState,
   NotificationMode,

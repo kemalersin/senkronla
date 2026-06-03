@@ -76,4 +76,37 @@ describe('EsrSync', () => {
     expect(requests.some((entry) => entry.startsWith('POST') && entry.includes('/namespaces'))).toBe(true)
     expect(requests.some((entry) => entry.startsWith('PUT') && entry.includes('/documents/primary'))).toBe(true)
   })
+
+  it('refreshAggregateStatus clears pending_push when local mutation was cleared', async () => {
+    let local = { count: 0 }
+    const document = createDocumentAdapter({
+      namespaceId,
+      namespaceLabel: 'Workspace',
+      contentType: 'application/json',
+      exportDocument: async () => local,
+      importDocument: async (data) => {
+        local = data as { count: number }
+      },
+    })
+
+    const sync = await EsrSync.connect({
+      relayUrl: 'https://relay.test/v1',
+      document,
+      storage: createMemoryStorageAdapter(),
+      notificationsEnabled: false,
+      fetch: vi.fn(async () => jsonResponse(404, { error: { code: 'NOT_FOUND', message: 'missing' } })) as typeof fetch,
+      onConflict: async () => 'remote',
+      onRecoveryPhrase: async () => {},
+    })
+
+    sync.notifyLocalChange()
+    expect(sync.getStatus()).toBe('pending_push')
+
+    const slot = sync.getSlot('primary')
+    expect(slot).toBeDefined()
+    slot!.state.clearLocalMutation()
+    ;(sync as unknown as { refreshAggregateStatus: () => void }).refreshAggregateStatus()
+
+    expect(sync.getStatus()).toBe('idle')
+  })
 })
