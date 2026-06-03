@@ -19,7 +19,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 ### Fixed
 
 - Code block copy button stays pinned top-right while horizontal code scroll runs in an inner container (mobile docs/API examples)
-- Code block copy button on touch devices — hidden until the block is tapped; auto-hides after 3.5 s
+- Code block copy button on touch devices — hidden until the block is tapped; auto-hides after 3.5 s; overlays code without extra padding (desktop and mobile)
 
 ### Fixed
 
