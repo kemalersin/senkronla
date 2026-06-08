@@ -9,6 +9,13 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+
+## [0.1.20]
+
+### Added
+
+- Locale-specific social share images — `og-image-en.png` / `og-image-tr.png` and `twitter-card-en.png` / `twitter-card-tr.png`; page metadata selects the image matching the active locale
+
 ## [0.1.19]
 
 ### Added
@@ -42,7 +49,7 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ### Added
 
-- Social share images — `og-image.png` and `twitter-card.png` (1200×630, brand-themed) served from `public/`; pages now emit `openGraph.images` and a `summary_large_image` Twitter card
+- Social share images — locale-specific `og-image-en.png` / `og-image-tr.png` and `twitter-card-en.png` / `twitter-card-tr.png` (1200×630, brand-themed); metadata picks the image matching the page locale
 - `metadataBase` from `NEXT_PUBLIC_SITE_URL` (fallback `https://senkron.la`) so OG/Twitter image URLs resolve to absolute paths
 
 ### Fixed

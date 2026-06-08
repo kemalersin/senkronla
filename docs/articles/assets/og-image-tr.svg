@@ -9,10 +9,6 @@
       <stop offset="0" stop-color="#0b7a71" stop-opacity="0.14"/>
       <stop offset="1" stop-color="#0b7a71" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="og-sq" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0c857b"/>
-      <stop offset="1" stop-color="#085751"/>
-    </linearGradient>
     <linearGradient id="og-env" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#0c857b"/>
       <stop offset="1" stop-color="#085751"/>
@@ -25,10 +21,16 @@
 
   <!-- brand mark + wordmark -->
   <g transform="translate(80,72)">
-    <rect width="52" height="52" rx="12" fill="url(#og-sq)"/>
-    <g transform="translate(10,10) scale(1.0)">
+    <svg x="0" y="0" width="52" height="52" viewBox="0 0 32 32" aria-hidden="true">
+      <defs>
+        <linearGradient id="brand-accent" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%" stop-color="#0c857b"/>
+          <stop offset="100%" stop-color="#085751"/>
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="7" fill="url(#brand-accent)"/>
       <path d="M16.34 24.45Q14.13 24.45 12.50 23.74Q10.86 23.04 9.94 21.79Q9.01 20.54 8.88 18.98L13.17 18.98Q13.33 19.58 13.71 20.08Q14.10 20.58 14.74 20.86Q15.38 21.15 16.27 21.15Q17.14 21.15 17.68 20.91Q18.22 20.67 18.50 20.26Q18.77 19.84 18.77 19.39Q18.77 18.72 18.38 18.35Q18 17.98 17.26 17.76Q16.53 17.54 15.47 17.31Q14.32 17.09 13.22 16.75Q12.11 16.42 11.25 15.90Q10.38 15.39 9.87 14.59Q9.36 13.79 9.36 12.61Q9.36 11.17 10.13 10.03Q10.90 8.90 12.37 8.22Q13.84 7.55 15.92 7.55Q18.83 7.55 20.53 8.86Q22.22 10.18 22.54 12.48L18.48 12.48Q18.29 11.74 17.63 11.31Q16.98 10.88 15.89 10.88Q14.74 10.88 14.13 11.30Q13.52 11.71 13.52 12.38Q13.52 12.83 13.92 13.18Q14.32 13.54 15.06 13.78Q15.79 14.02 16.85 14.24Q18.70 14.62 20.11 15.12Q21.52 15.62 22.32 16.53Q23.12 17.44 23.12 19.17Q23.12 20.70 22.29 21.90Q21.46 23.10 19.94 23.78Q18.42 24.45 16.34 24.45" fill="#ffffff"/>
-    </g>
+    </svg>
     <text x="68" y="36" font-size="30" font-weight="700" letter-spacing="-0.5" fill="#1b2330">senkron<tspan fill="#0b7a71">la</tspan></text>
   </g>
 

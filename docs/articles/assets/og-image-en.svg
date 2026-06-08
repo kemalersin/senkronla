@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" font-family="'DM Sans', system-ui, sans-serif">
+  <defs>
+    <linearGradient id="og-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f8f7f4"/>
+    </linearGradient>
+    <radialGradient id="og-glow" cx="0.16" cy="-0.05" r="0.7">
+      <stop offset="0" stop-color="#0b7a71" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#0b7a71" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="og-env" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c857b"/>
+      <stop offset="1" stop-color="#085751"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="630" fill="url(#og-bg)"/>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#og-glow)"/>
+  <rect x="0" y="618" width="1200" height="12" fill="#0b7a71"/>
+
+  <!-- illustration (behind text) -->
+  <g transform="translate(930,315)">
+    <circle cx="0" cy="0" r="190" fill="#0b7a71" fill-opacity="0.07"/>
+    <line x1="0" y1="0" x2="-150" y2="-140" stroke="#0b7a71" stroke-opacity="0.35" stroke-width="2" stroke-dasharray="3 8"/>
+    <line x1="0" y1="0" x2="165" y2="-95" stroke="#0b7a71" stroke-opacity="0.35" stroke-width="2" stroke-dasharray="3 8"/>
+    <line x1="0" y1="0" x2="150" y2="140" stroke="#0b7a71" stroke-opacity="0.35" stroke-width="2" stroke-dasharray="3 8"/>
+    <line x1="0" y1="0" x2="-160" y2="110" stroke="#0b7a71" stroke-opacity="0.35" stroke-width="2" stroke-dasharray="3 8"/>
+    <g fill="#ffffff" stroke="#0b7a71" stroke-width="2.5">
+      <rect x="-184" y="-162" width="62" height="44" rx="7"/>
+      <rect x="138" y="-122" width="46" height="62" rx="9"/>
+      <rect x="126" y="108" width="62" height="44" rx="7"/>
+      <rect x="-190" y="86" width="46" height="62" rx="9"/>
+    </g>
+    <g transform="translate(-100,-72)">
+      <rect x="0" y="0" width="200" height="144" rx="18" fill="url(#og-env)"/>
+      <path d="M0 14 L100 86 L200 14" fill="none" stroke="#ffffff" stroke-opacity="0.6" stroke-width="4"/>
+      <circle cx="100" cy="100" r="27" fill="#ffffff"/>
+      <rect x="88" y="94" width="24" height="21" rx="4" fill="#0b7a71"/>
+      <path d="M91 94 a9 9 0 0 1 18 0" fill="none" stroke="#0b7a71" stroke-width="4"/>
+      <text x="100" y="-16" text-anchor="middle" font-size="16" font-weight="700" fill="#085751" font-family="'IBM Plex Mono', monospace">ESR-DOC1</text>
+    </g>
+  </g>
+
+  <!-- foreground copy -->
+  <g>
+    <g transform="translate(80,72)">
+      <svg x="0" y="0" width="52" height="52" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="brand-accent" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+            <stop offset="0%" stop-color="#0c857b"/>
+            <stop offset="100%" stop-color="#085751"/>
+          </linearGradient>
+        </defs>
+        <rect width="32" height="32" rx="7" fill="url(#brand-accent)"/>
+        <path d="M16.34 24.45Q14.13 24.45 12.50 23.74Q10.86 23.04 9.94 21.79Q9.01 20.54 8.88 18.98L13.17 18.98Q13.33 19.58 13.71 20.08Q14.10 20.58 14.74 20.86Q15.38 21.15 16.27 21.15Q17.14 21.15 17.68 20.91Q18.22 20.67 18.50 20.26Q18.77 19.84 18.77 19.39Q18.77 18.72 18.38 18.35Q18 17.98 17.26 17.76Q16.53 17.54 15.47 17.31Q14.32 17.09 13.22 16.75Q12.11 16.42 11.25 15.90Q10.38 15.39 9.87 14.59Q9.36 13.79 9.36 12.61Q9.36 11.17 10.13 10.03Q10.90 8.90 12.37 8.22Q13.84 7.55 15.92 7.55Q18.83 7.55 20.53 8.86Q22.22 10.18 22.54 12.48L18.48 12.48Q18.29 11.74 17.63 11.31Q16.98 10.88 15.89 10.88Q14.74 10.88 14.13 11.30Q13.52 11.71 13.52 12.38Q13.52 12.83 13.92 13.18Q14.32 13.54 15.06 13.78Q15.79 14.02 16.85 14.24Q18.70 14.62 20.11 15.12Q21.52 15.62 22.32 16.53Q23.12 17.44 23.12 19.17Q23.12 20.70 22.29 21.90Q21.46 23.10 19.94 23.78Q18.42 24.45 16.34 24.45" fill="#ffffff"/>
+      </svg>
+      <text x="68" y="36" font-size="30" font-weight="700" letter-spacing="-0.5" fill="#1b2330">senkron<tspan fill="#0b7a71">la</tspan></text>
+    </g>
+
+    <text x="80" y="172" font-size="15" font-weight="600" letter-spacing="3" fill="#0b7a71">ENVELOPE SYNC RELAY</text>
+
+    <text x="78" y="258" font-size="52" font-weight="700" fill="#1b2330" font-family="'Source Serif 4', Georgia, serif">Without compromising</text>
+    <text x="78" y="318" font-size="52" font-weight="700" fill="#1b2330" font-family="'Source Serif 4', Georgia, serif">privacy,</text>
+    <text x="78" y="378" font-size="52" font-weight="700" fill="#0b7a71" font-family="'Source Serif 4', Georgia, serif">sync across devices</text>
+
+    <text x="80" y="432" font-size="22" fill="#5a6578">Data is encrypted on the user&apos;s device.</text>
+    <text x="80" y="462" font-size="22" fill="#5a6578">The relay only carries sealed envelopes; it never looks inside.</text>
+
+    <g transform="translate(80,498)" font-family="'IBM Plex Mono', ui-monospace, monospace">
+      <rect x="0" y="0" width="150" height="42" rx="21" fill="#ffffff" stroke="#0b7a71" stroke-opacity="0.4"/>
+      <text x="75" y="27" text-anchor="middle" font-size="15" font-weight="500" fill="#0b7a71">senkron.la</text>
+      <rect x="166" y="0" width="200" height="42" rx="21" fill="#ffffff" stroke="#dfe3ea"/>
+      <text x="266" y="27" text-anchor="middle" font-size="15" font-weight="500" fill="#5a6578">example: kurtar.co</text>
+      <rect x="382" y="0" width="176" height="42" rx="21" fill="#ffffff" stroke="#dfe3ea"/>
+      <text x="470" y="27" text-anchor="middle" font-size="15" font-weight="500" fill="#5a6578">open source / MIT</text>
+    </g>
+  </g>
+</svg>

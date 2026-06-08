@@ -1,11 +1,27 @@
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
+import type { Locale } from '@/i18n/config'
 
 /** Public site origin used for absolute metadata URLs (OG/Twitter images). */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://senkron.la'
 
-const OG_IMAGE = { url: '/og-image.png', width: 1200, height: 630 } as const
-const TWITTER_IMAGE = '/twitter-card.png'
+const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const
+
+function socialImageLocale(locale: string): Locale {
+  return locale === 'tr' ? 'tr' : 'en'
+}
+
+function socialShareImages(locale: string, alt: string) {
+  const lang = socialImageLocale(locale)
+  return {
+    openGraphImage: {
+      url: `/og-image-${lang}.png`,
+      ...OG_IMAGE_SIZE,
+      alt,
+    },
+    twitterImage: `/twitter-card-${lang}.png`,
+  }
+}
 
 export type PageMetaKey =
   | 'home'
@@ -63,6 +79,7 @@ export async function createDeveloperPageMetadata(
 
 export async function createRootLayoutMetadata(locale: string): Promise<Metadata> {
   const { fullTitle, description, siteName } = await readPageMeta(locale, 'home')
+  const { openGraphImage, twitterImage } = socialShareImages(locale, fullTitle)
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -86,13 +103,13 @@ export async function createRootLayoutMetadata(locale: string): Promise<Metadata
       siteName,
       locale,
       type: 'website',
-      images: [{ ...OG_IMAGE, alt: fullTitle }],
+      images: [openGraphImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: fullTitle,
       description,
-      images: [TWITTER_IMAGE],
+      images: [twitterImage],
     },
   }
 }
@@ -102,6 +119,7 @@ export async function createPageMetadata(
   pageKey: PageMetaKey,
 ): Promise<Metadata> {
   const { pageTitle, fullTitle, description, siteName } = await readPageMeta(locale, pageKey)
+  const { openGraphImage, twitterImage } = socialShareImages(locale, fullTitle)
 
   return {
     title: pageTitle,
@@ -112,13 +130,13 @@ export async function createPageMetadata(
       siteName,
       locale,
       type: 'website',
-      images: [{ ...OG_IMAGE, alt: fullTitle }],
+      images: [openGraphImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: fullTitle,
       description,
-      images: [TWITTER_IMAGE],
+      images: [twitterImage],
     },
   }
 }
