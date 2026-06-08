@@ -9,6 +9,9 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- `/agents` redirects to the agents guide at `/guides/agents` (locale-aware); static files under `/agents/*.md` are unchanged
 
 ## [0.1.20]
 

@@ -11,6 +11,9 @@ The published version number lives only in the [`package.json`](package.json) `v
 
 ## [Unreleased]
 
+### Added
+
+- **web:** `/agents` redirects to `/guides/agents` (locale-aware)
 
 ## [0.1.20]
 
