@@ -9,6 +9,9 @@ Monorepo release versions follow the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## [Unreleased]
 
+
+## [0.1.20]
+
 ### Added
 
 - Join modal — QR payload placeholder shows a full `esr://pair/v1/…` example (namespace ID, code, expiry, host)
