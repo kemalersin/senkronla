@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="360" rx="16" fill="#f8fafc"/>
+  <text x="480" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Classic &quot;cloud sync&quot; or sealed envelope?</text>
+
+  <rect x="40" y="70" width="420" height="252" rx="16" fill="#fff1f2" stroke="#fecdd3" stroke-width="2"/>
+  <text x="250" y="104" text-anchor="middle" font-size="16" font-weight="700" fill="#be123c">Plain JSON on the server</text>
+  <g font-size="13.5" fill="#9f1239">
+    <text x="70" y="146">&#8226; Accounts, debts, API keys in the clear</text>
+    <text x="70" y="178">&#8226; The server can read everything</text>
+    <text x="70" y="210">&#8226; A leak is directly your problem</text>
+    <text x="70" y="242">&#8226; Compliance burden goes through the roof</text>
+  </g>
+  <text x="250" y="292" text-anchor="middle" font-size="12.5" fill="#be123c" font-style="italic">&quot;We can look at your data too&quot; energy</text>
+
+  <rect x="500" y="70" width="420" height="252" rx="16" fill="#f0fdfa" stroke="#99f6e4" stroke-width="2"/>
+  <text x="710" y="104" text-anchor="middle" font-size="16" font-weight="700" fill="#0f766e">Sealed envelope (Senkronla)</text>
+  <g font-size="13.5" fill="#115e59">
+    <text x="530" y="146">&#8226; Encryption on device, keys stay with you</text>
+    <text x="530" y="178">&#8226; Relay only carries opaque envelopes</text>
+    <text x="530" y="210">&#8226; Even if leaked, content stays unreadable</text>
+    <text x="530" y="242">&#8226; Easy to scale because it stays &quot;dumb&quot;</text>
+  </g>
+  <text x="710" y="292" text-anchor="middle" font-size="12.5" fill="#0f766e" font-style="italic">&quot;I don&apos;t know what I&apos;m carrying&quot; energy (in a good way)</text>
+</svg>

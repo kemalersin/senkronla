@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="300" rx="16" fill="#f8fafc"/>
+  <text x="480" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Who is this for?</text>
+
+  <g>
+    <rect x="40" y="74" width="210" height="180" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+    <g transform="translate(145,128)">
+      <path d="M-30 8 a18 18 0 0 1 8 -34 a24 24 0 0 1 44 6 a16 16 0 0 1 2 32 Z" fill="#eef2ff" stroke="#6366f1" stroke-width="2.5"/>
+      <line x1="-34" y1="-30" x2="34" y2="26" stroke="#f87171" stroke-width="3.5"/>
+    </g>
+    <text x="145" y="190" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Offline-first app</text>
+    <text x="145" y="214" text-anchor="middle" font-size="12.5" fill="#64748b">web or mobile,</text>
+    <text x="145" y="232" text-anchor="middle" font-size="12.5" fill="#64748b">works without internet</text>
+  </g>
+
+  <g>
+    <rect x="270" y="74" width="210" height="180" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+    <g transform="translate(375,128)">
+      <path d="M0 -32 L28 -22 L28 4 C28 24 14 32 0 38 C-14 32 -28 24 -28 4 L-28 -22 Z" fill="#ccfbf1" stroke="#0f766e" stroke-width="2.5"/>
+      <path d="M-11 2 L-3 12 L13 -10" fill="none" stroke="#0f766e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="375" y="190" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Sensitive data</text>
+    <text x="375" y="214" text-anchor="middle" font-size="12.5" fill="#64748b">notes, budgets, health;</text>
+    <text x="375" y="232" text-anchor="middle" font-size="12.5" fill="#64748b">not stored in the clear</text>
+  </g>
+
+  <g>
+    <rect x="500" y="74" width="210" height="180" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+    <g transform="translate(605,124)">
+      <rect x="-30" y="-28" width="60" height="22" rx="5" fill="#e0f2fe" stroke="#0e7490" stroke-width="2.5"/>
+      <rect x="-30" y="-2" width="60" height="22" rx="5" fill="#e0f2fe" stroke="#0e7490" stroke-width="2.5"/>
+      <rect x="-30" y="24" width="60" height="22" rx="5" fill="#e0f2fe" stroke="#0e7490" stroke-width="2.5"/>
+      <circle cx="-18" cy="-17" r="3" fill="#0e7490"/>
+      <circle cx="-18" cy="9" r="3" fill="#0e7490"/>
+      <circle cx="-18" cy="35" r="3" fill="#0e7490"/>
+    </g>
+    <text x="605" y="190" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Self-hosted relay</text>
+    <text x="605" y="214" text-anchor="middle" font-size="12.5" fill="#64748b">on your own server</text>
+    <text x="605" y="232" text-anchor="middle" font-size="12.5" fill="#64748b">or single-tenant</text>
+  </g>
+
+  <g>
+    <rect x="730" y="74" width="210" height="180" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+    <g transform="translate(835,126)">
+      <path d="M0 30 C-34 6 -34 -26 -14 -26 C-4 -26 0 -18 0 -14 C0 -18 4 -26 14 -26 C34 -26 34 6 0 30 Z" fill="#fee2e2" stroke="#e11d48" stroke-width="2.5"/>
+      <text x="0" y="2" text-anchor="middle" font-size="14" font-weight="700" fill="#9f1239">&lt;/&gt;</text>
+    </g>
+    <text x="835" y="190" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">Indie &amp; open source</text>
+    <text x="835" y="214" text-anchor="middle" font-size="12.5" fill="#64748b">&quot;no backend, but</text>
+    <text x="835" y="232" text-anchor="middle" font-size="12.5" fill="#64748b">sync is non-negotiable&quot;</text>
+  </g>
+</svg>
